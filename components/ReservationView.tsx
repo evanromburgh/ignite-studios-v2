@@ -5,6 +5,7 @@ import { CONFIG } from '../config';
 import { formatPrice } from './UnitCard';
 import { unitService } from '../services/unitService';
 import { reservationService } from '../services/reservationService';
+import { supabase } from '../services/supabase';
 import { useToast } from './Toast';
 
 interface ReservationViewProps {
@@ -25,6 +26,7 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
   const hasReleasedRef = useRef(false);
   const isClosingRef = useRef(false);
   const releaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionTokenRef = useRef<string | null>(null);
   
   const effectiveNow = () => Date.now() + serverClockOffsetMs;
 
@@ -85,6 +87,13 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
     return () => clearInterval(timer);
   }, [unit.lockExpiresAt, calculateRemaining, handleClose, unit.id, serverClockOffsetMs]);
 
+  // Cache session token for keepalive release on refresh/close (async release is cancelled by browser)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      sessionTokenRef.current = session?.access_token ?? null;
+    });
+  }, []);
+
   useEffect(() => {
     // Clear any pending release from a previous cleanup (e.g. React Strict Mode remount)
     if (releaseTimeoutRef.current) {
@@ -93,16 +102,16 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
     }
 
     const handleBeforeUnload = () => {
-      releaseLock();
+      unitService.releaseLockKeepalive(unit.id, sessionTokenRef.current);
     };
-    
+
     const handlePageHide = () => {
-      releaseLock();
+      unitService.releaseLockKeepalive(unit.id, sessionTokenRef.current);
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('pagehide', handlePageHide);
-    
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
@@ -115,7 +124,7 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
         }, 150);
       }
     };
-  }, [releaseLock]);
+  }, [releaseLock, unit.id]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);

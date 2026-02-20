@@ -192,6 +192,36 @@ export const unitService = {
       .eq('id', unitId);
   },
 
+  /**
+   * Release lock using fetch with keepalive so the request can complete
+   * when the user closes the tab or refreshes (beforeunload/pagehide).
+   * Call this from unload handlers; use releaseLock() for normal navigation.
+   */
+  releaseLockKeepalive(unitId: string, accessToken: string | null): void {
+    const url = import.meta.env.VITE_SUPABASE_URL as string;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+    if (!url || !anonKey) return;
+    const endpoint = `${url}/rest/v1/units?id=eq.${encodeURIComponent(unitId)}`;
+    const headers: Record<string, string> = {
+      apikey: anonKey,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    };
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+    try {
+      fetch(endpoint, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ lock_expires_at: null, locked_by: null }),
+        keepalive: true,
+      });
+    } catch {
+      // Ignore; page may be unloading
+    }
+  },
+
   async releaseAllLocksForUser(userId: string): Promise<void> {
     await supabase
       .from(TABLE)
