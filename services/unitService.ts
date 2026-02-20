@@ -24,6 +24,39 @@ function toDbRow(unit: Unit): Record<string, unknown> {
 }
 
 function toAppUnit(row: Record<string, unknown>): Unit {
+  // Convert lock_expires_at to number (Supabase may return BIGINT as string or number)
+  // Database stores milliseconds, but we need to ensure it's treated as milliseconds
+  let lockExpiresAt: number | undefined = undefined;
+  
+  if (row.lock_expires_at != null) {
+    const rawValue = row.lock_expires_at;
+    let numValue: number;
+    
+    // Handle string values - remove any non-numeric characters except minus sign
+    if (typeof rawValue === 'string') {
+      // Remove slashes and other non-numeric characters, keep only digits
+      const cleaned = rawValue.replace(/[^\d-]/g, '');
+      numValue = parseInt(cleaned, 10);
+    } else {
+      // Handle number values
+      numValue = Number(rawValue);
+    }
+    
+    if (!isNaN(numValue)) {
+      // Database stores milliseconds (BIGINT from EXTRACT(EPOCH FROM now()) * 1000)
+      // If value is less than 13 digits, it might be in seconds - convert to milliseconds
+      // Valid millisecond timestamps are typically 13 digits (e.g., 1771597028000)
+      // Valid second timestamps are typically 10 digits (e.g., 1771597028)
+      if (numValue > 0 && numValue < 1000000000000) {
+        // Value appears to be in seconds, convert to milliseconds
+        lockExpiresAt = numValue * 1000;
+      } else {
+        // Value is already in milliseconds
+        lockExpiresAt = numValue;
+      }
+    }
+  }
+  
   return {
     id: row.id as string,
     unitNumber: row.unit_number as string,
@@ -36,7 +69,7 @@ function toAppUnit(row: Record<string, unknown>): Unit {
     unitType: row.unit_type as string,
     imageUrl: row.image_url as string,
     viewers: (row.viewers as Record<string, number>) ?? {},
-    lockExpiresAt: row.lock_expires_at as number | undefined,
+    lockExpiresAt: lockExpiresAt,
     lockedBy: row.locked_by as string | undefined,
   };
 }
@@ -122,6 +155,34 @@ export const unitService = {
 
     if (error) return false;
     return data === true;
+  },
+
+  async getServerTimeMs(): Promise<number> {
+    const { data, error } = await supabase.rpc('get_server_time_ms');
+    if (error) return Date.now(); // fallback to client time
+    const raw = data;
+    const ms = typeof raw === 'string' ? parseInt(raw, 10) : Number(raw);
+    return isNaN(ms) ? Date.now() : ms;
+  },
+
+  async getUnit(unitId: string): Promise<Unit | null> {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('*')
+      .eq('id', unitId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching unit:', error);
+      return null;
+    }
+    if (!data) {
+      console.error('No data returned for unit:', unitId);
+      return null;
+    }
+    
+    const unit = toAppUnit(data);
+    return unit;
   },
 
   async releaseLock(unitId: string): Promise<void> {

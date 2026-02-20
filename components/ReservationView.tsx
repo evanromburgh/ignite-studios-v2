@@ -10,9 +10,10 @@ import { useToast } from './Toast';
 interface ReservationViewProps {
   unit: Unit;
   onClose: () => void;
+  serverClockOffsetMs?: number;
 }
 
-export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose }) => {
+export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose, serverClockOffsetMs = 0 }) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState('');
@@ -23,13 +24,20 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose 
   const [reasonForBuying, setReasonForBuying] = useState('');
   const hasReleasedRef = useRef(false);
   const isClosingRef = useRef(false);
+  const releaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
+  const effectiveNow = () => Date.now() + serverClockOffsetMs;
+
   const calculateRemaining = useCallback(() => {
     if (!unit.lockExpiresAt) return 0;
-    return Math.max(0, Math.floor((unit.lockExpiresAt - Date.now()) / 1000));
-  }, [unit.lockExpiresAt]);
+    const remaining = Math.max(0, Math.floor((unit.lockExpiresAt - effectiveNow()) / 1000));
+    return remaining;
+  }, [unit.lockExpiresAt, serverClockOffsetMs]);
 
-  const [timeLeft, setTimeLeft] = useState(calculateRemaining);
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (!unit.lockExpiresAt) return 0;
+    return Math.max(0, Math.floor((unit.lockExpiresAt - effectiveNow()) / 1000));
+  });
 
   const releaseLock = useCallback(async () => {
     if (hasReleasedRef.current) return;
@@ -56,11 +64,17 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose 
     // If we're already closing, stop responding to unit prop updates to prevent flickering/resets
     if (isClosingRef.current) return;
     
-    setTimeLeft(calculateRemaining());
-    if (!unit.lockExpiresAt) return;
+    // Recalculate immediately when unit.lockExpiresAt changes
+    const initialRemaining = calculateRemaining();
+    setTimeLeft(initialRemaining);
+    
+    if (!unit.lockExpiresAt || initialRemaining <= 0) {
+      return;
+    }
 
+    // Start timer interval (use server time so timer shows 10:00)
     const timer = setInterval(() => {
-      const remaining = Math.max(0, Math.floor((unit.lockExpiresAt! - Date.now()) / 1000));
+      const remaining = Math.max(0, Math.floor((unit.lockExpiresAt! - effectiveNow()) / 1000));
       setTimeLeft(remaining);
       if (remaining <= 0) {
         clearInterval(timer);
@@ -69,19 +83,20 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose 
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [unit.lockExpiresAt, calculateRemaining, handleClose]);
+  }, [unit.lockExpiresAt, calculateRemaining, handleClose, unit.id, serverClockOffsetMs]);
 
   useEffect(() => {
-    // Use multiple events to catch all scenarios: refresh, navigation, close
-    // Note: We don't release on visibilitychange (tab switch/minimize) as user might return
+    // Clear any pending release from a previous cleanup (e.g. React Strict Mode remount)
+    if (releaseTimeoutRef.current) {
+      clearTimeout(releaseTimeoutRef.current);
+      releaseTimeoutRef.current = null;
+    }
+
     const handleBeforeUnload = () => {
-      // Try to release lock synchronously if possible
       releaseLock();
     };
     
     const handlePageHide = () => {
-      // pagehide fires more reliably than beforeunload, including on mobile
-      // This fires on actual page unload (refresh, close, navigation)
       releaseLock();
     };
 
@@ -91,9 +106,13 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
-      // Ensure the lock is released if we unmount for any reason (e.g., page navigation)
+      // Defer release so React Strict Mode's fake unmount doesn't clear the lock.
+      // On real unmount (navigate away) we won't remount, so release after delay.
       if (!isClosingRef.current) {
-        releaseLock();
+        releaseTimeoutRef.current = setTimeout(() => {
+          releaseTimeoutRef.current = null;
+          releaseLock();
+        }, 150);
       }
     };
   }, [releaseLock]);

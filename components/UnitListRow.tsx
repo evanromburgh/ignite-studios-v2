@@ -14,27 +14,27 @@ interface UnitListRowProps {
   isAdmin?: boolean;
   /** When true (e.g. on My Reservations page), show full opacity so the unit is visible. Buttons stay disabled. */
   hideReservedOverlay?: boolean;
+  serverClockOffsetMs?: number;
 }
 
-export const UnitListRow: React.FC<UnitListRowProps> = ({ unit, onSelect, onReserve, isWishlisted, onToggleWishlist, isAdmin = false, hideReservedOverlay = false }) => {
+export const UnitListRow: React.FC<UnitListRowProps> = ({ unit, onSelect, onReserve, isWishlisted, onToggleWishlist, isAdmin = false, hideReservedOverlay = false, serverClockOffsetMs = 0 }) => {
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [, setTick] = useState(0); // Dummy state to force re-render
   
   useEffect(() => {
-    // 1. Reservation timer
     if (!unit.lockExpiresAt) {
       setTimeLeft(0);
     } else {
+      const effectiveNow = () => Date.now() + serverClockOffsetMs;
       const updateTimer = () => {
-        const now = Date.now();
-        const remaining = Math.max(0, Math.floor((unit.lockExpiresAt! - now) / 1000));
+        const remaining = Math.max(0, Math.floor((unit.lockExpiresAt! - effectiveNow()) / 1000));
         setTimeLeft(remaining);
       };
       updateTimer();
       const interval = setInterval(updateTimer, 1000);
       return () => clearInterval(interval);
     }
-  }, [unit.lockExpiresAt]);
+  }, [unit.lockExpiresAt, serverClockOffsetMs]);
 
   useEffect(() => {
     const presenceTicker = setInterval(() => {

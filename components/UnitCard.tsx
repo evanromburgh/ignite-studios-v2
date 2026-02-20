@@ -15,6 +15,7 @@ interface UnitCardProps {
   onStatusChange?: (id: string, status: Unit['status']) => void;
   onEdit?: (unit: Unit) => void;
   onDelete?: (id: string) => void;
+  serverClockOffsetMs?: number;
 }
 
 export const formatPrice = (price: number) => {
@@ -31,7 +32,8 @@ export const UnitCard: React.FC<UnitCardProps> = ({
   hideReservedOverlay = false,
   onStatusChange,
   onEdit,
-  onDelete
+  onDelete,
+  serverClockOffsetMs = 0
 }) => {
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [, setTick] = useState(0); 
@@ -40,16 +42,16 @@ export const UnitCard: React.FC<UnitCardProps> = ({
     if (!unit.lockExpiresAt) {
       setTimeLeft(0);
     } else {
+      const effectiveNow = () => Date.now() + serverClockOffsetMs;
       const updateTimer = () => {
-        const now = Date.now();
-        const remaining = Math.max(0, Math.floor((unit.lockExpiresAt! - now) / 1000));
+        const remaining = Math.max(0, Math.floor((unit.lockExpiresAt! - effectiveNow()) / 1000));
         setTimeLeft(remaining);
       };
       updateTimer();
       const interval = setInterval(updateTimer, 1000);
       return () => clearInterval(interval);
     }
-  }, [unit.lockExpiresAt]);
+  }, [unit.lockExpiresAt, serverClockOffsetMs]);
 
   useEffect(() => {
     const presenceTicker = setInterval(() => {

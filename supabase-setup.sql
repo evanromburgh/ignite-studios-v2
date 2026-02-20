@@ -128,9 +128,14 @@ CREATE OR REPLACE FUNCTION public.try_acquire_lock(
 RETURNS BOOLEAN AS $$
 DECLARE
   rows_updated INTEGER;
+  server_lock_expires_at BIGINT;
 BEGIN
+  -- Calculate expiration time using server time to avoid clock skew between devices
+  -- Lock duration is 10 minutes (600000 milliseconds)
+  server_lock_expires_at := (EXTRACT(EPOCH FROM now()) * 1000)::BIGINT + (10 * 60 * 1000);
+  
   UPDATE units
-  SET lock_expires_at = p_lock_expires_at,
+  SET lock_expires_at = server_lock_expires_at,
       locked_by = p_user_id
   WHERE id = p_unit_id
     AND (lock_expires_at IS NULL OR lock_expires_at <= (EXTRACT(EPOCH FROM now()) * 1000)::BIGINT);
@@ -139,6 +144,13 @@ BEGIN
   RETURN rows_updated > 0;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- Return current server time in milliseconds (for client clock sync so timer shows 10:00)
+CREATE OR REPLACE FUNCTION public.get_server_time_ms()
+RETURNS BIGINT AS $$
+  SELECT (EXTRACT(EPOCH FROM now()) * 1000)::BIGINT;
+$$ LANGUAGE sql SECURITY DEFINER;
 
 
 -- =====================

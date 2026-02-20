@@ -85,6 +85,8 @@ const App: React.FC = () => {
     status: 'all',
   });
 
+  const [serverClockOffsetMs, setServerClockOffsetMs] = useState<number>(0);
+
   // Start at top of page on load/refresh
   useEffect(() => {
     window.history.scrollRestoration = 'manual';
@@ -155,6 +157,18 @@ const App: React.FC = () => {
     }
   }, [user, authLoading, hasTriggeredInitialTransition]);
 
+  // Sync client clock with server so timer shows 10:00 (not 6:42 from clock skew)
+  useEffect(() => {
+    if (!user) return;
+    const sync = async () => {
+      const serverMs = await unitService.getServerTimeMs();
+      setServerClockOffsetMs(serverMs - Date.now());
+    };
+    sync();
+    const interval = setInterval(sync, 60_000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   // Stable long-lived subscription for units
   useEffect(() => {
     if (!user) return;
@@ -194,24 +208,28 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, [user?.id]);
 
-  // Release locks when not in RESERVE view (handles refresh, navigation, etc.)
-  useEffect(() => {
-    if (!user || viewContext === 'RESERVE') return;
-    
-    // Release all locks owned by this user when not in reservation view
-    // This handles cases where user refreshes, navigates away, or closes browser
-    unitService.releaseAllLocksForUser(user.id).catch(err => {
-      console.error('Failed to release locks on view change:', err);
-    });
-  }, [user?.id, viewContext]);
+  // Do NOT release locks from App - ReservationView releases on unmount (Cancel/navigate)
+  // and on pagehide/beforeunload (refresh/close). Releasing here would clear the lock when
+  // another tab is on INVENTORY, allowing multiple users (or same user in another tab) to reserve.
 
   // Sync selected unit when the main list updates
   useEffect(() => {
-    if (selectedUnit) {
-      const fresh = units.find(u => u.id === selectedUnit.id);
-      if (fresh) setSelectedUnit(fresh);
+    if (!selectedUnit) return;
+    const fresh = units.find(u => u.id === selectedUnit.id);
+    if (!fresh) return;
+    
+    // When on reservation page, preserve lockExpiresAt/lockedBy so the timer doesn't get cleared
+    // (real-time updates can sometimes omit or clear lock fields)
+    if (viewContext === 'RESERVE' && selectedUnit.lockExpiresAt != null) {
+      setSelectedUnit({
+        ...fresh,
+        lockExpiresAt: fresh.lockExpiresAt ?? selectedUnit.lockExpiresAt,
+        lockedBy: fresh.lockedBy ?? selectedUnit.lockedBy,
+      });
+    } else {
+      setSelectedUnit(fresh);
     }
-  }, [units, selectedUnit?.id]);
+  }, [units, selectedUnit?.id, viewContext]);
 
   const transitionTo = useCallback((context: ViewContext, unit: Unit | null = null) => {
     if (isTransitioning) return;
@@ -235,12 +253,56 @@ const App: React.FC = () => {
     
     setIsSyncing(true);
     const success = await unitService.acquireLock(unit.id, user.id);
-    setIsSyncing(false);
-
+    
     if (success) {
-      const unitWithLock = { ...unit, lockExpiresAt: Date.now() + CONFIG.LOCK_DURATION_MS, lockedBy: user.id };
-      transitionTo('RESERVE', unitWithLock);
+      // Wait a bit for database update to be committed, then fetch the updated unit
+      // This ensures we get the server-calculated lockExpiresAt timestamp
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Try fetching the unit multiple times to handle any race conditions
+      let updatedUnit: Unit | null = null;
+      for (let i = 0; i < 5; i++) {
+        updatedUnit = await unitService.getUnit(unit.id);
+        if (updatedUnit && updatedUnit.lockExpiresAt && updatedUnit.lockedBy === user.id) {
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      setIsSyncing(false);
+      
+      if (updatedUnit && updatedUnit.lockExpiresAt) {
+        transitionTo('RESERVE', updatedUnit);
+      } else {
+        // Fallback: wait for real-time update from subscription
+        const waitForRealtime = (): Promise<Unit | null> => {
+          return new Promise((resolve) => {
+            let attempts = 0;
+            const checkInterval = setInterval(() => {
+              attempts++;
+              const realtimeUnit = units.find(u => u.id === unit.id && u.lockExpiresAt && u.lockedBy === user.id);
+              if (realtimeUnit) {
+                clearInterval(checkInterval);
+                resolve(realtimeUnit);
+              } else if (attempts >= 20) {
+                clearInterval(checkInterval);
+                resolve(null);
+              }
+            }, 100);
+          });
+        };
+        
+        const realtimeUnit = await waitForRealtime();
+        if (realtimeUnit && realtimeUnit.lockExpiresAt) {
+          transitionTo('RESERVE', realtimeUnit);
+        } else {
+          // Last resort fallback
+          const unitWithLock = { ...unit, lockExpiresAt: Date.now() + CONFIG.LOCK_DURATION_MS, lockedBy: user.id };
+          transitionTo('RESERVE', unitWithLock);
+        }
+      }
     } else {
+      setIsSyncing(false);
       toast("This unit is currently being reserved by another client. Please check back in a few minutes.", 'warning');
     }
   };
@@ -401,7 +463,7 @@ const App: React.FC = () => {
             {viewContext === 'UNIT_DETAIL' && selectedUnit ? (
               <UnitDetails unit={selectedUnit} onClose={() => transitionTo('INVENTORY')} isWishlisted={wishlistIds.includes(selectedUnit.id)} onToggleWishlist={toggleWishlist} onReserve={handleReserveRequest} />
             ) : viewContext === 'RESERVE' && selectedUnit ? (
-              <ReservationView unit={selectedUnit} onClose={() => transitionTo('INVENTORY')} />
+              <ReservationView unit={selectedUnit} onClose={() => transitionTo('INVENTORY')} serverClockOffsetMs={serverClockOffsetMs} />
             ) : viewContext === 'DOCUMENTS' ? (
               <div className="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pt-32 sm:pt-48 pb-0">
                 <header className="mb-12 sm:mb-24">
@@ -506,8 +568,8 @@ const App: React.FC = () => {
                     <div className={viewMode === ViewMode.GRID ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "w-full space-y-4"}>
                       {displayedUnits.map(unit => (
                         viewMode === ViewMode.GRID 
-                          ? <UnitCard key={unit.id} unit={unit} onSelect={(u) => transitionTo('UNIT_DETAIL', u)} onReserve={handleReserveRequest} isWishlisted={wishlistIds.includes(unit.id)} onToggleWishlist={toggleWishlist} isAdmin={isAdminMode} hideReservedOverlay={false} onStatusChange={handleStatusChange} onEdit={setEditingUnit} onDelete={handleDeleteUnit} />
-                          : <UnitListRow key={unit.id} unit={unit} onSelect={(u) => transitionTo('UNIT_DETAIL', u)} onReserve={handleReserveRequest} isWishlisted={wishlistIds.includes(unit.id)} onToggleWishlist={toggleWishlist} isAdmin={isAdminMode} hideReservedOverlay={false} />
+                          ? <UnitCard key={unit.id} unit={unit} onSelect={(u) => transitionTo('UNIT_DETAIL', u)} onReserve={handleReserveRequest} isWishlisted={wishlistIds.includes(unit.id)} onToggleWishlist={toggleWishlist} isAdmin={isAdminMode} hideReservedOverlay={false} onStatusChange={handleStatusChange} onEdit={setEditingUnit} onDelete={handleDeleteUnit} serverClockOffsetMs={serverClockOffsetMs} />
+                          : <UnitListRow key={unit.id} unit={unit} onSelect={(u) => transitionTo('UNIT_DETAIL', u)} onReserve={handleReserveRequest} isWishlisted={wishlistIds.includes(unit.id)} onToggleWishlist={toggleWishlist} isAdmin={isAdminMode} hideReservedOverlay={false} serverClockOffsetMs={serverClockOffsetMs} />
                       ))}
                     </div>
                   )

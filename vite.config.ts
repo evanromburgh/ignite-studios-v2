@@ -9,6 +9,7 @@ export default defineConfig({
     sourcemap: true
   },
   server: {
-    port: 3000
+    port: 3000,
+    host: true  // listen on 0.0.0.0 so you can test from phone (use your PC's IP:3000)
   }
 });
