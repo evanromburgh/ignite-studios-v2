@@ -194,6 +194,17 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, [user?.id]);
 
+  // Release locks when not in RESERVE view (handles refresh, navigation, etc.)
+  useEffect(() => {
+    if (!user || viewContext === 'RESERVE') return;
+    
+    // Release all locks owned by this user when not in reservation view
+    // This handles cases where user refreshes, navigates away, or closes browser
+    unitService.releaseAllLocksForUser(user.id).catch(err => {
+      console.error('Failed to release locks on view change:', err);
+    });
+  }, [user?.id, viewContext]);
+
   // Sync selected unit when the main list updates
   useEffect(() => {
     if (selectedUnit) {

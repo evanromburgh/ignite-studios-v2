@@ -131,6 +131,13 @@ export const unitService = {
       .eq('id', unitId);
   },
 
+  async releaseAllLocksForUser(userId: string): Promise<void> {
+    await supabase
+      .from(TABLE)
+      .update({ lock_expires_at: null, locked_by: null })
+      .eq('locked_by', userId);
+  },
+
   async saveUnit(unit: Unit): Promise<void> {
     await supabase.from(TABLE).upsert(toDbRow(unit));
   },

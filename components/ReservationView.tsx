@@ -72,12 +72,25 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose 
   }, [unit.lockExpiresAt, calculateRemaining, handleClose]);
 
   useEffect(() => {
+    // Use multiple events to catch all scenarios: refresh, navigation, close
+    // Note: We don't release on visibilitychange (tab switch/minimize) as user might return
     const handleBeforeUnload = () => {
+      // Try to release lock synchronously if possible
       releaseLock();
     };
+    
+    const handlePageHide = () => {
+      // pagehide fires more reliably than beforeunload, including on mobile
+      // This fires on actual page unload (refresh, close, navigation)
+      releaseLock();
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+    
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
       // Ensure the lock is released if we unmount for any reason (e.g., page navigation)
       if (!isClosingRef.current) {
         releaseLock();
