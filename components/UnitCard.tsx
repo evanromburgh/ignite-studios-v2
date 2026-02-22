@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Unit } from '../types';
 import { CONFIG } from '../config';
 import { IconBed, IconBath, IconCar, IconLayout, IconSize, IconHeart } from './Icons';
+import { getViewersForUnit, subscribeToViewersUpdates } from '../services/viewersStore';
 
 interface UnitCardProps {
   unit: Unit;
@@ -36,8 +37,13 @@ export const UnitCard: React.FC<UnitCardProps> = ({
   serverClockOffsetMs = 0
 }) => {
   const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [, setTick] = useState(0); 
-  
+  const [, setTick] = useState(0);
+  const viewers = getViewersForUnit(unit.id) || unit.viewers || {};
+
+  useEffect(() => {
+    return subscribeToViewersUpdates(() => setTick((t) => t + 1));
+  }, []);
+
   useEffect(() => {
     if (!unit.lockExpiresAt) {
       setTimeLeft(0);
@@ -75,13 +81,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({
     if (unit.status === 'Reserved') return `Unit ${unit.unitNumber} is Reserved`;
     if (isLocked) return `Reservation in progress (${formatTime(timeLeft)})`;
     
-    const now = Date.now();
-    const viewers = unit.viewers || {};
-    const count = Object.values(viewers).filter(t => {
-      const timestamp = typeof t === 'number' ? t : (t as any)?.seconds ? (t as any).seconds * 1000 : Number(t);
-      return now - timestamp < CONFIG.VIEWER_TIMEOUT_MS;
-    }).length;
-    
+    const count = Object.keys(viewers).length;
     return `${count} currently viewing`;
   };
 

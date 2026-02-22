@@ -1,10 +1,10 @@
-
 import React, { useMemo, useEffect, useState } from 'react';
 import { Unit } from '../types';
 import { CONFIG } from '../config';
 import { IconBed, IconBath, IconCar, IconSize, IconLayout } from './Icons';
 import { formatPrice } from './UnitCard';
 import { unitService } from '../services/unitService';
+import { getViewersForUnit, subscribeToViewersUpdates } from '../services/viewersStore';
 
 interface UnitDetailsProps {
   unit: Unit;
@@ -15,9 +15,13 @@ interface UnitDetailsProps {
 }
 
 export const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onClose, isWishlisted, onToggleWishlist, onReserve }) => {
-  // Generate a unique session ID for this view session
   const sessionId = useMemo(() => Math.random().toString(36).substring(2, 15), []);
-  const [, setTick] = useState(0); 
+  const [, setTick] = useState(0);
+  const viewers = getViewersForUnit(unit.id) || unit.viewers || {};
+
+  useEffect(() => {
+    return subscribeToViewersUpdates(() => setTick((t) => t + 1));
+  }, []); 
 
   // Financial Calculations
   const costs = useMemo(() => {
@@ -78,9 +82,7 @@ export const UnitDetails: React.FC<UnitDetailsProps> = ({ unit, onClose, isWishl
 
   const getStatusDisplay = () => {
     if (unit.status !== 'Available') return unit.status;
-    const now = Date.now();
-    const activeViewers = Object.values(unit.viewers || {}).filter(timestamp => now - (timestamp as number) < CONFIG.VIEWER_TIMEOUT_MS).length;
-    const count = Math.max(1, activeViewers);
+    const count = Math.max(1, Object.keys(viewers).length);
     return `${count} currently viewing`;
   };
 

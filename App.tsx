@@ -20,6 +20,7 @@ import { Navigation } from './components/Navigation';
 import { FilterBar } from './components/FilterBar';
 import { PaymentCancel, PAYMENT_CANCELLED_TOAST_KEY } from './components/PaymentCancel';
 import { useToast } from './components/Toast';
+import { startViewersPoll } from './services/viewersStore';
 
 const PATH_LIST_VIEWS: Record<string, ViewContext> = {
   '/wishlist': 'WISHLIST',
@@ -169,7 +170,7 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // Stable long-lived subscription for units
+  // Subscription for units list and lock state (viewer counts from viewersStore)
   useEffect(() => {
     if (!user) return;
     setLoading(true);
@@ -206,6 +207,11 @@ const App: React.FC = () => {
     });
     
     return () => unsubscribe();
+  }, [user?.id]);
+
+  // Viewer poll: updates module store and dispatches event so cards re-render (Desktop fix)
+  useEffect(() => {
+    return startViewersPoll(user?.id ?? null);
   }, [user?.id]);
 
   // Do NOT release locks from App - ReservationView releases on unmount (Cancel/navigate)
@@ -567,7 +573,7 @@ const App: React.FC = () => {
                   ) : (
                     <div className={viewMode === ViewMode.GRID ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "w-full space-y-4"}>
                       {displayedUnits.map(unit => (
-                        viewMode === ViewMode.GRID 
+                        viewMode === ViewMode.GRID
                           ? <UnitCard key={unit.id} unit={unit} onSelect={(u) => transitionTo('UNIT_DETAIL', u)} onReserve={handleReserveRequest} isWishlisted={wishlistIds.includes(unit.id)} onToggleWishlist={toggleWishlist} isAdmin={isAdminMode} hideReservedOverlay={false} onStatusChange={handleStatusChange} onEdit={setEditingUnit} onDelete={handleDeleteUnit} serverClockOffsetMs={serverClockOffsetMs} />
                           : <UnitListRow key={unit.id} unit={unit} onSelect={(u) => transitionTo('UNIT_DETAIL', u)} onReserve={handleReserveRequest} isWishlisted={wishlistIds.includes(unit.id)} onToggleWishlist={toggleWishlist} isAdmin={isAdminMode} hideReservedOverlay={false} serverClockOffsetMs={serverClockOffsetMs} />
                       ))}

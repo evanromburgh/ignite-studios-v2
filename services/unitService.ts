@@ -100,7 +100,7 @@ export const unitService = {
 
     fetchInitial();
 
-    const channel = supabase
+    const unitsChannel = supabase
       .channel('units-realtime')
       .on(
         'postgres_changes',
@@ -126,7 +126,7 @@ export const unitService = {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(unitsChannel);
     };
   },
 
@@ -163,6 +163,16 @@ export const unitService = {
     const raw = data;
     const ms = typeof raw === 'string' ? parseInt(raw, 10) : Number(raw);
     return isNaN(ms) ? Date.now() : ms;
+  },
+
+  async fetchViewersMap(): Promise<Record<string, Record<string, number>>> {
+    const { data, error } = await supabase.from(TABLE).select('id, viewers');
+    if (error || !data) return {};
+    const map: Record<string, Record<string, number>> = {};
+    for (const row of data as { id: string; viewers?: Record<string, number> }[]) {
+      map[row.id] = (row.viewers && typeof row.viewers === 'object') ? row.viewers : {};
+    }
+    return map;
   },
 
   async getUnit(unitId: string): Promise<Unit | null> {
