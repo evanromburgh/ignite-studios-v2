@@ -104,11 +104,14 @@ const App: React.FC = () => {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // Check URL for payment-cancel route (and listen for changes)
+  // Check URL for payment-cancel route (and listen for changes); clear redirect flag when back from payment
   useEffect(() => {
     const checkPath = () => {
       const pathname = window.location.pathname;
       setIsPaymentCancelPage(pathname === '/payment-cancel');
+      if (pathname === '/payment-cancel' || pathname === '/payment-success') {
+        sessionStorage.removeItem('ignite_reservation_redirecting');
+      }
     };
     checkPath();
     window.addEventListener('popstate', checkPath);

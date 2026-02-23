@@ -27,6 +27,11 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
   const isClosingRef = useRef(false);
   const releaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionTokenRef = useRef<string | null>(null);
+  const isRedirectingToPaymentRef = useRef(false);
+  const isSubmittingRef = useRef(false);
+
+  const REDIRECTING_KEY = 'ignite_reservation_redirecting';
+  const isRedirectingToPayment = () => typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem(REDIRECTING_KEY);
   
   const effectiveNow = () => Date.now() + serverClockOffsetMs;
 
@@ -80,6 +85,8 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
       setTimeLeft(remaining);
       if (remaining <= 0) {
         clearInterval(timer);
+        // Do not release if user is submitting (redirecting to PayFast) or already redirecting
+        if (isSubmittingRef.current || isRedirectingToPaymentRef.current || isRedirectingToPayment()) return;
         handleClose();
       }
     }, 1000);
@@ -102,10 +109,12 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
     }
 
     const handleBeforeUnload = () => {
+      if (isRedirectingToPaymentRef.current || isRedirectingToPayment()) return;
       unitService.releaseLockKeepalive(unit.id, sessionTokenRef.current);
     };
 
     const handlePageHide = () => {
+      if (isRedirectingToPaymentRef.current || isRedirectingToPayment()) return;
       unitService.releaseLockKeepalive(unit.id, sessionTokenRef.current);
     };
 
@@ -115,8 +124,9 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
+      // Do not release when redirecting to PayFast (sessionStorage set before location.href)
+      if (isRedirectingToPaymentRef.current || isRedirectingToPayment()) return;
       // Defer release so React Strict Mode's fake unmount doesn't clear the lock.
-      // On real unmount (navigate away) we won't remount, so release after delay.
       if (!isClosingRef.current) {
         releaseTimeoutRef.current = setTimeout(() => {
           releaseTimeoutRef.current = null;
@@ -162,6 +172,7 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -180,13 +191,19 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
 
       if (!response.paymentUrl) {
         toast('Payment URL not available. Please contact support.', 'error');
+        isSubmittingRef.current = false;
         setIsSubmitting(false);
         return;
       }
 
       toast('Redirecting to payment gateway...', 'success');
-      
-      // Redirect to PayFast payment page
+      // Do not release lock on redirect: set flag (sessionStorage + ref), cancel any pending release
+      sessionStorage.setItem(REDIRECTING_KEY, unit.id);
+      isRedirectingToPaymentRef.current = true;
+      if (releaseTimeoutRef.current) {
+        clearTimeout(releaseTimeoutRef.current);
+        releaseTimeoutRef.current = null;
+      }
       window.location.href = response.paymentUrl;
       
       // Note: We don't call onClose() here because the user is being redirected
@@ -194,6 +211,7 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
     } catch (error: any) {
       console.error('Reservation submission error:', error);
       toast(error.message || 'Failed to submit reservation. Please try again.', 'error');
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };

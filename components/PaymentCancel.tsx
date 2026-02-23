@@ -57,6 +57,8 @@ export const PaymentCancel: React.FC = () => {
         }
       }
 
+      // Clear redirect flag so lock logic is correct on next reservation
+      sessionStorage.removeItem('ignite_reservation_redirecting');
       // Set flag for toast notification
       sessionStorage.setItem(PAYMENT_CANCELLED_TOAST_KEY, 'true');
       
