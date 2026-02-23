@@ -411,6 +411,19 @@ serve(async (req) => {
       console.error('Failed to parse reservation response:', parseError?.message);
     }
 
+    if (reservationId) {
+      const { error: updatePendingErr } = await supabase
+        .from('pending_reservations')
+        .update({ zoho_reservation_id: reservationId })
+        .eq('unit_id', unitId)
+        .eq('zoho_contact_id', finalContactId);
+      if (updatePendingErr) {
+        console.error('Failed to store zoho_reservation_id in pending_reservations:', updatePendingErr);
+      } else {
+        console.log('Stored zoho_reservation_id in pending_reservations for webhook lookup:', reservationId);
+      }
+    }
+
     const payfastMerchantId = Deno.env.get('PAYFAST_MERCHANT_ID');
     const payfastMerchantKey = Deno.env.get('PAYFAST_MERCHANT_KEY');
     const payfastEnv = Deno.env.get('PAYFAST_ENV') || 'sandbox';

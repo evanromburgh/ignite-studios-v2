@@ -80,6 +80,7 @@ serve(async (req) => {
     const parts = decodedReference.split('-');
     console.log('Payment reference parts (array):', JSON.stringify(parts));
     console.log('Payment reference parts count:', parts.length);
+    console.log('SEARCH_TARGET: PayFast sent m_payment_id=', decodedReference, '-> we will search Zoho for unitId=', parts[0], 'contactId=', parts[1]);
     
     if (parts.length !== 3) {
       console.error('Invalid payment reference format:', decodedReference, 'parts length:', parts.length, 'parts:', parts);
@@ -163,6 +164,19 @@ serve(async (req) => {
       const u = normalizeUnit(r.Unit_Number ?? r.unit_number);
       return u === unitNumber || u === String(unitId);
     };
+
+    // Prefer Zoho reservation ID from our DB (set by submit-reservation) so we skip Zoho search entirely
+    let reservationId: string | null = null;
+    const { data: pendingRow } = await supabase
+      .from('pending_reservations')
+      .select('zoho_reservation_id')
+      .eq('unit_id', unitId)
+      .eq('zoho_contact_id', zohoContactId)
+      .maybeSingle();
+    if (pendingRow?.zoho_reservation_id) {
+      reservationId = String(pendingRow.zoho_reservation_id).trim();
+      console.log('Using zoho_reservation_id from pending_reservations (skip Zoho search):', reservationId);
+    }
     
     const pickBestMatch = (matches: any[], status: string) => {
       if (matches.length === 0) return null;
@@ -183,7 +197,6 @@ serve(async (req) => {
       return matches[0];
     };
 
-    let reservationId: string | null = null;
     const perPage = 200;
     
     // Retry logic: Zoho may need time to index newly created reservations after submit-reservation creates them.
