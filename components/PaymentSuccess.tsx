@@ -17,7 +17,8 @@ export const PaymentSuccess: React.FC = () => {
 
     const run = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      let paymentRef = urlParams.get('ref') || localStorage.getItem('payment_reference');
+      // Prefer ref from URL (PayFast may append), then m_payment_id, then localStorage (set by ReservationView before redirect)
+      let paymentRef = urlParams.get('ref') || urlParams.get('m_payment_id') || localStorage.getItem('payment_reference');
       if (paymentRef) {
         try {
           paymentRef = decodeURIComponent(paymentRef);

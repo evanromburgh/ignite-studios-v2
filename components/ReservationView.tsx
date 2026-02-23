@@ -197,6 +197,9 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
       }
 
       toast('Redirecting to payment gateway...', 'success');
+      if (response.paymentReference) {
+        localStorage.setItem('payment_reference', response.paymentReference);
+      }
       // Do not release lock on redirect: set flag (sessionStorage + ref), cancel any pending release
       sessionStorage.setItem(REDIRECTING_KEY, unit.id);
       isRedirectingToPaymentRef.current = true;
