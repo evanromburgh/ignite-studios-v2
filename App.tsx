@@ -19,6 +19,7 @@ import { AuthPortal } from './components/AuthPortal';
 import { Navigation } from './components/Navigation';
 import { FilterBar } from './components/FilterBar';
 import { PaymentCancel, PAYMENT_CANCELLED_TOAST_KEY } from './components/PaymentCancel';
+import { PaymentSuccess } from './components/PaymentSuccess';
 import { useToast } from './components/Toast';
 import { startViewersPoll } from './services/viewersStore';
 
@@ -72,6 +73,7 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isEntranceComplete, setIsEntranceComplete] = useState(false);
   const [isPaymentCancelPage, setIsPaymentCancelPage] = useState(false);
+  const [isPaymentSuccessPage, setIsPaymentSuccessPage] = useState(false);
 
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -104,11 +106,12 @@ const App: React.FC = () => {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // Check URL for payment-cancel route (and listen for changes); clear redirect flag when back from payment
+  // Check URL for payment-cancel / payment-success (and listen for changes); clear redirect flag when back from payment
   useEffect(() => {
     const checkPath = () => {
       const pathname = window.location.pathname;
       setIsPaymentCancelPage(pathname === '/payment-cancel');
+      setIsPaymentSuccessPage(pathname === '/payment-success');
       if (pathname === '/payment-cancel' || pathname === '/payment-success') {
         sessionStorage.removeItem('ignite_reservation_redirecting');
       }
@@ -453,6 +456,8 @@ const App: React.FC = () => {
       ) : window.location.pathname === '/payment-cancel' ? (
         // Fallback: if pathname matches but state wasn't updated yet
         <PaymentCancel />
+      ) : isPaymentSuccessPage || window.location.pathname === '/payment-success' ? (
+        <PaymentSuccess />
       ) : !user ? (
         <AuthPortal />
       ) : (
