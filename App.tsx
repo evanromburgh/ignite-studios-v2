@@ -457,7 +457,25 @@ const App: React.FC = () => {
         // Fallback: if pathname matches but state wasn't updated yet
         <PaymentCancel />
       ) : isPaymentSuccessPage || window.location.pathname === '/payment-success' ? (
-        <PaymentSuccess />
+        user ? (
+          <div className={`transition-opacity duration-700 ease-in-out ${isEntranceComplete ? 'opacity-100' : 'opacity-0'}`}>
+            <Navigation
+              user={user}
+              viewContext={viewContext}
+              isSyncing={isSyncing}
+              isLoggingOut={isLoggingOut}
+              wishlistCount={wishlistIds.length}
+              reservationsCount={reservationsCount}
+              onNavigate={(ctx) => transitionTo(ctx)}
+              onLogout={handleLogout}
+            />
+            <div className="w-full pt-32 sm:pt-48 pb-12">
+              <PaymentSuccess />
+            </div>
+          </div>
+        ) : (
+          <PaymentSuccess />
+        )
       ) : !user ? (
         <AuthPortal />
       ) : (
