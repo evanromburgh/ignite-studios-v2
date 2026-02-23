@@ -269,7 +269,7 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
                       <span className={`relative inline-flex rounded-full h-2 w-2 ${colors.main}`}></span>
                     </div>
                     <p className="text-[12px] sm:text-[13px] md:text-[15px] font-medium text-zinc-500 tracking-tight flex items-center gap-2 whitespace-nowrap">
-                      <span className="hidden sm:inline uppercase tracking-widest font-bold text-[10px]">Reservation Expires in</span>
+                      <span className="uppercase tracking-widest font-bold text-[10px]">Reservation Expires in</span>
                       <span className="text-white font-bold tabular-nums bg-white/5 px-3 sm:px-4 py-1.5 rounded-lg border border-white/10">
                         {formatTime(timeLeft)}
                       </span>

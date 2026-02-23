@@ -254,6 +254,8 @@ const App: React.FC = () => {
       setViewContext(context);
       setSelectedUnit(unit);
       pushPathForViewContext(context);
+      setIsPaymentSuccessPage(false);
+      setIsPaymentCancelPage(false);
       window.scrollTo(0, 0);
     }, CONFIG.TRANSITION_MID_MS);
 
