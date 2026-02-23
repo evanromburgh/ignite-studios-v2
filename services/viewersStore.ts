@@ -1,6 +1,6 @@
 /**
  * Module-level viewer store + DOM event so "Currently viewing" updates on all devices (Desktop).
- * Poll runs here; components subscribe to 'viewers-updated' and re-render with getViewersMap().
+ * Poll runs here; components subscribe to 'viewers-updated' and re-render with getViewersForUnit().
  */
 
 import { unitService } from './unitService';
@@ -9,10 +9,6 @@ let viewersMap: Record<string, Record<string, number>> = {};
 let pollIntervalId: ReturnType<typeof setInterval> | null = null;
 
 const EVENT_NAME = 'viewers-updated';
-
-export function getViewersMap(): Record<string, Record<string, number>> {
-  return viewersMap;
-}
 
 export function getViewersForUnit(unitId: string): Record<string, number> {
   return unitId in viewersMap ? viewersMap[unitId] ?? {} : {};

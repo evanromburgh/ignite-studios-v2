@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { AppUser, Unit, ViewMode, SearchFilters, ViewContext } from './types';
 import { CONFIG } from './config';
 import { MOCK_DOCUMENTS } from './constants';
-import { UnitCard, formatPrice } from './components/UnitCard';
+import { UnitCard } from './components/UnitCard';
 import { UnitListRow } from './components/UnitListRow';
 import { ReservationCard } from './components/ReservationCard';
 import { UnitDetails } from './components/UnitDetails';
