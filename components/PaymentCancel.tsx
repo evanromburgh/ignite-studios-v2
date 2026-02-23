@@ -30,35 +30,36 @@ export const PaymentCancel: React.FC = () => {
         return;
       }
 
-      const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-webhook`;
-      const formData = new URLSearchParams({
-        m_payment_id: paymentRef,
-        payment_status: 'CANCELLED',
-      });
-
-      console.log('Sending cancellation webhook with payment reference:', paymentRef);
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const releaseUrl = `${baseUrl}/functions/v1/release-reservation-lock`;
+      const webhookUrl = `${baseUrl}/functions/v1/payment-webhook`;
 
       try {
-        const res = await fetch(webhookUrl, {
+        await fetch(releaseUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: formData.toString(),
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ ref: paymentRef }).toString(),
         });
-        console.log('Cancellation webhook response:', res.status);
-      } catch (error) {
-        console.error('Failed to send cancellation webhook:', error);
+      } catch (e) {
+        console.error('Failed to release unit lock:', e);
       }
 
-      // Clear redirect flag so lock logic is correct on next reservation
+      try {
+        fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            m_payment_id: paymentRef,
+            payment_status: 'CANCELLED',
+          }).toString(),
+        });
+      } catch (e) {
+        console.error('Failed to send cancellation webhook:', e);
+      }
+
       sessionStorage.removeItem('ignite_reservation_redirecting');
       sessionStorage.setItem(PAYMENT_CANCELLED_TOAST_KEY, 'true');
-
-      // Brief delay so webhook has time to release the unit lock before user sees properties
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1500);
+      window.location.href = '/';
     };
 
     sendCancellationWebhook();
