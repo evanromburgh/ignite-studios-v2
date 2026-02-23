@@ -602,7 +602,28 @@ serve(async (req) => {
     const updateResponseText = await updateResponse.text();
     console.log('Zoho reservation updated successfully:', updateResponseText?.substring(0, 300));
 
-    if (finalStatus === 'COMPLETE') {
+    if (finalStatus === 'CANCELLED') {
+      console.log('Payment cancelled, releasing unit lock so unit shows Available again');
+      const { error: unitUpdateError } = await supabase
+        .from('units')
+        .update({
+          lock_expires_at: null,
+          locked_by: null,
+        })
+        .eq('id', unitId);
+
+      if (unitUpdateError) {
+        console.error('Failed to release unit lock:', unitUpdateError);
+        return jsonOk('OK');
+      }
+      console.log('Unit lock released successfully');
+
+      await supabase
+        .from('pending_reservations')
+        .delete()
+        .eq('unit_id', unitId)
+        .eq('zoho_contact_id', zohoContactId);
+    } else if (finalStatus === 'COMPLETE') {
       console.log('Payment complete, updating unit status to Reserved');
       const { error: unitUpdateError } = await supabase
         .from('units')
