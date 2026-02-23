@@ -382,15 +382,17 @@ const App: React.FC = () => {
       setViewContext('INVENTORY');
       setWishlistIds([]);
       setReservedUnitIds([]);
-      // Reset filters to default values
       setFilters({
         maxPrice: 'all',
         bedrooms: 'all',
         bathrooms: 'all',
         status: 'all',
       });
+      // Always show login/signup screen: replace URL to root
+      window.history.replaceState({}, '', window.location.origin + '/');
     } catch (err) {
       setUser(null);
+      window.history.replaceState({}, '', window.location.origin + '/');
     } finally {
       setIsLoggingOut(false);
     }
