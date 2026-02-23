@@ -189,7 +189,7 @@ serve(async (req) => {
     // Retry logic: Zoho may need time to index newly created reservations after submit-reservation creates them.
     // PayFast can notify very quickly after payment; an initial delay gives Zoho time to index.
     const maxRetries = 5;
-    const retryDelays = [2500, 3000, 5000, 7000, 10000]; // First attempt after 2.5s, then 3s, 5s, 7s, 10s
+    const retryDelays = [5000, 3000, 5000, 7000, 10000]; // First attempt after 5s (Zoho indexing), then 3s, 5s, 7s, 10s
     
     console.log('Starting reservation search with retry logic (max', maxRetries, 'attempts)');
     console.log('Searching for contact:', zohoContactId, 'unitNumber:', unitNumber, 'unitId:', unitId);
@@ -203,13 +203,17 @@ serve(async (req) => {
       }
       await new Promise(resolve => setTimeout(resolve, delay));
       
-      // Try searching by Unit Number first (often indexed faster than Contact lookup)
+      // Try searching by Unit Number first (often indexed faster than Contact lookup); try both unitNumber and unitId
       if (!reservationId) {
-        console.log('Trying unit-only search first...');
-        const unitOnlyCriteria = `(Unit_Number:equals:${encodeURIComponent(unitNumber)})`;
-        const unitSearchUrl = `${zohoApiUrl}/Unit_Reservations/search?criteria=${unitOnlyCriteria}&page=1&per_page=50`;
-        try {
-          const unitSearchResponse = await fetch(unitSearchUrl, {
+        const unitSearchValues = unitNumber !== String(unitId) ? [unitNumber, unitId] : [unitNumber];
+        for (const unitVal of unitSearchValues) {
+          if (reservationId) break;
+          console.log('Trying unit-only search first...', '(Unit_Number:', unitVal, ')');
+          const unitOnlyCriteria = `(Unit_Number:equals:${encodeURIComponent(String(unitVal))})`;
+          const unitSearchUrl = `${zohoApiUrl}/Unit_Reservations/search?criteria=${unitOnlyCriteria}&page=1&per_page=50`;
+          console.log('Unit-only search criteria:', unitOnlyCriteria);
+          try {
+            const unitSearchResponse = await fetch(unitSearchUrl, {
             headers: {
               'Authorization': `Zoho-oauthtoken ${access_token}`,
               'Content-Type': 'application/json',
@@ -275,60 +279,69 @@ serve(async (req) => {
               }
             }
           }
-        } catch (unitSearchError) {
-          console.error('Unit-only search error:', unitSearchError);
+          } catch (unitSearchError) {
+            console.error('Unit-only search error:', unitSearchError);
+          }
         }
       }
-      
-      // If unit-only search didn't work, try combined search
+
+      // If unit-only search didn't work, try combined search (try both Contact and Contact.id for lookup)
       if (!reservationId) {
-        const criteriaCombined = `(Contact:equals:${encodeURIComponent(zohoContactId)})and(Unit_Number:equals:${encodeURIComponent(unitNumber)})`;
-        console.log('Trying combined search with criteria:', criteriaCombined);
-        
-        let combinedPage = 1;
-        let combinedDone = false;
-        
-        while (!combinedDone && !reservationId) {
-          const combinedUrl = `${zohoApiUrl}/Unit_Reservations/search?criteria=${criteriaCombined}&page=${combinedPage}&per_page=${perPage}`;
-          console.log('Searching Zoho reservations, page:', combinedPage);
-          const searchResponse = await fetch(combinedUrl, {
-            headers: {
-              'Authorization': `Zoho-oauthtoken ${access_token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-          console.log('Combined search response status:', searchResponse.status);
-          if (!searchResponse.ok) {
-            const errorText = await searchResponse.text();
-            console.error('Combined search failed:', searchResponse.status, errorText);
-            // If rate limited, break and retry later
-            if (searchResponse.status === 429 || errorText.includes('too many requests')) {
-              console.log('Rate limited, will retry after delay');
-              break;
-            }
-            break;
-          }
-          try {
-            const searchText = await searchResponse.text();
-            if (!searchText || searchText.trim() === '') break;
-            const searchData = JSON.parse(searchText);
-            const pageData = searchData.data || [];
-            console.log(`Combined search found ${pageData.length} reservations on page ${combinedPage}`);
-            if (pageData.length > 0) {
-              const matches = pageData.filter((r: any) => unitMatches(r));
-              console.log(`Filtered to ${matches.length} matching reservations`);
-              const match = pickBestMatch(matches, finalStatus);
-              if (match) {
-                reservationId = match.id;
-                console.log('Found reservation via combined search:', reservationId);
+        const combinedCriteriaOptions = [
+          `(Contact:equals:${encodeURIComponent(zohoContactId)})and(Unit_Number:equals:${encodeURIComponent(unitNumber)})`,
+          `(Contact.id:equals:${encodeURIComponent(zohoContactId)})and(Unit_Number:equals:${encodeURIComponent(unitNumber)})`,
+        ];
+        for (const criteriaCombined of combinedCriteriaOptions) {
+          if (reservationId) break;
+          console.log('Trying combined search with criteria:', criteriaCombined);
+
+          let combinedPage = 1;
+          let combinedDone = false;
+
+          while (!combinedDone && !reservationId) {
+            const combinedUrl = `${zohoApiUrl}/Unit_Reservations/search?criteria=${criteriaCombined}&page=${combinedPage}&per_page=${perPage}`;
+            console.log('Searching Zoho reservations, page:', combinedPage);
+            const searchResponse = await fetch(combinedUrl, {
+              headers: {
+                'Authorization': `Zoho-oauthtoken ${access_token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            console.log('Combined search response status:', searchResponse.status);
+            if (!searchResponse.ok) {
+              const errorText = await searchResponse.text();
+              console.error('Combined search failed:', searchResponse.status, errorText);
+              if (searchResponse.status === 429 || errorText.includes('too many requests')) {
+                console.log('Rate limited, will retry after delay');
                 break;
               }
+              break;
             }
-            if (pageData.length < perPage) combinedDone = true;
-            else combinedPage++;
-          } catch (parseError) {
-            console.error('Parse error in combined search:', parseError);
-            break;
+            try {
+              const searchText = await searchResponse.text();
+              if (!searchText || searchText.trim() === '') {
+                if (searchResponse.status === 204) console.log('Zoho returned 204 No Content (no results)');
+                break;
+              }
+              const searchData = JSON.parse(searchText);
+              const pageData = searchData.data || [];
+              console.log(`Combined search found ${pageData.length} reservations on page ${combinedPage}`);
+              if (pageData.length > 0) {
+                const matches = pageData.filter((r: any) => unitMatches(r));
+                console.log(`Filtered to ${matches.length} matching reservations`);
+                const match = pickBestMatch(matches, finalStatus);
+                if (match) {
+                  reservationId = match.id;
+                  console.log('Found reservation via combined search:', reservationId);
+                  break;
+                }
+              }
+              if (pageData.length < perPage) combinedDone = true;
+              else combinedPage++;
+            } catch (parseError) {
+              console.error('Parse error in combined search:', parseError);
+              break;
+            }
           }
         }
       }
