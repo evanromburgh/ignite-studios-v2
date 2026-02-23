@@ -186,22 +186,22 @@ serve(async (req) => {
     let reservationId: string | null = null;
     const perPage = 200;
     
-    // Retry logic: Zoho may need time to index newly created reservations
-    // First reservation often needs more time, so we use longer delays
+    // Retry logic: Zoho may need time to index newly created reservations after submit-reservation creates them.
+    // PayFast can notify very quickly after payment; an initial delay gives Zoho time to index.
     const maxRetries = 5;
-    const retryDelays = [0, 3000, 5000, 7000, 10000]; // Progressive delays: 0s, 3s, 5s, 7s, 10s
+    const retryDelays = [2500, 3000, 5000, 7000, 10000]; // First attempt after 2.5s, then 3s, 5s, 7s, 10s
     
     console.log('Starting reservation search with retry logic (max', maxRetries, 'attempts)');
     console.log('Searching for contact:', zohoContactId, 'unitNumber:', unitNumber, 'unitId:', unitId);
     
     for (let retryAttempt = 0; retryAttempt < maxRetries && !reservationId; retryAttempt++) {
+      const delay = retryDelays[retryAttempt] ?? 10000;
       if (retryAttempt > 0) {
-        const delay = retryDelays[retryAttempt] || 10000;
         console.log(`Retry attempt ${retryAttempt + 1}/${maxRetries} after ${delay}ms delay...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
       } else {
-        console.log(`Initial search attempt ${retryAttempt + 1}/${maxRetries}...`);
+        console.log(`Initial delay ${delay}ms before first search (allow Zoho to index new reservation)...`);
       }
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       // Try searching by Unit Number first (often indexed faster than Contact lookup)
       if (!reservationId) {
