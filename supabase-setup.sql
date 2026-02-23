@@ -36,16 +36,18 @@ CREATE POLICY "Users can update their own profile"
 -- Ensure profile columns exist (for existing installs that ran older schema)
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS wishlist_unit_ids TEXT[] DEFAULT '{}';
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS reserved_unit_ids TEXT[] DEFAULT '{}';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS phone TEXT;
 
--- Auto-create a profile row when a new user signs up
+-- Auto-create a profile row when a new user signs up (phone from sign-up form)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, display_name)
+  INSERT INTO public.profiles (id, email, display_name, phone)
   VALUES (
     NEW.id,
     NEW.email,
-    NEW.raw_user_meta_data ->> 'display_name'
+    NEW.raw_user_meta_data ->> 'display_name',
+    NEW.raw_user_meta_data ->> 'phone'
   );
   RETURN NEW;
 END;

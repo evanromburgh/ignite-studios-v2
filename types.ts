@@ -3,6 +3,10 @@ export interface AppUser {
   email: string | null;
   displayName: string | null;
   role: 'admin' | 'user';
+  /** From sign-up; used to prefill reservation form */
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
 }
 
 export interface Unit {

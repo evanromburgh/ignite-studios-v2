@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Unit } from '../types';
+import { Unit, AppUser } from '../types';
 import { CONFIG } from '../config';
 import { formatPrice } from './UnitCard';
 import { unitService } from '../services/unitService';
@@ -12,9 +12,11 @@ interface ReservationViewProps {
   unit: Unit;
   onClose: () => void;
   serverClockOffsetMs?: number;
+  /** Signed-in user; name, surname, email, phone are used to prefill the form */
+  user?: AppUser | null;
 }
 
-export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose, serverClockOffsetMs = 0 }) => {
+export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose, serverClockOffsetMs = 0, user }) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState('');
@@ -29,6 +31,7 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
   const sessionTokenRef = useRef<string | null>(null);
   const isRedirectingToPaymentRef = useRef(false);
   const isSubmittingRef = useRef(false);
+  const hasPrefilledFromUserRef = useRef(false);
 
   const REDIRECTING_KEY = 'ignite_reservation_redirecting';
   const isRedirectingToPayment = () => typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem(REDIRECTING_KEY);
@@ -100,6 +103,34 @@ export const ReservationView: React.FC<ReservationViewProps> = ({ unit, onClose,
       sessionTokenRef.current = session?.access_token ?? null;
     });
   }, []);
+
+  // Prefill form from signed-in user (once per mount)
+  useEffect(() => {
+    if (hasPrefilledFromUserRef.current || !user) return;
+    hasPrefilledFromUserRef.current = true;
+    if (user.email) setEmail(user.email);
+    const firstName = user.firstName?.trim();
+    const lastName = user.lastName?.trim();
+    if (firstName) setName(firstName);
+    if (lastName) setSurname(lastName);
+    if (!firstName && !lastName) {
+      const display = user.displayName?.trim();
+      if (display) {
+        const firstSpace = display.indexOf(' ');
+        if (firstSpace > 0) {
+          setName(display.slice(0, firstSpace));
+          setSurname(display.slice(firstSpace + 1).trim());
+        } else {
+          setName(display);
+        }
+      }
+    }
+    const userPhone = user.phone?.trim().replace(/\D/g, '');
+    if (userPhone) {
+      const digits = userPhone.startsWith('0') ? userPhone.slice(1) : userPhone;
+      if (digits.length <= 10) setPhone(digits);
+    }
+  }, [user]);
 
   useEffect(() => {
     // Clear any pending release from a previous cleanup (e.g. React Strict Mode remount)

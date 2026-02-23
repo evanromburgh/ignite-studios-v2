@@ -509,7 +509,7 @@ const App: React.FC = () => {
             {viewContext === 'UNIT_DETAIL' && selectedUnit ? (
               <UnitDetails unit={selectedUnit} onClose={() => transitionTo('INVENTORY')} isWishlisted={wishlistIds.includes(selectedUnit.id)} onToggleWishlist={toggleWishlist} onReserve={handleReserveRequest} />
             ) : viewContext === 'RESERVE' && selectedUnit ? (
-              <ReservationView unit={selectedUnit} onClose={() => transitionTo('INVENTORY')} serverClockOffsetMs={serverClockOffsetMs} />
+              <ReservationView unit={selectedUnit} onClose={() => transitionTo('INVENTORY')} serverClockOffsetMs={serverClockOffsetMs} user={user} />
             ) : viewContext === 'DOCUMENTS' ? (
               <div className="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pt-32 sm:pt-48 pb-0">
                 <header className="mb-12 sm:mb-24">

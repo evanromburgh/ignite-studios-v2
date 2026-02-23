@@ -18,11 +18,15 @@ async function fetchRole(userId: string): Promise<AppUser['role']> {
 
 function mapUserSync(supabaseUser: any): AppUser | null {
   if (!supabaseUser) return null;
+  const meta = supabaseUser.user_metadata ?? {};
   return {
     id: supabaseUser.id,
     email: supabaseUser.email ?? null,
-    displayName: supabaseUser.user_metadata?.display_name ?? null,
+    displayName: meta.display_name ?? null,
     role: 'user',
+    firstName: meta.first_name ?? null,
+    lastName: meta.last_name ?? null,
+    phone: meta.phone ?? null,
   };
 }
 
@@ -59,7 +63,12 @@ export const authService = {
       email,
       password,
       options: {
-        data: { display_name: name },
+        data: {
+          display_name: name,
+          first_name: firstName ?? null,
+          last_name: lastName ?? null,
+          phone: phone ?? null,
+        },
       },
     });
     
@@ -72,8 +81,19 @@ export const authService = {
       });
       throw error;
     }
-    
+
     console.log('Signup successful:', { userId: data.user?.id, email: data.user?.email });
+
+    // Ensure phone (and any profile fields) are saved — trigger may run before metadata is written
+    if (data.user?.id && (phone !== undefined && phone !== '')) {
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update({ phone: phone.trim() })
+        .eq('id', data.user.id);
+      if (profileErr) {
+        console.warn('Failed to update profile phone after signup:', profileErr);
+      }
+    }
 
     // Create Lead in Zoho CRM (fire-and-forget, don't block on errors)
     if (data.user && firstName && lastName) {
