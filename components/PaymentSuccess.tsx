@@ -54,7 +54,7 @@ export const PaymentSuccess: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6 px-6 sm:px-10 md:px-16">
+    <div className="bg-black flex flex-col items-center justify-center gap-6 px-6 sm:px-10 md:px-16 py-12">
       <div className="text-center w-full max-w-5xl">
         <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight mb-4">
           Your Reservation Confirmed
