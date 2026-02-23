@@ -31,41 +31,34 @@ export const PaymentCancel: React.FC = () => {
       }
 
       const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-webhook`;
-      
-      // Use sendBeacon for reliable delivery during page unload
       const formData = new URLSearchParams({
         m_payment_id: paymentRef,
         payment_status: 'CANCELLED',
       });
-      
+
       console.log('Sending cancellation webhook with payment reference:', paymentRef);
 
-      const sent = navigator.sendBeacon(webhookUrl, formData);
-      
-      if (!sent) {
-        // Fallback to fetch if sendBeacon fails
-        try {
-          await fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: formData.toString(),
-          });
-        } catch (error) {
-          console.error('Failed to send cancellation webhook:', error);
-        }
+      try {
+        const res = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formData.toString(),
+        });
+        console.log('Cancellation webhook response:', res.status);
+      } catch (error) {
+        console.error('Failed to send cancellation webhook:', error);
       }
 
       // Clear redirect flag so lock logic is correct on next reservation
       sessionStorage.removeItem('ignite_reservation_redirecting');
-      // Set flag for toast notification
       sessionStorage.setItem(PAYMENT_CANCELLED_TOAST_KEY, 'true');
-      
-      // Small delay before redirect to ensure webhook is sent
+
+      // Brief delay so webhook has time to release the unit lock before user sees properties
       setTimeout(() => {
         window.location.href = '/';
-      }, 500);
+      }, 1500);
     };
 
     sendCancellationWebhook();
