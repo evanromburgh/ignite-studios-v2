@@ -469,9 +469,21 @@ const App: React.FC = () => {
               onNavigate={(ctx) => transitionTo(ctx)}
               onLogout={handleLogout}
             />
-            <div className="w-full pt-32 sm:pt-48 pb-12">
+            <div className="w-full pt-32 sm:pt-48 pb-0">
               <PaymentSuccess />
             </div>
+
+            <footer className="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 mt-16 sm:mt-24 pt-12 sm:pt-20 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center text-zinc-700 text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] gap-8 sm:gap-12 pb-12 sm:pb-20">
+              <p>&copy; {new Date().getFullYear()} Ignite Studios</p>
+              {user.role === 'admin' && (
+                <button
+                  onClick={() => setIsAdminMode(!isAdminMode)}
+                  className={`h-[46px] px-8 rounded-full border transition-all flex items-center justify-center ${isAdminMode ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 text-zinc-800 hover:text-white hover:border-white/20'}`}
+                >
+                  {isAdminMode ? 'ADMIN ACTIVE' : 'ADMIN ACCESS'}
+                </button>
+              )}
+            </footer>
           </div>
         ) : (
           <PaymentSuccess />
