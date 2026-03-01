@@ -1,7 +1,6 @@
 /**
  * Returns unit id + viewers for the "Currently viewing" poll.
- * Uses server-side Supabase so the response can be sent with Cache-Control: no-store,
- * avoiding cached/stale responses that break the count on Vercel (browser/CDN cache).
+ * POST is used so browsers/proxies never cache the response (desktop was getting stale GET cache).
  */
 import { createClient } from '@supabase/supabase-js'
 
@@ -21,7 +20,7 @@ export default defineEventHandler(async (event) => {
   })
   const { data, error } = await supabase.from('units').select('id, viewers').order('unit_number', { ascending: true })
   if (error) {
-    console.error('[viewers.get]', error.message)
+    console.error('[viewers.post]', error.message)
     setResponseStatus(event, 500)
     return { data: [] }
   }
