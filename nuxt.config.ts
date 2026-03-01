@@ -40,7 +40,6 @@ export default defineNuxtConfig({
   },
   nitro: {
     minify: false,
-    srcDir: 'backend/server',
   },
   typescript: {
     strict: true,
