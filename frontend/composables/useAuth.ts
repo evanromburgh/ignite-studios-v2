@@ -1,4 +1,4 @@
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted } from 'vue'
 import type { AppUser } from '~/types'
 
 function mapUserSync(supabaseUser: any): AppUser | null {
@@ -35,9 +35,10 @@ const authLoading = ref(true)
 /** Session from initial getSession(); set so list page can use it for Reserve without waiting. */
 const sessionRef = ref<{ access_token: string } | null>(null)
 
+let authSubscriptionDone = false
+
 export function useAuth() {
   const { $supabase } = useNuxtApp()
-  let unsubscribe: (() => void) | null = null
 
   onMounted(() => {
     const resolveUser = async (supabaseUser: any) => {
@@ -72,17 +73,13 @@ export function useAuth() {
       authLoading.value = false
     })
 
-    const {
-      data: { subscription },
-    } = $supabase.auth.onAuthStateChange((_event: string, session: any) => {
-      resolveUser(session?.user ?? null)
-    })
-
-    unsubscribe = () => subscription.unsubscribe()
-  })
-
-  onBeforeUnmount(() => {
-    if (unsubscribe) unsubscribe()
+    // Subscribe to auth state change only once globally so we don't fire N profile fetches per event
+    if (!authSubscriptionDone) {
+      authSubscriptionDone = true
+      $supabase.auth.onAuthStateChange((_event: string, session: any) => {
+        resolveUser(session?.user ?? null)
+      })
+    }
   })
 
   const signUp = async (
