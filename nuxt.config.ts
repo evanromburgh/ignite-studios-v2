@@ -28,8 +28,6 @@ export default defineNuxtConfig({
     public: {
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY,
-      /** Viewer count poll interval (ms). 1500 = same as /portal. 0 = Realtime only. */
-      viewersPollMs: process.env.NUXT_PUBLIC_VIEWERS_POLL_MS != null ? Number(process.env.NUXT_PUBLIC_VIEWERS_POLL_MS) : 1_500,
     },
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   },
@@ -37,7 +35,6 @@ export default defineNuxtConfig({
     '/': { isr: 60 },
     '/documents': { isr: 3600 },
     '/contact': { static: true },
-    '/api/units/viewers': { cache: false, swr: false },
   },
   nitro: {
     minify: false,

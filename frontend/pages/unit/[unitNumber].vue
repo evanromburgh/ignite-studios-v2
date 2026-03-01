@@ -357,7 +357,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { CONFIG } from '~/config'
 import { useUnits } from '~/composables/useUnits'
@@ -371,9 +371,9 @@ import IconHeart from '~/components/icons/IconHeart.vue'
 import type { Unit } from '~/types'
 
 const route = useRoute()
+const { $supabase } = useNuxtApp()
 const { units, loading: unitsLoading } = useUnits()
 const { wishlistIds, toggle: toggleWishlist } = useWishlist()
-const { getViewersForUnit, subscribeToViewersUpdates } = useViewersPoll()
 
 const reserving = ref(false)
 const returningToList = ref(false)
@@ -399,16 +399,6 @@ const galleryImages = computed(() => {
   if (unit.value.floorplanUrl) urls.push(unit.value.floorplanUrl)
 
   return urls
-})
-
-/** Force re-render when viewers poll updates (like old app: DOM event + presence tick for Desktop) */
-const viewersTick = ref(0)
-const viewerCount = computed(() => {
-  if (!unit.value) return 0
-  viewersTick.value // depend on tick so we re-run when event fires or tick runs
-  const polled = getViewersForUnit(unit.value.id)
-  const viewers = polled ?? unit.value.viewers ?? {}
-  return Object.keys(viewers).length
 })
 
 const isAvailable = computed(() => unit.value?.status === 'Available')
@@ -449,163 +439,16 @@ const indicatorColorClass = computed(() => {
 const statusDisplay = computed(() => {
   if (!unit.value) return ''
   if (unit.value.status !== 'Available') return unit.value.status
-  const count = Math.max(1, viewerCount.value)
-  return `${count} currently viewing`
+  return '0 currently viewing'
 })
 
-const viewerPresenceSessionId = ref<string | null>(null)
-let heartbeatInterval: ReturnType<typeof setInterval> | null = null
-let visibilityHandler: (() => void) | null = null
-let beforeUnloadHandler: (() => void) | null = null
-let viewersUnsubscribe: (() => void) | null = null
-let viewersPresenceTickId: ReturnType<typeof setInterval> | null = null
-let authToken: string | null = null
-
-async function ensureAuthToken(): Promise<string | null> {
-  if (authToken) return authToken
-  const { $supabase } = useNuxtApp()
-  const {
-    data: { session },
-  } = await $supabase.auth.getSession()
-  if (!session) return null
-  authToken = session.access_token
-  return authToken
-}
-
-async function sendViewerHeartbeat() {
-  if (!unit.value) return
-  const token = await ensureAuthToken()
-  if (!token) return
-
-  if (!viewerPresenceSessionId.value) {
-    viewerPresenceSessionId.value = Math.random().toString(36).slice(2)
-  }
-
-  try {
-    await $fetch('/api/units/viewer-heartbeat', {
-      method: 'POST',
-      body: {
-        unitId: unit.value.id,
-        sessionId: viewerPresenceSessionId.value,
-      },
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-  } catch (e) {
-    console.error('[viewer-heartbeat]', e)
-  }
-}
-
-async function sendRemoveViewer(keepalive = false) {
-  if (!unit.value || !viewerPresenceSessionId.value) return
-  const token = await ensureAuthToken()
-  if (!token) return
-
-  const payload = JSON.stringify({
-    unitId: unit.value.id,
-    sessionId: viewerPresenceSessionId.value,
-  })
-
-  const endpoint = '/api/units/remove-viewer'
-
-  try {
-    // Use fetch with keepalive so the request completes when navigating away or closing tab.
-    // sendBeacon doesn't support Authorization header so we use fetch.
-    // Don't await when keepalive so we don't block unmount; browser completes the request in background.
-    const p = fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: payload,
-      keepalive,
-    })
-    if (!keepalive) await p
-  } catch {
-    // Ignore errors during unload
-  }
-}
-
-function clearPresenceHandlers() {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval)
-    heartbeatInterval = null
-  }
-  if (visibilityHandler) {
-    document.removeEventListener('visibilitychange', visibilityHandler)
-    visibilityHandler = null
-  }
-  if (beforeUnloadHandler) {
-    window.removeEventListener('beforeunload', beforeUnloadHandler)
-    beforeUnloadHandler = null
-  }
-}
-
-async function setupPresence() {
-  if (process.server) return
-  if (!unit.value) return
-
-  clearPresenceHandlers()
-  await sendViewerHeartbeat()
-
-  heartbeatInterval = setInterval(() => {
-    void sendViewerHeartbeat()
-  }, CONFIG.HEARTBEAT_INTERVAL_MS)
-
-  visibilityHandler = () => {
-    if (document.visibilityState === 'visible') {
-      void sendViewerHeartbeat()
-    }
-  }
-  document.addEventListener('visibilitychange', visibilityHandler)
-
-  beforeUnloadHandler = () => {
-    void sendRemoveViewer(true)
-  }
-  window.addEventListener('beforeunload', beforeUnloadHandler)
-}
-
-onMounted(() => {
-  if (!unit.value) return
-  void setupPresence()
-  viewersUnsubscribe = subscribeToViewersUpdates(() => {
-    viewersTick.value += 1
-  })
-  viewersPresenceTickId = setInterval(() => {
-    viewersTick.value += 1
-  }, CONFIG.PRESENCE_TICK_MS)
-})
-
-watch(unit, (newUnit, oldUnit) => {
-  if (process.server) return
-  if (!newUnit) {
-    clearPresenceHandlers()
-    return
-  }
-  if (!oldUnit || newUnit.id !== oldUnit.id) {
-    viewerPresenceSessionId.value = null
-    void setupPresence()
-  }
-})
-
-onBeforeUnmount(() => {
-  if (process.server) return
-  if (viewersUnsubscribe) viewersUnsubscribe()
-  viewersUnsubscribe = null
-  if (viewersPresenceTickId) clearInterval(viewersPresenceTickId)
-  viewersPresenceTickId = null
-  // keepalive: true so the request completes even after Vue navigates away
-  void sendRemoveViewer(true)
-  clearPresenceHandlers()
-})
+const isWishlisted = computed(
+  () => unit.value != null && wishlistIds.value.includes(unit.value.id),
+)
 
 async function goBackToList() {
   if (process.server) return
   returningToList.value = true
-  await sendRemoveViewer(false)
-  clearPresenceHandlers()
   await navigateTo('/')
 }
 
