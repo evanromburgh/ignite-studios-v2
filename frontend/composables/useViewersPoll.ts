@@ -66,12 +66,11 @@ export function useViewersPoll() {
   }
 
   onMounted(() => {
-    if (user.value) startPolling()
+    startPolling()
   })
 
-  watch(user, (u) => {
-    if (u) startPolling()
-    else stopPolling()
+  watch(user, () => {
+    // Keep polling regardless of auth so "Currently Viewing" updates for all visitors
   })
 
   onBeforeUnmount(() => {
