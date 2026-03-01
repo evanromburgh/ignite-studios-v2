@@ -1,105 +1,47 @@
-# Ignite Studios - Premium Property Portal
+# Ignite Portal (Nuxt)
 
-A modern property reservation portal built with React, TypeScript, Vite, Supabase, and integrated with Zoho CRM and PayFast payment gateway.
+The **main app** for Ignite Studios. The repo root is this app.
 
-## 🚀 Tech Stack
+## Tech stack
 
-- **Frontend**: React 19, TypeScript, Vite
-- **Backend**: Supabase (Database, Auth, Edge Functions)
-- **CRM Integration**: Zoho CRM API
-- **Payment Gateway**: PayFast
-- **Deployment**: Vercel
+- **Framework:** Nuxt 3 (Vue)
+- **Styling:** Tailwind CSS
+- **Backend:** Supabase
+- **Payments:** PayFast (via Supabase Edge Functions)
 
-## 📁 Project Structure
+## Setup
 
-```
-ignite-studios/
-├── components/          # React components
-├── services/           # Business logic & API services
-├── supabase/
-│   └── functions/      # Edge Functions (submit-reservation, payment-webhook)
-├── config.ts           # App configuration
-├── constants.ts         # Mock data & constants
-├── types.ts            # TypeScript type definitions
-└── App.tsx             # Main application component
-```
+1. **From the repo root:**
 
-## 🔧 Development
-
-### Prerequisites
-- Node.js 18+ and npm
-- Supabase account and project
-- Zoho CRM account with API access
-- PayFast account (sandbox or production)
-
-### Setup
-
-1. **Install dependencies**:
    ```bash
    npm install
    ```
 
-2. **Configure environment**:
-   - Set up Supabase project and get credentials
-   - Configure Zoho CRM API credentials
-   - Set up PayFast merchant credentials
+2. **Environment:** Copy `.env.example` to `.env`. Set:
 
-3. **Run development server**:
+   - `NUXT_PUBLIC_SUPABASE_URL` – your Supabase project URL  
+   - `NUXT_PUBLIC_SUPABASE_ANON_KEY` – your Supabase anon key  
+
+3. **Run:**
+
    ```bash
    npm run dev
    ```
-   Server runs on `http://localhost:3000`
 
-4. **Build for production**:
-   ```bash
-   npm run build
-   ```
+   App runs at `http://localhost:3000` (or the port Nuxt prints).
 
-## 📦 Deployment
+## Env and secrets
 
-### Deploy to Vercel
+- **App env:** Use `.env` in the repo root. Do not commit it.
+- **Supabase CLI:** When running Supabase commands (migrations, functions), use the backend workdir:  
+  `supabase --workdir backend <command>` or set `SUPABASE_WORKDIR=backend`.
+- **Supabase Edge Function secrets** (Zoho, PayFast, return/cancel URLs): set in **Supabase Dashboard** → Project Settings → Edge Functions → Secrets.  
+  Set `PAYFAST_RETURN_URL` and `PAYFAST_CANCEL_URL` to your app URLs (e.g. `https://your-domain.com/payment-success` and `.../payment-cancel`).
 
-```bash
-npm run deploy
-```
+## Deploy
 
-Or use Vercel CLI:
-```bash
-vercel --prod
-```
+Build and deploy from the repo root (e.g. Vercel). Configure the same env vars on the host.
 
-### Supabase Edge Functions
+## Feature status
 
-Deploy Edge Functions via Supabase Dashboard:
-1. Go to Edge Functions section
-2. Create/update functions: `submit-reservation`, `payment-webhook`, `create-lead`
-3. Set required secrets (Zoho credentials, PayFast credentials)
-
-See `supabase/functions/README.md` for detailed setup instructions.
-
-## 🔐 Required Secrets (Supabase Edge Functions)
-
-**Zoho CRM:**
-- `ZOHO_CLIENT_ID`
-- `ZOHO_CLIENT_SECRET`
-- `ZOHO_REFRESH_TOKEN`
-- `ZOHO_API_DOMAIN` (default: "com")
-
-**PayFast:**
-- `PAYFAST_MERCHANT_ID`
-- `PAYFAST_MERCHANT_KEY`
-- `PAYFAST_ENV` ("sandbox" or "production")
-
-## 📝 Features
-
-- Property inventory management
-- User authentication (Supabase Auth)
-- Reservation system with payment integration
-- Zoho CRM synchronization
-- Admin panel for unit management
-- Wishlist functionality
-- Responsive design
-
-## 📄 License
-
-© 2026 Ignite Studios
+See [FEATURE-CHECKLIST.md](./FEATURE-CHECKLIST.md) for what’s done and what’s next.

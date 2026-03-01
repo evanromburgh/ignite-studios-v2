@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "name": "Frontend",
+      "path": "frontend"
+    },
+    {
+      "name": "Backend (server)",
+      "path": "backend/server"
+    },
+    {
+      "name": "Backend (supabase)",
+      "path": "backend/supabase"
+    }
+  ],
+  "settings": {
+    "explorer.sortOrder": "type"
+  }
+}

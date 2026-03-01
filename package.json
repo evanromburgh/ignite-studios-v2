@@ -1,24 +1,24 @@
 {
-  "name": "ignite-premium-portal",
+  "name": "ignite-portal",
   "private": true,
-  "version": "3.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "deploy": "vercel --prod"
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "dev:host": "nuxt dev --host",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "gsap": "^3.12.5",
+    "nuxt": "^3.14.0",
+    "vue": "latest",
+    "vue-router": "latest"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "typescript": "~5.6.2",
-    "vite": "^6.0.5"
+    "@nuxt/devtools": "latest",
+    "@nuxtjs/tailwindcss": "^6.12.2",
+    "typescript": "~5.6.2"
   }
 }
