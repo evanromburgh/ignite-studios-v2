@@ -37,6 +37,7 @@ export default defineNuxtConfig({
     '/': { isr: 60 },
     '/documents': { isr: 3600 },
     '/contact': { static: true },
+    '/api/units/viewers': { cache: false, swr: false },
   },
   nitro: {
     minify: false,

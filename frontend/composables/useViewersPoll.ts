@@ -28,7 +28,8 @@ export function useViewersPoll() {
   const pollIntervalMs = (config.public.viewersPollMs as number) ?? CONFIG.VIEWERS_POLL_MS ?? 0
 
   function sync() {
-    $fetch<{ data: { id: string; viewers?: Record<string, number> }[] }>('/api/units/viewers', { cache: 'no-store' })
+    const url = `/api/units/viewers?t=${Date.now()}`
+    $fetch<{ data: { id: string; viewers?: Record<string, number> }[] }>(url, { cache: 'no-store' })
       .then(({ data }) => {
         if (!data?.length) return
         const next: Record<string, Record<string, number>> = {}
@@ -37,7 +38,9 @@ export function useViewersPoll() {
         }
         viewersMap.value = next
       })
-      .catch((err) => console.error('[useViewersPoll]', err))
+      .catch((err) => {
+        console.error('[useViewersPoll]', err)
+      })
   }
 
   function startPolling() {
