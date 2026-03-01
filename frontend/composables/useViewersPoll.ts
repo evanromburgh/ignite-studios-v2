@@ -23,19 +23,16 @@ function pruneViewers(raw: Record<string, number | string> | null | undefined): 
 }
 
 export function useViewersPoll() {
-  const { $supabase } = useNuxtApp()
   const { user } = useAuth()
   const config = useRuntimeConfig()
   const pollIntervalMs = (config.public.viewersPollMs as number) ?? CONFIG.VIEWERS_POLL_MS ?? 0
 
   function sync() {
-    $supabase
-      .from('units')
-      .select('id, viewers')
-      .then(({ data, error }) => {
-        if (error || !data) return
+    $fetch<{ data: { id: string; viewers?: Record<string, number> }[] }>('/api/units/viewers', { cache: 'no-store' })
+      .then(({ data }) => {
+        if (!data?.length) return
         const next: Record<string, Record<string, number>> = {}
-        for (const row of data as { id: string; viewers?: Record<string, number> }[]) {
+        for (const row of data) {
           next[row.id] = pruneViewers(row.viewers)
         }
         viewersMap.value = next
