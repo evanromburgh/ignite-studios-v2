@@ -1,10 +1,12 @@
 /**
  * Viewer counts: optional poll + Realtime.
- * - VIEWERS_POLL_MS > 0: poll units (id, viewers) at that interval so all clients see updates quickly (adds DB read load).
- * - VIEWERS_POLL_MS === 0: no polling; rely on Supabase Realtime only (scales to extreme traffic).
+ * Matches old app (ignite-studios): after each poll we dispatch 'viewers-updated' so
+ * components can force re-render and show latest count on all devices (Desktop).
  */
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { CONFIG } from '~/config'
+
+const VIEWERS_UPDATED_EVENT = 'viewers-updated'
 
 const viewersMap = ref<Record<string, Record<string, number>>>({})
 let pollIntervalId: ReturnType<typeof setInterval> | null = null
@@ -20,6 +22,22 @@ function pruneViewers(raw: Record<string, number | string> | null | undefined): 
     if (!Number.isNaN(t) && now - t <= ttl) out[key] = t
   }
   return out
+}
+
+function emitViewersUpdated(): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.dispatchEvent(new CustomEvent(VIEWERS_UPDATED_EVENT))
+  } catch {
+    // ignore
+  }
+}
+
+export function subscribeToViewersUpdates(onUpdate: () => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+  const handler = () => onUpdate()
+  window.addEventListener(VIEWERS_UPDATED_EVENT, handler)
+  return () => window.removeEventListener(VIEWERS_UPDATED_EVENT, handler)
 }
 
 export function useViewersPoll() {
@@ -39,6 +57,7 @@ export function useViewersPoll() {
           next[row.id] = pruneViewers(row.viewers)
         }
         viewersMap.value = next
+        emitViewersUpdated()
       })
       .catch((err) => {
         console.error('[useViewersPoll]', err)
@@ -86,5 +105,6 @@ export function useViewersPoll() {
       const map = viewersMap.value[unitId]
       return map ?? null
     },
+    subscribeToViewersUpdates,
   }
 }

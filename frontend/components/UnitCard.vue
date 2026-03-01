@@ -107,6 +107,7 @@
 
 <script setup lang="ts">
 import type { Unit } from '~/types'
+import { CONFIG } from '~/config'
 import IconBed from '~/components/icons/IconBed.vue'
 import IconBath from '~/components/icons/IconBath.vue'
 import IconCar from '~/components/icons/IconCar.vue'
@@ -135,10 +136,13 @@ const emit = defineEmits<{
   toggleWishlist: [unitId: string]
 }>()
 
-const { getViewersForUnit } = useViewersPoll()
+const { getViewersForUnit, subscribeToViewersUpdates } = useViewersPoll()
 
 const timeLeft = ref(0)
+/** Force re-render when viewers poll updates (like old app: DOM event + presence tick for Desktop) */
+const viewersTick = ref(0)
 const viewerCount = computed(() => {
+  viewersTick.value // depend on tick so we re-run when event fires or tick runs
   const polled = getViewersForUnit(props.unit.id)
   const viewers = polled ?? props.unit.viewers ?? {}
   return Object.keys(viewers).length
@@ -207,6 +211,7 @@ function onToggleWishlist(unitId: string) {
 }
 
 let timerId: ReturnType<typeof setInterval> | null = null
+let presenceTickId: ReturnType<typeof setInterval> | null = null
 
 function startTimer() {
   if (!props.unit.lockExpiresAt) {
@@ -223,10 +228,17 @@ function startTimer() {
 
 onMounted(() => {
   startTimer()
+  subscribeToViewersUpdates(() => {
+    viewersTick.value += 1
+  })
+  presenceTickId = setInterval(() => {
+    viewersTick.value += 1
+  }, CONFIG.PRESENCE_TICK_MS)
 })
 
 onBeforeUnmount(() => {
   if (timerId) clearInterval(timerId)
+  if (presenceTickId) clearInterval(presenceTickId)
 })
 
 watch(() => [props.unit.lockExpiresAt, props.serverClockOffsetMs], () => {

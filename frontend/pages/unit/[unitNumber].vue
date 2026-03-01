@@ -373,7 +373,7 @@ import type { Unit } from '~/types'
 const route = useRoute()
 const { units, loading: unitsLoading } = useUnits()
 const { wishlistIds, toggle: toggleWishlist } = useWishlist()
-const { getViewersForUnit } = useViewersPoll()
+const { getViewersForUnit, subscribeToViewersUpdates } = useViewersPoll()
 
 const reserving = ref(false)
 const returningToList = ref(false)
@@ -401,8 +401,11 @@ const galleryImages = computed(() => {
   return urls
 })
 
+/** Force re-render when viewers poll updates (like old app: DOM event + presence tick for Desktop) */
+const viewersTick = ref(0)
 const viewerCount = computed(() => {
   if (!unit.value) return 0
+  viewersTick.value // depend on tick so we re-run when event fires or tick runs
   const polled = getViewersForUnit(unit.value.id)
   const viewers = polled ?? unit.value.viewers ?? {}
   return Object.keys(viewers).length
@@ -454,6 +457,8 @@ const viewerPresenceSessionId = ref<string | null>(null)
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null
 let visibilityHandler: (() => void) | null = null
 let beforeUnloadHandler: (() => void) | null = null
+let viewersUnsubscribe: (() => void) | null = null
+let viewersPresenceTickId: ReturnType<typeof setInterval> | null = null
 let authToken: string | null = null
 
 async function ensureAuthToken(): Promise<string | null> {
@@ -565,6 +570,12 @@ async function setupPresence() {
 onMounted(() => {
   if (!unit.value) return
   void setupPresence()
+  viewersUnsubscribe = subscribeToViewersUpdates(() => {
+    viewersTick.value += 1
+  })
+  viewersPresenceTickId = setInterval(() => {
+    viewersTick.value += 1
+  }, CONFIG.PRESENCE_TICK_MS)
 })
 
 watch(unit, (newUnit, oldUnit) => {
@@ -581,6 +592,10 @@ watch(unit, (newUnit, oldUnit) => {
 
 onBeforeUnmount(() => {
   if (process.server) return
+  if (viewersUnsubscribe) viewersUnsubscribe()
+  viewersUnsubscribe = null
+  if (viewersPresenceTickId) clearInterval(viewersPresenceTickId)
+  viewersPresenceTickId = null
   // keepalive: true so the request completes even after Vue navigates away
   void sendRemoveViewer(true)
   clearPresenceHandlers()
