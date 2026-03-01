@@ -442,10 +442,6 @@ const statusDisplay = computed(() => {
   return '0 currently viewing'
 })
 
-const isWishlisted = computed(
-  () => unit.value != null && wishlistIds.value.includes(unit.value.id),
-)
-
 async function goBackToList() {
   if (process.server) return
   returningToList.value = true
