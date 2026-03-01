@@ -28,6 +28,7 @@ export default defineNuxtConfig({
     public: {
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY,
+      viewersPollMs: process.env.NUXT_PUBLIC_VIEWERS_POLL_MS != null ? Number(process.env.NUXT_PUBLIC_VIEWERS_POLL_MS) : 1_500,
     },
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   },

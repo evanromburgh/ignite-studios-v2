@@ -207,6 +207,8 @@ const { user, logout } = useAuth()
 const { wishlistCount } = useWishlistCount()
 const { reservationsCount } = useReservationsCount()
 
+useViewersPoll()
+
 const showUserMenu = ref(false)
 const showMobileMenu = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)

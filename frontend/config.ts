@@ -4,10 +4,10 @@ export const CONFIG = {
   PRESENCE_TICK_MS: 10_000,
   PRESENCE_TTL_MS: 12_000,
   /**
-   * Viewer count poll interval (ms). 3000 = fewer requests; use 1500 to match old portal exactly.
-   * Set to 0 to disable and rely only on Realtime.
+   * Viewer count poll interval (ms). 1500 = same as ignite-studios-portals.
+   * Set to 0 to disable.
    */
-  VIEWERS_POLL_MS: 3_000,
+  VIEWERS_POLL_MS: 1_500,
   TRANSITION_MID_MS: 600,
   TRANSITION_END_MS: 1200,
   RESERVATION_DEPOSIT: 10_000,
