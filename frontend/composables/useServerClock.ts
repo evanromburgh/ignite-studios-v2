@@ -1,9 +1,10 @@
 /**
  * Syncs client clock with server so reservation timer shows correct countdown (e.g. 10:00) on all devices.
- * Without this, mobile devices with wrong system time show wrong remaining time (e.g. 13:28 instead of 10:00).
- * Uses a shared ref so the offset is reused across pages (e.g. list page sync is still valid on reserve page).
+ * Uses a shared ref and a single app-wide sync/interval so we don't fire N server-time requests per minute.
  */
 const serverClockOffsetMs = ref(0)
+let serverClockSyncStarted = false
+let serverClockIntervalId: ReturnType<typeof setInterval> | null = null
 
 export function useServerClock() {
   const sync = async () => {
@@ -19,9 +20,10 @@ export function useServerClock() {
   }
 
   onMounted(() => {
+    if (serverClockSyncStarted) return
+    serverClockSyncStarted = true
     sync()
-    const interval = setInterval(sync, 60_000)
-    onBeforeUnmount(() => clearInterval(interval))
+    serverClockIntervalId = setInterval(sync, 60_000)
   })
 
   /** Current time in ms aligned to server (use for timer countdown). */

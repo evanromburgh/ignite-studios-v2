@@ -31,6 +31,7 @@ export default defineNuxtConfig({
       viewersPollMs: process.env.NUXT_PUBLIC_VIEWERS_POLL_MS != null ? Number(process.env.NUXT_PUBLIC_VIEWERS_POLL_MS) : 1_500,
     },
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    cronSecret: process.env.CRON_SECRET || '',
   },
   routeRules: {
     '/': { isr: 60 },

@@ -67,14 +67,6 @@ export function useUnits() {
       }
       if (!data) return
       units.value = data.map(mapRow)
-
-      if (import.meta.client) {
-        try {
-          await $fetch('/api/units/prune-viewers', { method: 'POST' })
-        } catch {
-          // ignore
-        }
-      }
     } finally {
       loading.value = false
     }

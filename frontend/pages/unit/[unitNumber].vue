@@ -521,7 +521,17 @@ async function setupPresence() {
     void sendViewerHeartbeat()
   }, CONFIG.HEARTBEAT_INTERVAL_MS)
   visibilityHandler = () => {
-    if (document.visibilityState === 'visible') void sendViewerHeartbeat()
+    if (document.visibilityState === 'hidden') {
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval)
+        heartbeatInterval = null
+      }
+    } else if (document.visibilityState === 'visible') {
+      void sendViewerHeartbeat()
+      heartbeatInterval = setInterval(() => {
+        void sendViewerHeartbeat()
+      }, CONFIG.HEARTBEAT_INTERVAL_MS)
+    }
   }
   document.addEventListener('visibilitychange', visibilityHandler)
   beforeUnloadHandler = () => void sendRemoveViewer(true)

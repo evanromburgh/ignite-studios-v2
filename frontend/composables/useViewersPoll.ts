@@ -1,17 +1,14 @@
 /**
- * Viewer counts: matches ignite-studios (ignite-studios-portals.vercel.app).
- * - Single poll: .from('units').select('id, viewers') every 1.5s when user is logged in.
- * - Dispatches 'viewers-updated' so components re-render.
- * - No TTL pruning in fetch (same as old app).
+ * Viewer counts for "currently viewing" – built for high traffic.
+ * Uses Supabase Realtime (postgres_changes on units) instead of polling so we only
+ * get updates when viewers actually change. One initial fetch + subscription when user is logged in.
  */
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { CONFIG } from '~/config'
 
 const VIEWERS_UPDATED_EVENT = 'viewers-updated'
 
 const viewersMap = ref<Record<string, Record<string, number>>>({})
-let pollIntervalId: ReturnType<typeof setInterval> | null = null
-let visibilityHandler: (() => void) | null = null
+let channel: { unsubscribe: () => void } | null = null
 
 function emitViewersUpdated(): void {
   if (typeof window === 'undefined') return
@@ -29,13 +26,30 @@ export function subscribeToViewersUpdates(onUpdate: () => void): () => void {
   return () => window.removeEventListener(VIEWERS_UPDATED_EVENT, handler)
 }
 
+function setViewersFromRow(row: { id: string; viewers?: Record<string, number> | null }): void {
+  const v = row.viewers
+  viewersMap.value = {
+    ...viewersMap.value,
+    [row.id]: v && typeof v === 'object' ? v : {},
+  }
+}
+
 export function useViewersPoll() {
   const { $supabase } = useNuxtApp()
   const { user } = useAuth()
-  const config = useRuntimeConfig()
-  const pollIntervalMs = (config.public.viewersPollMs as number) ?? CONFIG.VIEWERS_POLL_MS ?? 1_500
 
-  function sync() {
+  function stopRealtime() {
+    if (channel) {
+      channel.unsubscribe()
+      channel = null
+    }
+    viewersMap.value = {}
+  }
+
+  function startRealtime() {
+    if (channel) return
+    if (!user.value) return
+
     $supabase
       .from('units')
       .select('id, viewers')
@@ -49,39 +63,38 @@ export function useViewersPoll() {
         viewersMap.value = next
         emitViewersUpdated()
       })
-      .catch((err) => console.error('[useViewersPoll]', err))
-  }
+      .catch((err) => console.error('[useViewersPoll] initial fetch', err))
 
-  function startPolling() {
-    if (pollIntervalId) return
-    if (!user.value) return
-    if (pollIntervalMs <= 0) return
-    sync()
-    pollIntervalId = setInterval(sync, pollIntervalMs)
-    visibilityHandler = () => {
-      if (document.visibilityState === 'visible') sync()
-    }
-    document.addEventListener('visibilitychange', visibilityHandler)
-  }
-
-  function stopPolling() {
-    if (pollIntervalId) {
-      clearInterval(pollIntervalId)
-      pollIntervalId = null
-    }
-    if (visibilityHandler) {
-      document.removeEventListener('visibilitychange', visibilityHandler)
-      visibilityHandler = null
-    }
+    channel = $supabase
+      .channel('viewers-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'units' },
+        (payload) => {
+          const newRow = payload.new as { id: string; viewers?: Record<string, number> } | undefined
+          const oldRow = payload.old as { id: string } | undefined
+          if (payload.eventType === 'INSERT' && newRow) {
+            setViewersFromRow(newRow)
+          } else if (payload.eventType === 'UPDATE' && newRow) {
+            setViewersFromRow(newRow)
+          } else if (payload.eventType === 'DELETE' && oldRow) {
+            const next = { ...viewersMap.value }
+            delete next[oldRow.id]
+            viewersMap.value = next
+          }
+          emitViewersUpdated()
+        },
+      )
+      .subscribe()
   }
 
   onMounted(() => {
-    if (user.value) startPolling()
+    if (user.value) startRealtime()
   })
 
   watch(user, (u) => {
-    if (u) startPolling()
-    else stopPolling()
+    if (u) startRealtime()
+    else stopRealtime()
   })
 
   onBeforeUnmount(() => {})
@@ -89,7 +102,6 @@ export function useViewersPoll() {
   return {
     viewersMap,
     getViewersForUnit(unitId: string): Record<string, number> | null {
-      if (pollIntervalMs <= 0) return null
       const map = viewersMap.value[unitId]
       return map ?? null
     },
