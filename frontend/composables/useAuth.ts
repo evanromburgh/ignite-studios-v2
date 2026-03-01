@@ -36,6 +36,8 @@ const authLoading = ref(true)
 const sessionRef = ref<{ access_token: string } | null>(null)
 
 let authSubscriptionDone = false
+/** Run initial getSession/getUser only once so we don't fire N "user" requests per page (every useAuth() caller was triggering onMounted). */
+let initialAuthFetchDone = false
 
 export function useAuth() {
   const { $supabase } = useNuxtApp()
@@ -53,6 +55,12 @@ export function useAuth() {
         currentUser.value = { ...user, role }
       }
     }
+
+    if (initialAuthFetchDone) {
+      authLoading.value = false
+      return
+    }
+    initialAuthFetchDone = true
 
     $supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.access_token) sessionRef.value = { access_token: session.access_token }
