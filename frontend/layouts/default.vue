@@ -194,6 +194,14 @@
       <slot />
     </main>
 
+    <div
+      class="fixed bottom-4 right-4 z-[200] flex items-center gap-2 px-3 py-2 rounded-full bg-black/80 backdrop-blur border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300"
+      aria-live="polite"
+    >
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+      {{ onlineCount }} browsing now
+    </div>
+
     <footer class="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 mt-16 sm:mt-24 pt-12 sm:pt-20 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center text-zinc-700 text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] gap-8 sm:gap-12 pb-12 sm:pb-20">
       <p>&copy; {{ new Date().getFullYear() }} Ignite Studios</p>
     </footer>
@@ -206,8 +214,7 @@ const route = useRoute()
 const { user, logout } = useAuth()
 const { wishlistCount } = useWishlistCount()
 const { reservationsCount } = useReservationsCount()
-
-useViewersPoll()
+const { onlineCount } = useGlobalPresence()
 
 const showUserMenu = ref(false)
 const showMobileMenu = ref(false)
