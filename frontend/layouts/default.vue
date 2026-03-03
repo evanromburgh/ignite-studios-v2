@@ -194,12 +194,21 @@
       <slot />
     </main>
 
+    <!-- Browsing badge – Nuxt DevTools bar styling -->
     <div
-      class="fixed bottom-4 right-4 z-[200] flex items-center gap-2 px-3 py-2 rounded-full bg-black/80 backdrop-blur border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300"
+      class="browsing-anchor"
       aria-live="polite"
     >
-      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-      {{ onlineCount }} browsing now
+      <div class="browsing-panel group">
+        <div class="browsing-icon-button flex-shrink-0">
+          <IconEyeLottie />
+        </div>
+        <div class="browsing-sep" />
+        <div class="browsing-label">
+          <span class="browsing-label-main">{{ onlineCount }}</span>
+          <span class="browsing-label-secondary">Currently Viewing</span>
+        </div>
+      </div>
     </div>
 
     <footer class="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 mt-16 sm:mt-24 pt-12 sm:pt-20 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center text-zinc-700 text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] gap-8 sm:gap-12 pb-12 sm:pb-20">
@@ -210,6 +219,8 @@
 </template>
 
 <script setup lang="ts">
+import IconEyeLottie from '~/components/icons/IconEyeLottie.client.vue'
+
 const route = useRoute()
 const { user, logout } = useAuth()
 const { wishlistCount } = useWishlistCount()
@@ -282,4 +293,93 @@ watch(showMobileMenu, (open) => {
 </script>
 
 <style scoped>
+/* Nuxt DevTools bar styling */
+.browsing-anchor {
+  --browsing-widget-bg: #111;
+  --browsing-widget-fg: #f5f5f5;
+  --browsing-widget-border: rgba(51, 51, 51, 0.4);
+  --browsing-widget-shadow: rgba(0, 0, 0, 0.3);
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 200;
+  pointer-events: auto;
+}
+
+.browsing-panel {
+  border: 1px solid var(--browsing-widget-border);
+  background-color: var(--browsing-widget-bg);
+  backdrop-filter: blur(10px);
+  height: 30px;
+  color: var(--browsing-widget-fg);
+  box-shadow: 2px 2px 8px var(--browsing-widget-shadow);
+  user-select: none;
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 80px; /* show icon + number by default */
+  padding: 2px 10px;
+  transition: max-width 0.6s, padding 0.5s;
+  overflow: hidden;
+}
+
+.browsing-panel:hover {
+  max-width: 180px;
+  padding: 2px 10px;
+}
+
+.browsing-icon-button {
+  width: 26px;
+  height: 26px;
+  border-radius: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.browsing-panel:hover .browsing-icon-button {
+  opacity: 1;
+}
+
+.browsing-sep {
+  border-left: 1px solid rgba(136, 136, 136, 0.2);
+  width: 1px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+.browsing-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  font-size: 0.8em;
+  line-height: 1em;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.browsing-label-main {
+  opacity: 0.8;
+  margin-left: 4px; /* balance space between separator and number */
+  font-size: 0.75em;
+}
+
+.browsing-label-secondary {
+  opacity: 0;
+  max-width: 0;
+  margin-left: 0;
+  font-size: 0.75em;
+  line-height: 1em; /* vertically center with number */
+  transition: opacity 0.4s, max-width 0.4s, margin-left 0.4s;
+}
+
+.browsing-panel:hover .browsing-label-secondary {
+  opacity: 0.5;
+  max-width: 200px;
+  margin-left: 3px;
+}
 </style>

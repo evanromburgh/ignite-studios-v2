@@ -35,7 +35,8 @@
         </div>
       </header>
 
-      <section class="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 -mt-[9.5rem] pb-10">
+      <!-- Filter controls section -->
+      <section class="w-[75%] mx-auto -mt-[9.5rem] pb-6">
         <FilterBar
           :filters="filters"
           :view-mode="viewMode"
@@ -48,7 +49,10 @@
           @update:filters="filters = $event"
           @update:view-mode="viewMode = $event"
         />
+      </section>
 
+      <!-- Unit results section -->
+      <section class="w-[75%] mx-auto pb-10">
         <div v-if="unitsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
           <div
             v-for="i in 8"
