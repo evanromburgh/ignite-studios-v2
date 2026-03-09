@@ -8,8 +8,25 @@ const error = ref<string | null>(null)
 let hasInitialized = false
 let channel: { unsubscribe: () => void } | null = null
 
+function appendCacheBust(url: string | null | undefined, cacheBust: string): string
+function appendCacheBust(url: string | null | undefined, cacheBust: string | undefined): string | null
+function appendCacheBust(url: string | null | undefined, cacheBust: string | undefined): string | null {
+  if (url == null || url === '') return url ?? null
+  const bust = (cacheBust && cacheBust.trim()) || ''
+  if (!bust) return url
+  try {
+    const u = new URL(url)
+    u.searchParams.set('v', bust)
+    return u.toString()
+  } catch {
+    return url + (url.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(bust)
+  }
+}
+
 export function useUnits() {
   const { $supabase } = useNuxtApp()
+  const config = useRuntimeConfig()
+  const imageCacheBust = (config.public.imageCacheBust as string) ?? ''
 
   const mapRow = (row: any): Unit => {
     const rawViewers = (row.viewers as Record<string, number | string> | null | undefined) ?? {}
@@ -41,10 +58,10 @@ export function useUnits() {
       unitType: row.unit_type as string,
       floor: (row.floor as string | null) ?? null,
       direction: (row.direction as string | null) ?? null,
-      imageUrl: row.image_url as string,
-      imageUrl2: (row.image_url_2 as string | null) ?? null,
-      imageUrl3: (row.image_url_3 as string | null) ?? null,
-      floorplanUrl: (row.floorplan_url as string | null) ?? null,
+      imageUrl: (appendCacheBust(row.image_url as string, imageCacheBust) ?? row.image_url) as string,
+      imageUrl2: appendCacheBust(row.image_url_2 as string | null, imageCacheBust),
+      imageUrl3: appendCacheBust(row.image_url_3 as string | null, imageCacheBust),
+      floorplanUrl: appendCacheBust(row.floorplan_url as string | null, imageCacheBust),
       viewers,
       lockExpiresAt,
       lockedBy: row.locked_by as string | undefined,

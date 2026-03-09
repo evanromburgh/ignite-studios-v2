@@ -1,6 +1,6 @@
 <template>
-  <div class="mb-10 sm:mb-14">
-    <div class="liquid-glass-dark filter-bar rounded-xl p-5 sm:p-6 md:p-8 mb-6 sm:mb-8 border border-white/5 shadow-inner">
+  <div>
+    <div class="filter-bar filter-bar--light rounded-lg p-5 sm:p-6 md:p-8">
       <div class="space-y-6">
         <!-- 5×3 grid at lg: each control in its own cell; Price Range spans 2 cols; Clear All in row 3 col 5 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
@@ -14,8 +14,8 @@
             </label>
             <input
               type="text"
-:placeholder="`e.g. ${sampleUnitNumbersPlaceholder}`"
-              class="w-full h-11 pl-4 pr-4 bg-white/[0.03] border border-white/5 rounded-lg text-zinc-300 placeholder-zinc-500 placeholder:normal-case text-[13px] font-medium capitalize focus:border-zinc-500 focus:outline-none transition-colors"
+              placeholder="e.g. 701, 848"
+              class="w-full h-[2.375rem] pl-4 pr-4 bg-theme-input-bg border border-theme-border rounded-lg text-zinc-300 placeholder-zinc-500 placeholder:normal-case text-[12px] font-medium capitalize focus:border-zinc-500 focus:outline-none transition-colors"
               :value="filters.searchQuery ?? ''"
               @input="onSearchInput($event)"
             />
@@ -28,20 +28,20 @@
               Order By
             </label>
             <select
-              class="h-11 w-full bg-white/[0.03] border border-white/5 rounded-lg px-4 text-zinc-300 text-[13px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
+              class="h-[2.375rem] w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 text-zinc-300 text-[12px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
               :value="filters.orderBy ?? 'unitNumber'"
               @change="onOrderByChange($event)"
             >
-              <option value="unitNumber" class="bg-zinc-950">Unit Number</option>
-              <option value="price" class="bg-zinc-950">Price</option>
-              <option value="bedrooms" class="bg-zinc-950">Beds</option>
+              <option value="unitNumber" class="bg-theme-input-bg text-theme-text-primary">Unit Number</option>
+              <option value="price" class="bg-theme-input-bg text-theme-text-primary">Price</option>
+              <option value="bedrooms" class="bg-theme-input-bg text-theme-text-primary">Beds</option>
             </select>
           </div>
           <div class="lg:col-span-1">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">Sort</label>
             <button
               type="button"
-              class="h-11 w-full bg-white/[0.03] border border-white/5 rounded-lg px-4 text-zinc-300 text-[13px] font-medium capitalize flex items-center justify-center cursor-pointer focus:border-zinc-500 focus:outline-none hover:bg-white/[0.05] transition-colors"
+              class="h-[2.375rem] w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 text-zinc-300 text-[12px] font-medium capitalize flex items-center justify-center cursor-pointer focus:border-zinc-500 focus:outline-none hover:bg-theme-input-bg transition-colors"
               :aria-pressed="(filters.orderDir ?? 'asc') === 'desc'"
               aria-label="Sort order"
               @click="onSortToggle"
@@ -51,18 +51,18 @@
           </div>
           <!-- Price Range spans 2 cols -->
           <div class="lg:col-span-2 flex flex-col justify-end min-h-[4.125rem] overflow-visible">
-            <label for="price-slider" class="flex items-center justify-center text-xs font-medium text-zinc-500 mb-1 text-center shrink-0">
+            <label for="price-slider" class="flex items-center justify-center text-xs font-medium text-zinc-500 mt-1 mb-2 text-center shrink-0">
               Price Range
             </label>
             <div id="price-slider" class="price-slider w-full mt-2 flex-1 min-h-0 relative flex flex-col justify-end pb-0 slider-target slider-horizontal px-[1.8rem] -mt-[1.25rem]">
               <div class="slider-base relative w-full h-3 overflow-visible shrink-0">
                 <div class="slider-connects absolute inset-0 pointer-events-none">
                   <div
-                    class="slider-connect absolute top-1/2 -translate-y-1/2 h-[4px] rounded-full bg-white/5"
+                    class="slider-connect absolute top-1/2 -translate-y-1/2 h-[4px] rounded-full bg-theme-border"
                     :style="{ left: minPercent + '%', width: (maxPercent - minPercent) + '%' }"
                   />
                 </div>
-                <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[4px] rounded-full bg-white/[0.03] pointer-events-none" aria-hidden="true" />
+                <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[4px] rounded-full bg-theme-input-bg pointer-events-none" aria-hidden="true" />
                 <input
                   type="range"
                   :min="effectivePriceRange.min"
@@ -95,10 +95,10 @@
                   class="slider-origin absolute top-1/2 z-0 pointer-events-none"
                   :style="{ left: minPercent + '%', transform: 'translate(-50%, -50%)' }"
                 >
-                  <div class="slider-handle slider-handle-lower w-3.5 h-3.5 rounded-full bg-white/5 shadow-sm flex flex-col items-center" role="presentation">
+                  <div class="slider-handle slider-handle-lower w-3.5 h-3.5 rounded-full bg-theme-border shadow-sm flex flex-col items-center" role="presentation">
                     <div class="slider-tooltip slider-tooltip-top absolute bottom-full left-1/2 -translate-x-1/2 mb-1 flex flex-col items-center">
-                      <span class="slider-tooltip-pill rounded-[0.35rem] bg-white/5 px-2 py-1 text-[11px] font-bold text-white whitespace-nowrap shadow-sm">R{{ formatPriceShort(priceMinValue) }}</span>
-                      <span class="slider-tooltip-arrow w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-white/5 -mt-px" />
+                      <span class="slider-tooltip-pill rounded-[0.35rem] bg-theme-surface-elevated px-2 py-1 text-[11px] font-bold text-theme-text-primary whitespace-nowrap shadow-sm">R{{ formatPriceShort(priceMinValue) }}</span>
+                      <span class="slider-tooltip-arrow w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-theme-border -mt-px" />
                     </div>
                   </div>
                 </div>
@@ -106,10 +106,10 @@
                   class="slider-origin absolute top-1/2 z-0 pointer-events-none"
                   :style="{ left: maxPercent + '%', transform: 'translate(-50%, -50%)' }"
                 >
-                  <div class="slider-handle slider-handle-upper w-3.5 h-3.5 rounded-full bg-white/5 shadow-sm flex flex-col items-center" role="presentation">
+                  <div class="slider-handle slider-handle-upper w-3.5 h-3.5 rounded-full bg-theme-border shadow-sm flex flex-col items-center" role="presentation">
                     <div class="slider-tooltip slider-tooltip-top absolute bottom-full left-1/2 -translate-x-1/2 mb-1 flex flex-col items-center">
-                      <span class="slider-tooltip-pill rounded-[0.35rem] bg-white/5 px-2 py-1 text-[11px] font-bold text-white whitespace-nowrap shadow-sm">R{{ formatPriceShort(priceMaxValue) }}</span>
-                      <span class="slider-tooltip-arrow w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-white/5 -mt-px" />
+                      <span class="slider-tooltip-pill rounded-[0.35rem] bg-theme-surface-elevated px-2 py-1 text-[11px] font-bold text-theme-text-primary whitespace-nowrap shadow-sm">R{{ formatPriceShort(priceMaxValue) }}</span>
+                      <span class="slider-tooltip-arrow w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-theme-border -mt-px" />
                     </div>
                   </div>
                 </div>
@@ -124,17 +124,17 @@
                 <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0"/>
                 <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/>
               </svg>
-              Availability
+              Status
             </label>
             <select
-              class="h-11 w-full bg-white/[0.03] border border-white/5 rounded-lg px-4 text-zinc-300 text-[13px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
+              class="h-[2.375rem] w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 text-zinc-300 text-[12px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
               :value="filters.status"
               @change="onStatusChange($event)"
             >
-              <option value="all" class="bg-zinc-950">All</option>
-              <option value="Available" class="bg-zinc-950">Available</option>
-              <option value="Reserved" class="bg-zinc-950">Reserved</option>
-              <option value="Sold" class="bg-zinc-950">Sold</option>
+              <option value="all" class="bg-theme-input-bg text-theme-text-primary">All</option>
+              <option value="Available" class="bg-theme-input-bg text-theme-text-primary">Available</option>
+              <option value="Reserved" class="bg-theme-input-bg text-theme-text-primary">Reserved</option>
+              <option value="Sold" class="bg-theme-input-bg text-theme-text-primary">Sold</option>
             </select>
           </div>
           <div class="lg:col-span-1">
@@ -143,28 +143,28 @@
               Layout
             </label>
             <select
-              class="h-11 w-full bg-white/[0.03] border border-white/5 rounded-lg px-4 text-zinc-300 text-[13px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
+              class="h-[2.375rem] w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 text-zinc-300 text-[12px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
               :value="filters.layout ?? 'any'"
               @change="onLayoutChange($event)"
             >
-              <option value="any" class="bg-zinc-950">Any</option>
-              <option v-for="t in layoutOptions" :key="t" :value="t" class="bg-zinc-950">{{ t }}</option>
+              <option value="any" class="bg-theme-input-bg text-theme-text-primary">Any</option>
+              <option v-for="t in layoutOptions" :key="t" :value="t" class="bg-theme-input-bg text-theme-text-primary">{{ t }}</option>
             </select>
           </div>
           <div class="lg:col-span-1">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
-              <svg class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <svg class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M8.235 1.559a.5.5 0 0 0-.47 0l-7.5 4a.5.5 0 0 0 0 .882L3.188 8 .264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l2.922-1.559a.5.5 0 0 0 0-.882zm3.515 7.008L14.438 10 8 13.433 1.562 10 4.25 8.567l3.515 1.874a.5.5 0 0 0 .47 0zM8 9.433 1.562 6 8 2.567 14.438 6z"/>
               </svg>
               Floor
             </label>
             <select
-              class="h-11 w-full bg-white/[0.03] border border-white/5 rounded-lg px-4 text-zinc-300 text-[13px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
+              class="h-[2.375rem] w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 text-zinc-300 text-[12px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
               :value="filters.floor ?? 'any'"
               @change="onFloorChange($event)"
             >
-              <option value="any" class="bg-zinc-950">Any</option>
-              <option v-for="f in floorOptions" :key="f" :value="f" class="bg-zinc-950">{{ f }}</option>
+              <option value="any" class="bg-theme-input-bg text-theme-text-primary">Any</option>
+              <option v-for="f in floorOptions" :key="f" :value="f" class="bg-theme-input-bg text-theme-text-primary">{{ formatFloorLabel(f) }}</option>
             </select>
           </div>
           <div class="lg:col-span-1">
@@ -176,12 +176,12 @@
               Direction
             </label>
             <select
-              class="h-11 w-full bg-white/[0.03] border border-white/5 rounded-lg px-4 text-zinc-300 text-[13px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
+              class="h-[2.375rem] w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 text-zinc-300 text-[12px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
               :value="filters.direction ?? 'any'"
               @change="onDirectionChange($event)"
             >
-              <option value="any" class="bg-zinc-950">Any</option>
-              <option v-for="d in directionOptions" :key="d" :value="d" class="bg-zinc-950">{{ d }}</option>
+              <option value="any" class="bg-theme-input-bg text-theme-text-primary">Any</option>
+              <option v-for="d in directionOptions" :key="d" :value="d" class="bg-theme-input-bg text-theme-text-primary">{{ d }} Facing</option>
             </select>
           </div>
           <div class="lg:col-span-1">
@@ -190,14 +190,14 @@
               Parking
             </label>
             <select
-              class="h-11 w-full bg-white/[0.03] border border-white/5 rounded-lg px-4 text-zinc-300 text-[13px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
+              class="h-[2.375rem] w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 text-zinc-300 text-[12px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
               :value="filters.parking ?? 'any'"
               @change="onParkingChange($event)"
             >
-              <option value="any" class="bg-zinc-950">Any</option>
-              <option value="0" class="bg-zinc-950">0</option>
-              <option value="1" class="bg-zinc-950">1</option>
-              <option value="2" class="bg-zinc-950">2</option>
+              <option value="any" class="bg-theme-input-bg text-theme-text-primary">Any</option>
+              <option value="0" class="bg-theme-input-bg text-theme-text-primary">0</option>
+              <option value="1" class="bg-theme-input-bg text-theme-text-primary">1</option>
+              <option value="2" class="bg-theme-input-bg text-theme-text-primary">2</option>
             </select>
           </div>
 
@@ -208,38 +208,29 @@
               Wishlist
             </label>
             <select
-              class="h-11 w-full bg-white/[0.03] border border-white/5 rounded-lg px-4 text-zinc-300 text-[13px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
+              class="h-[2.375rem] w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 text-zinc-300 text-[12px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
               :value="filters.wishlistFilter ?? 'all'"
               @change="onWishlistChange($event)"
             >
-              <option value="all" class="bg-zinc-950">All</option>
-              <option value="yes" class="bg-zinc-950">In wishlist</option>
+              <option value="all" class="bg-theme-input-bg text-theme-text-primary">All</option>
+              <option value="yes" class="bg-theme-input-bg text-theme-text-primary">In wishlist</option>
             </select>
           </div>
           <div class="hidden lg:block lg:col-span-3" aria-hidden="true" />
           <div class="lg:col-span-1 flex justify-end items-end">
             <button
               type="button"
-              class="inline-flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-zinc-300 capitalize transition-colors underline underline-offset-2"
+              class="filter-bar-clear inline-flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-zinc-300 capitalize transition-colors underline underline-offset-2"
               @click="clearAllFilters"
             >
               <svg class="w-[13px] h-[13px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               Clear All Filters
             </button>
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="flex justify-center mt-4 px-1">
-      <p class="text-[10px] font-black text-zinc-500 capitalize">
-        {{ availableCount }}
-        <span class="text-zinc-600">of</span>
-        {{ totalUnits }}
-        <span class="text-zinc-600">units available</span>
-      </p>
     </div>
   </div>
 </template>
@@ -253,12 +244,9 @@ import type { SearchFilters, ViewMode } from '~/types'
 const props = defineProps<{
   filters: SearchFilters
   viewMode: ViewMode
-  availableCount: number
-  totalUnits: number
   unitTypes?: string[]
   floorOptions?: string[]
   directionOptions?: string[]
-  sampleUnitNumbers?: string
 }>()
 
 const emit = defineEmits<{
@@ -289,15 +277,17 @@ const maxPercent = computed(() => ((priceMaxValue.value - effectivePriceRange.va
 const layoutOptions = computed(() => props.unitTypes ?? [])
 const floorOptions = computed(() => props.floorOptions ?? [])
 const directionOptions = computed(() => props.directionOptions ?? [])
-const sampleUnitNumbersPlaceholder = computed(() => {
-  const sample = props.sampleUnitNumbers?.trim()
-  return sample || '101, 102'
-})
 
 function formatPriceShort(price: number) {
   if (price >= 1_000_000) return (price / 1_000_000).toFixed(1) + 'M'
   if (price >= 1_000) return (price / 1_000).toFixed(0) + 'K'
   return String(price)
+}
+function formatFloorLabel(floor: string | undefined): string {
+  const raw = (floor || '').toLowerCase()
+  if (!raw) return ''
+  const withFloor = raw.includes('floor') ? raw : `${raw} floor`
+  return withFloor.replace(/\b\w/g, (c) => c.toUpperCase())
 }
 function updateFilter(key: keyof SearchFilters, value: string | number | 'all' | undefined) {
   emit('update:filters', { ...props.filters, [key]: value } as SearchFilters)

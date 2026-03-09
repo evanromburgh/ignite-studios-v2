@@ -16,6 +16,8 @@ export interface Unit {
   parking: number
   sizeSqm: number
   price: number
+  /** If set, shown as strikethrough "was" price above current price on cards */
+  originalPrice?: number | null
   status: 'Available' | 'Reserved' | 'Sold'
   unitType: string
   floor?: string | null
@@ -32,6 +34,8 @@ export interface Unit {
 export enum ViewMode {
   GRID = 'GRID',
   LIST = 'LIST',
+  ELEVATION = 'ELEVATION',
+  FLOOR = 'FLOOR',
 }
 
 export interface SearchFilters {

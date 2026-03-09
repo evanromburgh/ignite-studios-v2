@@ -2,6 +2,10 @@
   "name": "ignite-portal",
   "private": true,
   "type": "module",
+  "imports": {
+    "#internal/nuxt/paths": "./nuxt-internal-paths-stub.mjs",
+    "#app-manifest": "./nuxt-app-manifest-stub.mjs"
+  },
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
@@ -14,6 +18,7 @@
     "gsap": "^3.12.5",
     "lottie-web": "^5.13.0",
     "nuxt": "^3.14.0",
+    "swiper": "^11.1.14",
     "vue": "latest",
     "vue-router": "latest"
   },

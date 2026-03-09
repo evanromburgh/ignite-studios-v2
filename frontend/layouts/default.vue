@@ -1,27 +1,27 @@
 <template>
-  <div class="min-h-screen bg-black text-zinc-100 relative">
+  <div class="min-h-screen bg-theme-bg text-theme-text-primary relative">
     <div class="min-h-screen flex flex-col">
         <!-- Mobile menu backdrop -->
         <div
           role="presentation"
           aria-hidden="!showMobileMenu"
-          class="lg:hidden fixed inset-0 z-[140] backdrop-blur-[5px] transition-opacity duration-300"
+          class="lg:hidden fixed inset-0 z-[140] bg-black/20 backdrop-blur-[5px] transition-opacity duration-300"
           :class="showMobileMenu ? 'opacity-100' : 'opacity-0 pointer-events-none'"
           @click="showMobileMenu = false"
         />
 
         <nav
       class="fixed top-0 left-0 right-0 z-[150] flex flex-col transition-all duration-300"
-      :class="scrolled ? 'bg-black/80 backdrop-blur-2xl border-b border-white/5' : 'bg-transparent border-b border-transparent'"
+      :class="scrolled ? 'bg-theme-overlay-nav/95 backdrop-blur-xl border-b border-white/10 shadow-sm' : 'bg-theme-overlay-nav/80 backdrop-blur-sm border-b border-transparent'"
     >
       <div class="pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 h-16 sm:h-24 flex items-center justify-between flex-shrink-0">
         <NuxtLink
           to="/"
           class="cursor-pointer group flex items-center shrink-0"
         >
-          <span class="text-2xl sm:text-3xl font-black tracking-tighter text-white group-hover:text-zinc-400 transition-colors leading-none">IGNITE</span>
-          <span class="h-5 sm:h-5 w-px bg-zinc-800 mx-2 sm:mx-4" />
-          <span class="text-[9px] sm:text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] sm:tracking-[0.5em] leading-none">STUDIOS</span>
+          <span class="text-2xl sm:text-3xl font-black tracking-tighter text-white transition-colors leading-none">IGNITE</span>
+          <span class="h-5 sm:h-5 w-px bg-white/70 mx-2 sm:mx-4" />
+          <span class="text-[9px] sm:text-[10px] font-black text-white uppercase tracking-[0.3em] sm:tracking-[0.5em] leading-none">STUDIOS</span>
         </NuxtLink>
 
         <div class="flex items-center gap-3 sm:gap-4">
@@ -29,22 +29,22 @@
           <div class="hidden lg:flex items-center space-x-10 mr-6">
             <NuxtLink
               to="/"
-              class="h-[46px] px-2 text-[10px] font-black uppercase tracking-[0.3em] transition-colors flex items-center"
-              :class="isPropertiesPage ? 'text-white' : 'text-zinc-500 hover:text-white'"
+              class="h-[46px] px-2 text-[10px] uppercase tracking-[0.15em] transition-colors flex items-center"
+              :class="isPropertiesPage ? 'text-white font-black' : 'text-zinc-300 font-bold'"
             >
               Properties
             </NuxtLink>
             <NuxtLink
               to="/documents"
-              class="h-[46px] px-2 text-[10px] font-black uppercase tracking-[0.3em] transition-colors flex items-center"
-              :class="isDocumentsPage ? 'text-white' : 'text-zinc-500 hover:text-white'"
+              class="h-[46px] px-2 text-[10px] uppercase tracking-[0.15em] transition-colors flex items-center"
+              :class="isDocumentsPage ? 'text-white font-black' : 'text-zinc-300 font-bold'"
             >
               Documents
             </NuxtLink>
             <NuxtLink
               to="/contact"
-              class="h-[46px] px-2 text-[10px] font-black uppercase tracking-[0.3em] transition-colors flex items-center"
-              :class="isContactPage ? 'text-white' : 'text-zinc-500 hover:text-white'"
+              class="h-[46px] px-2 text-[10px] uppercase tracking-[0.15em] transition-colors flex items-center"
+              :class="isContactPage ? 'text-white font-black' : 'text-zinc-300 font-bold'"
             >
               Contact
             </NuxtLink>
@@ -56,23 +56,23 @@
                 type="button"
                 title="Profile Settings"
                 class="w-9 h-9 sm:w-[46px] sm:h-[46px] flex items-center justify-center rounded-full transition-all group overflow-hidden relative border pointer-events-none lg:pointer-events-auto cursor-default lg:cursor-pointer"
-                :class="showUserMenu ? 'bg-white text-black border-white' : 'bg-white/5 border-white/10 text-zinc-400 lg:hover:text-white lg:hover:border-white/20'"
+                :class="showUserMenu ? 'bg-theme-accent-green text-white border-theme-accent-green' : 'bg-theme-input-bg border-theme-border-strong text-theme-text-muted lg:hover:text-theme-text-primary lg:hover:border-theme-border-strong'"
                 @click="showUserMenu = !showUserMenu"
               >
                 <span class="relative z-10 text-[9px] sm:text-[10px] font-black">{{ userInitials }}</span>
                 <div
                   v-if="!showUserMenu"
-                  class="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+                  class="absolute inset-0 bg-gradient-to-tr from-theme-input-bg to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
                 />
               </button>
 
               <div
                 v-if="showUserMenu"
-                class="hidden lg:block absolute top-full right-0 mt-3 sm:mt-[1.3rem] w-56 sm:w-64 bg-black/95 backdrop-blur-2xl rounded-xl p-2 border border-white/10 shadow-[0_40px_80px_rgba(0,0,0,0.9)] z-[200]"
+                class="hidden lg:block absolute top-full right-0 mt-3 sm:mt-[1.3rem] w-56 sm:w-64 bg-theme-overlay-dropdown rounded-xl p-2 border border-theme-border shadow-xl z-[200]"
               >
                 <NuxtLink
                   to="/reservations"
-                  class="w-full flex items-center px-4 h-12 rounded-lg text-zinc-400 hover:bg-white hover:text-black transition-all group mb-1"
+                  class="w-full flex items-center px-4 h-12 rounded-lg text-theme-text-muted hover:bg-zinc-100 hover:text-theme-text-primary transition-all group mb-1"
                   @click="showUserMenu = false"
                 >
                   <span class="text-[10px] font-black uppercase tracking-widest">My Reservations</span>
@@ -83,10 +83,10 @@
                     {{ reservationsCount }}
                   </span>
                 </NuxtLink>
-                <div class="h-px bg-white/5 mx-2 my-1" />
+                <div class="h-px bg-theme-border mx-2 my-1" />
                 <NuxtLink
                   to="/wishlist"
-                  class="w-full flex items-center px-4 h-12 rounded-lg text-zinc-400 hover:bg-white hover:text-black transition-all group mb-1"
+                  class="w-full flex items-center px-4 h-12 rounded-lg text-theme-text-muted hover:bg-zinc-100 hover:text-theme-text-primary transition-all group mb-1"
                   @click="showUserMenu = false"
                 >
                   <span class="text-[10px] font-black uppercase tracking-widest">Wishlist</span>
@@ -97,10 +97,10 @@
                     {{ wishlistCount }}
                   </span>
                 </NuxtLink>
-                <div class="h-px bg-white/5 mx-2 my-1" />
+                <div class="h-px bg-theme-border mx-2 my-1" />
                 <button
                   type="button"
-                  class="w-full flex items-center px-4 h-12 rounded-lg text-zinc-400 hover:bg-white hover:text-black transition-all group"
+                  class="w-full flex items-center px-4 h-12 rounded-lg text-theme-text-muted hover:bg-zinc-100 hover:text-theme-text-primary transition-all group"
                   @click="handleLogout"
                 >
                   <span class="text-[10px] font-black uppercase tracking-widest">
@@ -145,40 +145,40 @@
       >
         <div class="flex flex-col items-stretch pt-0 pb-6 pl-5 pr-5 sm:pl-8 sm:pr-8">
           <div class="w-full flex">
-            <NuxtLink to="/" class="w-full max-w-xs mx-auto h-12 flex items-center text-[10px] font-black uppercase tracking-widest" :class="isPropertiesPage ? 'text-white' : 'text-zinc-400'" @click="showMobileMenu = false">
+            <NuxtLink to="/" class="w-full max-w-xs mx-auto h-12 flex items-center text-[10px] uppercase tracking-wider" :class="isPropertiesPage ? 'text-white font-black' : 'text-zinc-300 font-bold'" @click="showMobileMenu = false">
               Properties
             </NuxtLink>
           </div>
-          <div class="w-full h-px bg-zinc-800 my-1" />
+          <div class="w-full h-px bg-white/10 my-1" />
           <div class="w-full flex">
-            <NuxtLink to="/documents" class="w-full max-w-xs mx-auto h-12 flex items-center text-[10px] font-black uppercase tracking-widest" :class="isDocumentsPage ? 'text-white' : 'text-zinc-400'" @click="showMobileMenu = false">
+            <NuxtLink to="/documents" class="w-full max-w-xs mx-auto h-12 flex items-center text-[10px] uppercase tracking-wider" :class="isDocumentsPage ? 'text-white font-black' : 'text-zinc-300 font-bold'" @click="showMobileMenu = false">
               Documents
             </NuxtLink>
           </div>
-          <div class="w-full h-px bg-zinc-800 my-1" />
+          <div class="w-full h-px bg-white/10 my-1" />
           <div class="w-full flex">
-            <NuxtLink to="/contact" class="w-full max-w-xs mx-auto h-12 flex items-center text-[10px] font-black uppercase tracking-widest" :class="isContactPage ? 'text-white' : 'text-zinc-400'" @click="showMobileMenu = false">
+            <NuxtLink to="/contact" class="w-full max-w-xs mx-auto h-12 flex items-center text-[10px] uppercase tracking-wider" :class="isContactPage ? 'text-white font-black' : 'text-zinc-300 font-bold'" @click="showMobileMenu = false">
               Contact
             </NuxtLink>
           </div>
           <template v-if="user">
-            <div class="w-full h-px bg-zinc-800 my-1" />
+            <div class="w-full h-px bg-white/10 my-1" />
             <div class="w-full flex">
-              <NuxtLink to="/reservations" class="w-full max-w-xs mx-auto h-12 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest" :class="isReservationsPage ? 'text-white' : 'text-zinc-400'" @click="showMobileMenu = false">
+              <NuxtLink to="/reservations" class="w-full max-w-xs mx-auto h-12 flex items-center gap-3 text-[10px] uppercase tracking-wider" :class="isReservationsPage ? 'text-white font-black' : 'text-zinc-300 font-bold'" @click="showMobileMenu = false">
                 My Reservations
-                <span class="inline-grid place-items-center w-5 h-5 min-w-5 min-h-5 rounded-full ml-auto text-[9px] font-black tabular-nums" :class="reservationsCount > 0 ? 'bg-emerald-500 text-white' : 'bg-white/10 text-zinc-500'">{{ reservationsCount }}</span>
+                <span class="inline-grid place-items-center w-5 h-5 min-w-5 min-h-5 rounded-full ml-auto text-[9px] font-black tabular-nums" :class="reservationsCount > 0 ? 'bg-emerald-500 text-white' : 'bg-theme-input-bg text-theme-text-muted-2'">{{ reservationsCount }}</span>
               </NuxtLink>
             </div>
-            <div class="w-full h-px bg-zinc-800 my-1" />
+            <div class="w-full h-px bg-white/10 my-1" />
             <div class="w-full flex">
-              <NuxtLink to="/wishlist" class="w-full max-w-xs mx-auto h-12 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest" :class="isWishlistPage ? 'text-white' : 'text-zinc-400'" @click="showMobileMenu = false">
+              <NuxtLink to="/wishlist" class="w-full max-w-xs mx-auto h-12 flex items-center gap-3 text-[10px] uppercase tracking-wider" :class="isWishlistPage ? 'text-white font-black' : 'text-zinc-300 font-bold'" @click="showMobileMenu = false">
                 Wishlist
-                <span class="inline-grid place-items-center w-5 h-5 min-w-5 min-h-5 rounded-full ml-auto text-[9px] font-black tabular-nums" :class="wishlistCount > 0 ? 'bg-red-500 text-white' : 'bg-white/10 text-zinc-500'">{{ wishlistCount }}</span>
+                <span class="inline-grid place-items-center w-5 h-5 min-w-5 min-h-5 rounded-full ml-auto text-[9px] font-black tabular-nums" :class="wishlistCount > 0 ? 'bg-red-500 text-white' : 'bg-theme-input-bg text-theme-text-muted-2'">{{ wishlistCount }}</span>
               </NuxtLink>
             </div>
-            <div class="w-full h-px bg-zinc-800 my-1" />
+            <div class="w-full h-px bg-white/10 my-1" />
             <div class="w-full flex">
-              <button type="button" class="w-full max-w-xs mx-auto h-12 flex items-center justify-between text-[10px] font-black uppercase tracking-widest" :class="isLoggingOut ? 'text-zinc-400' : 'text-red-500'" @click="handleLogoutMobile">
+              <button type="button" class="w-full max-w-xs mx-auto h-12 flex items-center justify-between text-[10px] font-black uppercase tracking-widest" :class="isLoggingOut ? 'text-theme-text-muted' : 'text-red-500'" @click="handleLogoutMobile">
                 {{ isLoggingOut ? 'Ending Session...' : 'Sign Out' }}
                 <svg v-if="!isLoggingOut" class="w-4 h-4 ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -211,7 +211,7 @@
       </div>
     </div>
 
-    <footer class="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 mt-16 sm:mt-24 pt-12 sm:pt-20 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center text-zinc-700 text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] gap-8 sm:gap-12 pb-12 sm:pb-20">
+    <footer class="bg-[#18181b] text-zinc-300 pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 pt-12 sm:pt-20 flex flex-col lg:flex-row justify-between items-center text-[11px] font-black uppercase gap-8 sm:gap-12 pb-12 sm:pb-20">
       <p>&copy; {{ new Date().getFullYear() }} Ignite Studios</p>
     </footer>
     </div>
@@ -295,13 +295,13 @@ watch(showMobileMenu, (open) => {
 <style scoped>
 /* Nuxt DevTools bar styling */
 .browsing-anchor {
-  --browsing-widget-bg: #111;
-  --browsing-widget-fg: #f5f5f5;
-  --browsing-widget-border: rgba(51, 51, 51, 0.4);
+  --browsing-widget-bg: var(--theme-surface-elevated);
+  --browsing-widget-fg: var(--theme-text-primary);
+  --browsing-widget-border: var(--theme-border-strong);
   --browsing-widget-shadow: rgba(0, 0, 0, 0.3);
   position: fixed;
-  left: 20px;
-  bottom: 20px;
+  left: 1.25rem;
+  bottom: 1.25rem;
   z-index: 200;
   pointer-events: auto;
 }

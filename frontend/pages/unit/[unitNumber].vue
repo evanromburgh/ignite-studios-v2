@@ -6,7 +6,7 @@
 
     <div v-else-if="!unit">
       <div class="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight mb-3">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-black text-theme-text-primary mb-3">
           Unit not found
         </h1>
         <p class="text-zinc-500 text-sm max-w-md mb-6">
@@ -14,20 +14,21 @@
         </p>
         <NuxtLink
           to="/"
-          class="px-6 h-[44px] inline-flex items-center justify-center rounded-lg border border-white/10 text-[11px] font-black uppercase tracking-wide text-zinc-200 hover:bg-white/5 transition-colors"
+          class="px-6 h-[44px] inline-flex items-center justify-center rounded-lg border border-theme-border-strong text-[11px] font-black uppercase text-zinc-200 hover:bg-theme-input-bg transition-colors"
         >
           Back to all units
         </NuxtLink>
       </div>
     </div>
 
-    <div v-else class="pt-32 sm:pt-48 pb-0">
-      <div class="max-w-[1400px] mx-auto px-5 sm:px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-16">
-          <!-- Left: image, price, specs, actions -->
-          <div class="lg:col-span-2 space-y-4">
+    <div v-else class="pt-28 sm:pt-36 pb-16 bg-theme-surface">
+      <div class="w-full mx-auto px-4 sm:px-6 lg:px-12">
+        <div ref="layoutRow" class="md:flex md:gap-12">
+          <!-- Left: media, elevation, context -->
+          <div class="md:w-[60%] space-y-6">
+            <!-- Media carousel -->
             <div
-              class="relative overflow-hidden rounded-xl aspect-[16/10] bg-zinc-900 group shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]"
+              class="relative overflow-hidden rounded-3xl bg-zinc-900 group aspect-square sm:aspect-[5/4]"
             >
               <div
                 class="flex h-full w-full transition-transform duration-500 ease-out"
@@ -42,15 +43,16 @@
                     :src="img"
                     :alt="`Unit ${unit.unitNumber} image ${index + 1}`"
                     loading="lazy"
-                    class="w-full h-full object-cover opacity-100 group-hover:scale-105 transition-transform duration-[3s] ease-out"
+                    class="w-full h-full object-cover transition-transform duration-[4s] ease-out group-hover:scale-105"
                   />
                 </div>
               </div>
 
+              <!-- Carousel controls -->
               <button
                 v-if="galleryImages.length > 1"
                 type="button"
-                class="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/70 border border-white/10 flex items-center justify-center text-zinc-200 hover:bg-black/90 transition-colors"
+                class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
                 @click="prevImage"
               >
                 <span class="sr-only">Previous</span>
@@ -59,26 +61,24 @@
               <button
                 v-if="galleryImages.length > 1"
                 type="button"
-                class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/70 border border-white/10 flex items-center justify-center text-zinc-200 hover:bg-black/90 transition-colors"
+                class="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
                 @click="nextImage"
               >
                 <span class="sr-only">Next</span>
                 <span class="ml-px text-xs">&gt;</span>
               </button>
 
-              <!-- Indicators overlay -->
+              <!-- Indicators – styled to match hero swiper pagination -->
               <div
                 v-if="galleryImages.length > 1"
-                class="pointer-events-none absolute inset-x-0 bottom-4 flex items-center justify-center gap-3"
+                class="pointer-events-none absolute right-5 bottom-3 sm:bottom-4 flex items-center justify-end gap-2"
               >
                 <button
                   v-for="(img, index) in galleryImages"
                   :key="img || index"
                   type="button"
-                  class="pointer-events-auto h-2.5 rounded-full bg-black/60 transition-all duration-200"
-                  :class="index === activeIndex
-                    ? 'w-4 bg-black'
-                    : 'w-2.5 bg-black/60 hover:bg-black/90'"
+                  class="pointer-events-auto h-2 rounded-full bg-white/40 transition-all duration-200"
+                  :class="index === activeIndex ? 'w-6 bg-white opacity-100' : 'w-2 opacity-50 hover:opacity-80'"
                   @click="goToImage(index)"
                 >
                   <span class="sr-only">Go to slide {{ index + 1 }}</span>
@@ -86,278 +86,319 @@
               </div>
             </div>
 
-            <div class="px-0 sm:px-2">
-              <div
-                class="flex flex-col sm:flex-row items-start sm:items-baseline justify-between w-full gap-2 sm:gap-6 py-8 sm:py-16"
+            <!-- Small image strip (thumbnails) -->
+            <div
+              v-if="galleryImages.length > 1"
+              class="hidden sm:grid grid-cols-4 gap-3"
+            >
+              <button
+                v-for="(img, index) in galleryImages.slice(0, 4)"
+                :key="img || index"
+                type="button"
+                class="relative aspect-square rounded-2xl overflow-hidden border transition-all"
+                :class="index === activeIndex ? 'border-white' : 'border-theme-border hover:border-white/60'"
+                @click="goToImage(index)"
               >
+                <img
+                  :src="img"
+                  :alt="`Thumbnail ${index + 1}`"
+                  loading="lazy"
+                  class="w-full h-full object-cover"
+                />
+              </button>
+            </div>
+
+            <!-- Caption -->
+            <p class="text-[11px] text-zinc-400 italic">
+              All imagery is illustrative and subject to final design.
+            </p>
+          </div>
+
+          <!-- Right: details / stats / CTAs -->
+          <div class="mt-10 md:mt-0 md:w-[40%]">
+            <!-- Details card: whole right section -->
+            <div
+              ref="rightPanel"
+              :class="isRightPanelFixed ? 'fixed z-30' : ''"
+              :style="rightPanelStyle"
+            >
+              <!-- Tag row -->
+              <div class="flex flex-wrap items-center gap-2">
                 <span
-                  class="text-2xl sm:text-4xl md:text-5xl font-semibold text-zinc-400 tracking-tight leading-none"
+                  class="bg-zinc-900/80 text-zinc-50 text-[10px] font-black uppercase px-3 py-1 rounded-full"
                 >
                   Unit {{ unit.unitNumber }}
                 </span>
-                <div class="text-left sm:text-right">
+                <span
+                  v-if="unit.unitType"
+                  class="bg-theme-input-bg text-theme-text-primary text-[10px] font-bold uppercase px-3 py-1 rounded-full"
+                >
+                  {{ unit.unitType }} layout
+                </span>
+                <span
+                  v-if="unit.status !== 'Available'"
+                  class="text-[10px] font-bold uppercase px-3 py-1 rounded-full border"
+                  :class="unit.status === 'Sold'
+                    ? 'border-red-500 text-red-400'
+                    : 'border-amber-400 text-amber-300'"
+                >
+                  {{ unit.status }}
+                </span>
+              </div>
+
+              <!-- Price block -->
+              <div class="mt-8">
+                <div class="flex items-baseline justify-between gap-4 mb-1">
                   <h1
-                    class="text-4xl sm:text-6xl md:text-8xl font-extrabold text-white tracking-tighter leading-none"
+                    class="text-4xl sm:text-5xl lg:text-6xl font-black text-theme-text-primary leading-none"
                   >
                     R {{ formattedPrice }}
                   </h1>
                 </div>
-              </div>
 
-              <div class="py-8 sm:py-16 border-y border-white/5">
-                <div class="grid grid-cols-3 sm:grid-cols-5 gap-6 sm:gap-4 w-full">
-                  <div class="flex flex-col items-center gap-3 sm:gap-4 group">
-                    <div
-                      class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center group-hover:bg-white/[0.06] transition-all"
-                    >
-                      <IconBed class="w-5 h-5 sm:w-7 sm:h-7 text-zinc-500" />
-                    </div>
-                    <div class="text-center">
-                      <span
-                        class="block text-lg sm:text-2xl font-black text-white leading-none mb-1 sm:mb-2"
-                      >
-                        {{ unit.bedrooms }}
-                      </span>
-                      <span
-                        class="text-[8px] sm:text-[10px] font-black text-zinc-600 uppercase tracking-wider sm:tracking-widest"
-                      >
-                        Beds
-                      </span>
-                    </div>
-                  </div>
-                  <div class="flex flex-col items-center gap-3 sm:gap-4 group">
-                    <div
-                      class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center group-hover:bg-white/[0.06] transition-all"
-                    >
-                      <IconBath class="w-5 h-5 sm:w-7 sm:h-7 text-zinc-500" />
-                    </div>
-                    <div class="text-center">
-                      <span
-                        class="block text-lg sm:text-2xl font-black text-white leading-none mb-1 sm:mb-2"
-                      >
-                        {{ unit.bathrooms }}
-                      </span>
-                      <span
-                        class="text-[8px] sm:text-[10px] font-black text-zinc-600 uppercase tracking-wider sm:tracking-widest"
-                      >
-                        Baths
-                      </span>
-                    </div>
-                  </div>
-                  <div class="flex flex-col items-center gap-3 sm:gap-4 group">
-                    <div
-                      class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center group-hover:bg-white/[0.06] transition-all"
-                    >
-                      <IconCar class="w-5 h-5 sm:w-7 sm:h-7 text-zinc-500" />
-                    </div>
-                    <div class="text-center">
-                      <span
-                        class="block text-lg sm:text-2xl font-black text-white leading-none mb-1 sm:mb-2"
-                      >
-                        {{ unit.parking || 1 }}
-                      </span>
-                      <span
-                        class="text-[8px] sm:text-[10px] font-black text-zinc-600 uppercase tracking-wider sm:tracking-widest"
-                      >
-                        Parking
-                      </span>
-                    </div>
-                  </div>
-                  <div class="flex flex-col items-center gap-3 sm:gap-4 group">
-                    <div
-                      class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center group-hover:bg-white/[0.06] transition-all"
-                    >
-                      <IconLayout class="w-5 h-5 sm:w-7 sm:h-7 text-zinc-500" />
-                    </div>
-                    <div class="text-center">
-                      <span
-                        class="block text-lg sm:text-2xl font-black text-white leading-none mb-1 sm:mb-2"
-                      >
-                        {{ unit.unitType }}
-                      </span>
-                      <span
-                        class="text-[8px] sm:text-[10px] font-black text-zinc-600 uppercase tracking-wider sm:tracking-widest"
-                      >
-                        Type
-                      </span>
-                    </div>
-                  </div>
-                  <div class="flex flex-col items-center gap-3 sm:gap-4 group">
-                    <div
-                      class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center group-hover:bg-white/[0.06] transition-all"
-                    >
-                      <IconSize class="w-5 h-5 sm:w-7 sm:h-7 text-zinc-500" />
-                    </div>
-                    <div class="text-center">
-                      <span
-                        class="block text-lg sm:text-2xl font-black text-white leading-none mb-1 sm:mb-2"
-                      >
-                        {{ unit.sizeSqm }}m²
-                      </span>
-                      <span
-                        class="text-[8px] sm:text-[10px] font-black text-zinc-600 uppercase tracking-wider sm:tracking-widest"
-                      >
-                        Area
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-8 sm:pt-16 pb-0"
-              >
-                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    class="w-full sm:w-auto sm:min-w-[160px] h-[46px] flex items-center justify-center rounded-lg text-[11px] font-black uppercase tracking-normal text-center leading-none transition-all"
-                    :class="isWishlisted ? 'bg-zinc-700 text-white' : 'bg-zinc-100 text-zinc-950 hover:bg-white shadow-xl'"
-                    @click="onToggleWishlist"
-                  >
-                    {{ isWishlisted ? 'REMOVE WISHLIST' : 'ADD TO WISHLIST' }}
-                  </button>
-                  <button
-                    type="button"
-                    :disabled="returningToList"
-                    class="w-full sm:w-auto sm:min-w-[160px] h-[46px] flex items-center justify-center border border-white/10 text-zinc-300 rounded-lg text-[11px] font-black uppercase tracking-normal text-center leading-none hover:bg-white/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    @click="goBackToList"
-                  >
-                    {{ returningToList ? 'RETURNING...' : 'RETURN TO LIST' }}
-                  </button>
-                </div>
-
-                <div class="flex items-center justify-center sm:justify-end gap-3 pt-2 sm:pt-0">
-                  <span
-                    class="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    :class="indicatorColorClass"
-                  />
-                  <span
-                    class="text-[10px] sm:text-[11px] font-black text-white uppercase tracking-[0.15em] sm:tracking-[0.2em]"
-                  >
-                    {{ statusDisplay }}
+                <!-- Development / layout copy -->
+                <p class="mt-3 text-sm text-zinc-400">
+                  Ignite Studios. Property Sales, Reimagined.
+                </p>
+                <p class="mt-1 text-sm text-theme-text-primary">
+                  <span class="font-semibold">Layout:</span>
+                  <span class="font-medium">
+                    {{ unit.unitType || '—' }}
                   </span>
+                </p>
+                <p class="text-sm text-theme-text-primary">
+                  <span class="font-semibold">Unit:</span>
+                  <span class="font-medium">
+                    {{ unit.unitNumber }}
+                  </span>
+                </p>
+              </div>
+
+              <!-- Quick stats -->
+              <div class="mt-8 grid grid-cols-4 gap-3 pt-8 border-t border-theme-border">
+                <div class="text-center">
+                  <p class="text-[9px] uppercase font-bold text-zinc-500 mb-1">
+                    Floor
+                  </p>
+                  <p class="text-sm font-semibold text-theme-text-primary">
+                    {{ unit.floor || '—' }}
+                  </p>
+                </div>
+                <div class="text-center">
+                  <p class="text-[9px] uppercase font-bold text-zinc-500 mb-1">
+                    Facing
+                  </p>
+                  <p class="text-sm font-semibold text-theme-text-primary">
+                    {{ unit.direction || '—' }}
+                  </p>
+                </div>
+                <div class="text-center">
+                  <p class="text-[9px] uppercase font-bold text-zinc-500 mb-1">
+                    Levies
+                  </p>
+                  <p class="text-sm font-semibold text-theme-text-primary">
+                    R {{ formatAmount(costs.levies) }}
+                  </p>
+                </div>
+                <div class="text-center">
+                  <p class="text-[9px] uppercase font-bold text-zinc-500 mb-1">
+                    Rates
+                  </p>
+                  <p class="text-sm font-semibold text-theme-text-primary">
+                    R {{ formatAmount(costs.rates) }}
+                  </p>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Right: estimated monthly costs card -->
-          <div class="lg:col-span-1 relative">
-            <div class="lg:sticky lg:top-32 flex flex-col gap-8 sm:gap-10">
+              <!-- Feature icons -->
               <div
-                class="liquid-glass group !bg-white/[0.01] hover:!bg-white/[0.03] p-6 sm:p-10 relative overflow-hidden rounded-2xl border border-white/5 hover:border-white/10 shadow-xl transition-all duration-500"
+                class="mt-8 mb-8 border border-theme-border rounded-2xl bg-theme-surface/60 py-8"
               >
-                <div
-                  class="absolute top-0 right-0 w-32 h-32 bg-white/[0.02] rounded-full -mr-16 -mt-16 blur-3xl transition-all"
-                />
-
-                <h2
-                  class="text-lg sm:text-xl font-black text-white mb-6 sm:mb-8 tracking-tighter leading-tight group-hover:text-zinc-300 transition-colors"
-                >
-                  Estimated Monthly Costs
-                </h2>
-
-                <div class="flex flex-col mb-8 sm:mb-10">
+                <div class="flex items-center justify-evenly gap-0">
                   <div
-                    class="flex items-center justify-between mb-1 sm:text-[0.875rem] sm:leading-[1.1rem]"
+                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700"
                   >
                     <span
-                      class="text-zinc-500 font-medium text-sm transition-colors tracking-tight"
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
                     >
-                      Bond Payment
-                    </span>
-                    <span
-                      class="text-zinc-100 font-bold text-sm text-right sm:text-[0.875rem] sm:leading-[1.1rem]"
-                    >
-                      R {{ formatAmount(costs.bond) }}
-                    </span>
-                  </div>
-                  <div
-                    class="flex items-center justify-between mb-1 sm:text-[0.875rem] sm:leading-[1.1rem]"
-                  >
-                    <span
-                      class="text-zinc-500 font-medium text-sm transition-colors tracking-tight"
-                    >
-                      Rates &amp; Taxes
-                    </span>
-                    <span
-                      class="text-zinc-100 font-bold text-sm text-right sm:text-[0.875rem] sm:leading-[1.1rem]"
-                    >
-                      R {{ formatAmount(costs.rates) }}
-                    </span>
-                  </div>
-                  <div
-                    class="flex items-center justify-between mb-6 sm:mb-8 sm:text-[0.875rem] sm:leading-[1.1rem]"
-                  >
-                    <span
-                      class="text-zinc-500 font-medium text-sm transition-colors tracking-tight"
-                    >
-                      Levies
-                    </span>
-                    <span
-                      class="text-zinc-100 font-bold text-sm text-right sm:text-[0.875rem] sm:leading-[1.1rem]"
-                    >
-                      R {{ formatAmount(costs.levies) }}
-                    </span>
-                  </div>
-
-                  <div class="pt-6 sm:pt-8 border-t border-white/10">
-                    <div class="flex items-center justify-between">
+                      Beds
                       <span
-                        class="text-white font-black text-base sm:text-xl uppercase tracking-tighter"
-                      >
-                        Total Monthly
-                      </span>
+                        class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <IconBed class="w-4 h-4 text-zinc-700 flex-shrink-0" />
+                    <span class="font-semibold text-theme-text-primary">
+                      {{ unit.bedrooms }}
+                    </span>
+                  </div>
+                  <div
+                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700"
+                  >
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
+                    >
+                      Baths
                       <span
-                        class="text-white text-base sm:text-xl font-black tracking-tighter text-right"
-                      >
-                        R {{ formatAmount(costs.total) }}
-                      </span>
-                    </div>
+                        class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <IconBath class="w-4 h-4 text-zinc-700 flex-shrink-0" />
+                    <span class="font-semibold text-theme-text-primary">
+                      {{ unit.bathrooms }}
+                    </span>
+                  </div>
+                  <div
+                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700"
+                  >
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
+                    >
+                      Parking
+                      <span
+                        class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <IconCar class="w-4 h-4 text-zinc-700 flex-shrink-0" />
+                    <span class="font-semibold text-theme-text-primary">
+                      {{ unit.parking || 1 }}
+                    </span>
+                  </div>
+                  <div
+                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700"
+                  >
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
+                    >
+                      Unit Type
+                      <span
+                        class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <IconLayout class="w-4 h-4 text-zinc-700 flex-shrink-0" />
+                    <span class="font-semibold text-theme-text-primary">
+                      {{ unit.unitType || '—' }}
+                    </span>
+                  </div>
+                  <div
+                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700"
+                  >
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
+                    >
+                      Unit Size
+                      <span
+                        class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <IconSize class="w-4 h-4 text-zinc-700 flex-shrink-0" />
+                    <span class="font-semibold text-theme-text-primary">
+                      {{ unit.sizeSqm }}m²
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cost estimates row -->
+              <div class="mt-8">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-left sm:text-center">
+                  <div>
+                    <p class="text-[9px] uppercase font-bold text-zinc-500 mb-1">
+                      Est. bond cost
+                    </p>
+                    <p class="text-sm sm:text-base font-semibold text-theme-text-primary">
+                      R {{ formatAmount(rentalEstimates.bond) }}
+                      <span class="text-[10px] text-zinc-500 ml-1">pm</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-[9px] uppercase font-bold text-zinc-500 mb-1">
+                      Est. short term rental
+                    </p>
+                    <p class="text-sm sm:text-base font-semibold text-theme-text-primary">
+                      R {{ formatAmount(rentalEstimates.shortTerm) }}
+                      <span class="text-[10px] text-zinc-500 ml-1">pm</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-[9px] uppercase font-bold text-zinc-500 mb-1">
+                      Est. long term rental
+                    </p>
+                    <p class="text-sm sm:text-base font-semibold text-theme-text-primary">
+                      R {{ formatAmount(rentalEstimates.longTerm) }}
+                      <span class="text-[10px] text-zinc-500 ml-1">pm</span>
+                    </p>
                   </div>
                 </div>
 
-                <div class="flex flex-col gap-3 sm:gap-4">
+                <!-- Primary CTAs -->
+                <div class="mt-8 flex flex-col sm:flex-row gap-3">
                   <button
                     type="button"
                     :disabled="!isAvailable"
-                    class="w-full sm:w-auto sm:min-w-[160px] h-[46px] flex items-center justify-center rounded-lg text-[11px] font-black uppercase tracking-normal text-center leading-none transition-all"
+                    class="w-full sm:w-auto sm:min-w-[170px] h-[44px] flex items-center justify-center rounded-full text-[12px] font-black uppercase text-center leading-none transition-all"
                     :class="isAvailable
-                      ? 'bg-zinc-100 text-zinc-950 hover:bg-white shadow-xl'
+                      ? 'bg-zinc-900 text-zinc-50 hover:bg-zinc-800'
                       : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'"
                     @click="isAvailable && onReserveClick()"
                   >
-                    RESERVE UNIT
+                    Reserve unit
                   </button>
                   <button
                     type="button"
-                    class="h-[46px] flex items-center justify-center border border-white/10 text-zinc-300 rounded-lg text-[11px] font-black uppercase tracking-normal text-center leading-none hover:bg-white/5 transition-all"
-                    @click="navigateTo('/contact')"
+                    class="w-full sm:w-auto sm:min-w-[170px] h-[44px] inline-flex items-center justify-center gap-1.5 rounded-full border border-zinc-300 bg-white/95 text-zinc-600 text-[12px] font-bold uppercase shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600"
+                    :class="isWishlisted ? '!border-red-600 !bg-red-600 !text-white' : ''"
+                    @click="onToggleWishlist"
                   >
-                    ENQUIRE NOW
+                    <IconHeart class="w-3.5 h-3.5 flex-shrink-0" :filled="isWishlisted" />
+                    <span>
+                      {{ isWishlisted ? 'Remove from wishlist' : 'Add to wishlist' }}
+                    </span>
                   </button>
                 </div>
-              </div>
 
-              <div class="px-2 sm:pl-2 sm:pr-20">
-                <p
-                  class="text-[11px] sm:text-[12px] text-zinc-500 font-medium leading-relaxed tracking-tight text-left"
-                >
-                  <span class="text-white font-black">Note:</span>
-                  This reservation deposit secures your unit for 7 days. Our sales team will contact you
-                  within 24 hours to complete the purchase process.
-                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Back to all units bar directly above footer -->
+    <div class="bg-theme-bg">
+      <div class="w-full mx-auto px-4 sm:px-6 lg:px-12 py-6 flex justify-center">
+        <button
+          type="button"
+          class="flex items-center gap-2 text-[11px] font-semibold uppercase text-zinc-400 hover:text-zinc-100 transition-colors"
+          @click="goBackToList"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-3.5 h-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          <span>Back to all units</span>
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { CONFIG } from '~/config'
 import { useUnits } from '~/composables/useUnits'
@@ -377,6 +418,96 @@ const { wishlistIds, toggle: toggleWishlist } = useWishlist()
 const reserving = ref(false)
 const returningToList = ref(false)
 const activeIndex = ref(0)
+const heroAutoplayId = ref<number | null>(null)
+
+// Right panel sticky behavior (measured, fixed alignment)
+const layoutRow = ref<HTMLElement | null>(null)
+const rightPanel = ref<HTMLElement | null>(null)
+const isRightPanelFixed = ref(false)
+const rightPanelStyle = ref<Record<string, string>>({})
+
+const panelInitialTop = ref<number | null>(null)
+const panelInitialLeft = ref<number | null>(null)
+const panelInitialWidth = ref<number | null>(null)
+const panelInitialHeight = ref<number | null>(null)
+const rowBottom = ref<number | null>(null)
+
+function measureRightPanel() {
+  const el = rightPanel.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const scrollY = window.scrollY || window.pageYOffset
+  panelInitialTop.value = rect.top + scrollY
+  panelInitialLeft.value = rect.left
+  panelInitialWidth.value = rect.width
+  panelInitialHeight.value = rect.height
+
+  const rowEl = layoutRow.value
+  if (rowEl) {
+    const rowRect = rowEl.getBoundingClientRect()
+    rowBottom.value = rowRect.bottom + scrollY
+  }
+}
+
+function updateRightPanelPosition() {
+  if (
+    panelInitialTop.value == null ||
+    panelInitialLeft.value == null ||
+    panelInitialWidth.value == null
+  ) {
+    measureRightPanel()
+    if (
+      panelInitialTop.value == null ||
+      panelInitialLeft.value == null ||
+      panelInitialWidth.value == null
+    ) {
+      return
+    }
+  }
+
+  const offsetTop = 112 // 28 * 4 (roughly nav + spacing)
+  const scrollY = window.scrollY || window.pageYOffset
+
+  // Before we reach the panel's original top, do nothing special
+  if (scrollY + offsetTop < panelInitialTop.value) {
+    isRightPanelFixed.value = false
+    rightPanelStyle.value = {}
+    return
+  }
+
+  // Once we've scrolled past the original top, keep it fixed,
+  // but don't let it scroll past the bottom of the left column (row bottom).
+  let top = offsetTop
+
+  if (rowBottom.value != null && panelInitialHeight.value != null) {
+    const rowBottomViewport = rowBottom.value - scrollY
+    const maxTop = rowBottomViewport - panelInitialHeight.value
+    if (maxTop < top) {
+      top = Math.max(maxTop, 0)
+    }
+  }
+
+  isRightPanelFixed.value = true
+  rightPanelStyle.value = {
+    position: 'fixed',
+    top: `${top}px`,
+    left: `${panelInitialLeft.value}px`,
+    width: `${panelInitialWidth.value}px`,
+    zIndex: '30',
+  }
+}
+
+function handleResize() {
+  // Re-measure and re-apply on resize
+  isRightPanelFixed.value = false
+  rightPanelStyle.value = {}
+  panelInitialTop.value = null
+  panelInitialLeft.value = null
+  panelInitialWidth.value = null
+  panelInitialHeight.value = null
+  measureRightPanel()
+  updateRightPanelPosition()
+}
 
 const unitNumberParam = computed(
   () => (route.params.unitNumber as string | undefined)?.toString() ?? '',
@@ -422,6 +553,17 @@ const costs = computed(() => {
   }
 })
 
+const rentalEstimates = computed(() => {
+  if (!unit.value) {
+    return { bond: 0, shortTerm: 0, longTerm: 0 }
+  }
+  const bond = costs.value.bond
+  // Simple multipliers to provide indicative short/long-term rentals
+  const shortTerm = Math.round(bond * 1.27)
+  const longTerm = Math.round(bond * 0.86)
+  return { bond, shortTerm, longTerm }
+})
+
 const isWishlisted = computed(
   () => unit.value != null && wishlistIds.value.includes(unit.value.id),
 )
@@ -437,8 +579,11 @@ const indicatorColorClass = computed(() => {
 
 const statusDisplay = computed(() => {
   if (!unit.value) return ''
-  if (unit.value.status !== 'Available') return unit.value.status
-  return '0 currently viewing'
+  if (unit.value.status === 'Sold' || unit.value.status === 'Reserved') {
+    return unit.value.status
+  }
+  // For available units we only show the indicator dot, no text label
+  return ''
 })
 
 async function goBackToList() {
@@ -515,5 +660,33 @@ async function onReserveClick() {
     reserving.value = false
   }
 }
+
+onMounted(() => {
+  measureRightPanel()
+  updateRightPanelPosition()
+  window.addEventListener('scroll', updateRightPanelPosition, { passive: true })
+  window.addEventListener('resize', handleResize)
+
+  // Autoplay for unit gallery – mimic hero slider timing
+  if (typeof window !== 'undefined') {
+    if (heroAutoplayId.value != null) {
+      window.clearInterval(heroAutoplayId.value)
+      heroAutoplayId.value = null
+    }
+    if (galleryImages.value.length > 1) {
+      heroAutoplayId.value = window.setInterval(() => {
+        nextImage()
+      }, 5000)
+    }
+  }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', updateRightPanelPosition)
+  window.removeEventListener('resize', handleResize)
+  if (heroAutoplayId.value != null && typeof window !== 'undefined') {
+    window.clearInterval(heroAutoplayId.value)
+  }
+})
 </script>
 

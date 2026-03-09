@@ -4,7 +4,7 @@
 
     <div v-else class="min-h-screen">
       <header class="mb-12 sm:mb-24 px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pt-8 sm:pt-12">
-        <h1 class="text-4xl sm:text-7xl md:text-9xl font-black text-white tracking-tighter leading-[0.8] mb-6 sm:mb-10">
+          <h1 class="text-4xl sm:text-7xl md:text-9xl font-black text-theme-text-primary tracking-tighter leading-[0.8] mb-6 sm:mb-10">
           MY<br>
           <span class="text-transparent bg-clip-text bg-gradient-to-r from-zinc-300 via-zinc-100 to-zinc-500 opacity-90">SELECTIONS</span>
         </h1>
@@ -14,11 +14,11 @@
       </header>
 
       <section class="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pb-10">
-        <div v-if="wishlistLoading && wishlistUnits.length === 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
+        <div v-if="wishlistLoading && wishlistUnits.length === 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem] animate-pulse">
           <div
             v-for="i in 6"
             :key="i"
-            class="aspect-[3/4] bg-white/[0.03] rounded-xl border border-white/5"
+            class="aspect-[3/4] bg-theme-input-bg rounded-xl border border-theme-border"
           />
         </div>
 
@@ -30,7 +30,7 @@
           Could not load wishlist. {{ wishlistError }} Make sure the wishlists table exists (run the migration in README).
         </div>
 
-        <div v-else-if="wishlistUnits.length === 0" class="text-center py-48 bg-white/[0.01] backdrop-blur-3xl rounded-xl border border-white/5 shadow-inner">
+        <div v-else-if="wishlistUnits.length === 0" class="text-center py-48 bg-theme-surface backdrop-blur-3xl rounded-xl border border-theme-border shadow-inner">
           <h3 class="text-2xl md:text-3xl font-black text-zinc-300 uppercase tracking-[0.3em] mb-4">No saved units</h3>
           <p class="text-zinc-500 font-medium mb-8">Save units from the Properties page to see them here.</p>
           <NuxtLink
@@ -41,7 +41,7 @@
           </NuxtLink>
         </div>
 
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem]">
           <UnitCard
             v-for="unit in wishlistUnits"
             :key="unit.id"

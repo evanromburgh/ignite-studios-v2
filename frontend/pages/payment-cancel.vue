@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen bg-black flex flex-col items-center justify-center gap-6 px-5">
+  <div class="min-h-screen bg-theme-bg flex flex-col items-center justify-center gap-6 px-5">
     <div class="flex items-center animate-pulse">
-      <span class="text-2xl sm:text-4xl font-black tracking-tighter text-white leading-none">IGNITE</span>
+      <span class="text-2xl sm:text-4xl font-black tracking-tighter text-theme-text-primary leading-none">IGNITE</span>
       <div class="h-4 sm:h-6 w-[1px] bg-zinc-800 mx-3 sm:mx-4" />
       <span class="text-[8px] sm:text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] sm:tracking-[0.5em] leading-none">STUDIOS</span>
     </div>
-    <div class="w-12 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+    <div class="w-12 h-[1px] bg-gradient-to-r from-transparent via-theme-border-strong to-transparent" />
     <p class="text-zinc-500 text-sm">Taking you back to properties...</p>
   </div>
 </template>

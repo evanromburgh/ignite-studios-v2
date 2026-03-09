@@ -1,6 +1,5 @@
 /**
- * Stub: per-unit viewers disabled. Use useViewersPoll.legacy.ts to restore.
- * Global "browsing now" is in useGlobalPresence().
+ * Stub: per-unit viewers disabled. Global "browsing now" is in useGlobalPresence().
  */
 import { ref } from 'vue'
 

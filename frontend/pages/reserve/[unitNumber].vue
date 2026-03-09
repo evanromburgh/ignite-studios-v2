@@ -8,19 +8,19 @@
       <div class="max-w-[1400px] mx-auto px-5 sm:px-8">
         <div v-if="acquireError" class="mb-8 p-6 rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-200">
           <p class="text-sm font-bold uppercase tracking-wide">{{ acquireError }}</p>
-          <NuxtLink to="/" class="inline-block mt-4 text-[11px] font-black uppercase text-white hover:underline">Browse units</NuxtLink>
+          <NuxtLink to="/" class="inline-block mt-4 text-[11px] font-black uppercase text-theme-text-primary hover:underline">Browse units</NuxtLink>
         </div>
         <div v-else-if="isLockedByOther" class="mb-8 p-6 rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-200">
           <p class="text-sm font-bold uppercase tracking-wide">This unit is currently being reserved</p>
           <p class="mt-2 text-[13px] text-zinc-400">Someone else has this unit in their reservation. It will be available again when their session expires.</p>
-          <NuxtLink to="/" class="inline-block mt-4 text-[11px] font-black uppercase text-white hover:underline">Browse units</NuxtLink>
+          <NuxtLink to="/" class="inline-block mt-4 text-[11px] font-black uppercase text-theme-text-primary hover:underline">Browse units</NuxtLink>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-16">
           <!-- Form column -->
           <div class="lg:col-span-2">
             <header class="mb-8 sm:mb-16">
               <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-2">
-                <h1 class="text-2xl sm:text-3xl md:text-5xl font-semibold text-white tracking-tighter leading-none">
+                <h1 class="text-2xl sm:text-3xl md:text-5xl font-semibold text-theme-text-primary tracking-tighter leading-none">
                   Reserve Unit {{ unitNumberDisplay }}
                 </h1>
                 <div v-if="acquiringLock" class="flex items-center gap-3 sm:gap-4">
@@ -39,7 +39,7 @@
                   </div>
                   <p class="text-[12px] sm:text-[13px] md:text-[15px] font-medium text-zinc-500 tracking-tight flex items-center gap-2 whitespace-nowrap">
                     <span class="uppercase tracking-widest font-bold text-[10px]">Reservation Expires in</span>
-                    <span class="text-white font-bold tabular-nums bg-white/5 px-3 sm:px-4 py-1.5 rounded-lg border border-white/10">
+                    <span class="text-theme-text-primary font-bold tabular-nums bg-theme-input-bg px-3 sm:px-4 py-1.5 rounded-lg border border-theme-border-strong">
                       {{ formatTime(timeLeft) }}
                     </span>
                   </p>
@@ -55,7 +55,7 @@
                     v-model="firstName"
                     required
                     type="text"
-                    class="w-full bg-white/[0.03] border border-white/5 rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
                   />
                 </div>
                 <div class="space-y-2">
@@ -64,7 +64,7 @@
                     v-model="lastName"
                     required
                     type="text"
-                    class="w-full bg-white/[0.03] border border-white/5 rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
                   />
                 </div>
               </div>
@@ -73,14 +73,14 @@
                 <div class="space-y-2">
                   <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] ml-1">Phone Number</label>
                   <div class="relative">
-                    <div class="flex items-center bg-white/[0.03] border border-white/5 rounded-lg overflow-hidden focus-within:border-zinc-500 transition-all h-[46px]">
+                    <div class="flex items-center bg-theme-input-bg border border-theme-border rounded-lg overflow-hidden focus-within:border-zinc-500 transition-all h-[46px]">
                       <div class="relative shrink-0 h-full flex items-center">
                         <button
                           type="button"
                           class="h-full flex items-center gap-1.5 pl-4 pr-2 text-zinc-400 hover:text-zinc-200 transition-colors"
                           @click.stop="phoneCountryDropdownOpen = !phoneCountryDropdownOpen"
                         >
-                          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-white/5" aria-hidden="true">
+                          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-theme-input-bg" aria-hidden="true">
                             <img :src="phoneFlagUrl(selectedPhoneCountry.countryCode)" :alt="selectedPhoneCountry.countryCode" class="w-full h-full object-cover">
                           </span>
                           <span class="text-[0.875rem]">{{ formatPhoneDialCode(selectedPhoneCountry.dialCode) }} ({{ selectedPhoneCountry.countryCode }})</span>
@@ -101,16 +101,16 @@
                     </div>
                     <div
                       v-if="phoneCountryDropdownOpen"
-                      class="absolute top-full left-0 mt-1 z-[100] max-h-64 overflow-auto rounded-lg border border-white/10 bg-[#0b0b0b] shadow-xl py-1 min-w-[14rem]"
+                      class="absolute top-full left-0 mt-1 z-[100] max-h-64 overflow-auto rounded-lg border border-theme-border-strong bg-theme-surface-elevated shadow-xl py-1 min-w-[14rem]"
                     >
                       <button
                         v-for="(c, i) in phoneCountries"
                         :key="i"
                         type="button"
-                        class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-zinc-300 hover:bg-white/10 hover:text-white transition-colors"
+                        class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-zinc-300 hover:bg-theme-input-bg hover:text-theme-text-primary transition-colors"
                         @click.stop="selectPhoneCountry(c); phoneCountryDropdownOpen = false"
                       >
-                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-white/5">
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-theme-input-bg">
                           <img :src="phoneFlagUrl(c.countryCode)" :alt="c.countryCode" class="w-full h-full object-cover">
                         </span>
                         <span>{{ formatPhoneDialCode(c.dialCode) }} ({{ c.countryCode }})</span>
@@ -124,7 +124,7 @@
                     v-model="email"
                     required
                     type="email"
-                    class="w-full bg-white/[0.03] border border-white/5 rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
                   />
                 </div>
               </div>
@@ -135,7 +135,7 @@
                   v-model="idPassport"
                   required
                   type="text"
-                  class="w-full bg-white/[0.03] border border-white/5 rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
+                  class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
                 />
               </div>
 
@@ -144,7 +144,7 @@
                 <select
                   v-model="reasonForBuying"
                   required
-                  class="w-full bg-white/[0.03] border border-white/5 rounded-lg px-6 h-[46px] pt-[13px] pb-[13px] leading-[1.25] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all appearance-none cursor-pointer"
+                  class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] pt-[13px] pb-[13px] leading-[1.25] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all appearance-none cursor-pointer"
                 >
                   <option value="" disabled class="bg-zinc-900">Select reason</option>
                   <option value="Primary Residence" class="bg-zinc-900">Primary Residence</option>
@@ -169,7 +169,7 @@
                 <button
                   type="button"
                   :disabled="canceling"
-                  class="px-10 h-[46px] border border-white/10 text-zinc-300 text-[11px] font-black uppercase tracking-normal rounded-lg hover:bg-white/5 transition-all leading-none flex items-center justify-center disabled:opacity-70 disabled:cursor-wait"
+                  class="px-10 h-[46px] border border-theme-border-strong text-zinc-300 text-[11px] font-black uppercase tracking-normal rounded-lg hover:bg-theme-input-bg transition-all leading-none flex items-center justify-center disabled:opacity-70 disabled:cursor-wait"
                   @click="onCancel"
                 >
                   {{ canceling ? 'CANCELING...' : 'CANCEL' }}
@@ -181,9 +181,9 @@
           <!-- Summary column -->
           <div class="lg:col-span-1">
             <div class="lg:sticky lg:top-32 flex flex-col gap-8 sm:gap-10">
-              <div class="!bg-white/[0.01] hover:!bg-white/[0.03] p-6 sm:p-10 relative overflow-hidden rounded-2xl border border-white/5 hover:border-white/10 shadow-xl transition-all duration-500">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-white/[0.02] rounded-full -mr-16 -mt-16 blur-3xl transition-all" aria-hidden="true" />
-                <h2 class="text-lg sm:text-xl font-black text-white mb-6 sm:mb-8 tracking-tighter leading-tight">
+              <div class="!bg-theme-surface hover:!bg-theme-input-bg p-6 sm:p-10 relative overflow-hidden rounded-2xl border border-theme-border hover:border-theme-border-strong shadow-xl transition-all duration-500">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-theme-input-bg rounded-full -mr-16 -mt-16 blur-3xl transition-all" aria-hidden="true" />
+                <h2 class="text-lg sm:text-xl font-black text-theme-text-primary mb-6 sm:mb-8 tracking-tighter leading-tight">
                   Reservation Summary
                 </h2>
                 <div class="flex flex-col">
@@ -217,17 +217,17 @@
                       <span class="text-zinc-100 font-bold text-sm text-right whitespace-nowrap sm:text-[0.875rem] sm:leading-[1.1rem]">R {{ formatPrice(unit.price) }}</span>
                     </div>
                   </template>
-                  <div class="pt-6 sm:pt-8 border-t border-white/10">
+                  <div class="pt-6 sm:pt-8 border-t border-theme-border-strong">
                     <div class="flex items-center justify-between">
-                      <span class="text-white font-black text-base sm:text-xl tracking-tighter">Total Payable Now</span>
-                      <span class="text-white text-base sm:text-xl font-black tracking-tighter text-right whitespace-nowrap">R {{ formatPrice(CONFIG.RESERVATION_DEPOSIT) }}</span>
+                      <span class="text-theme-text-primary font-black text-base sm:text-xl tracking-tighter">Total Payable Now</span>
+                      <span class="text-theme-text-primary text-base sm:text-xl font-black tracking-tighter text-right whitespace-nowrap">R {{ formatPrice(CONFIG.RESERVATION_DEPOSIT) }}</span>
                     </div>
                   </div>
                 </div>
               </div>
               <div class="px-2 sm:pl-2 sm:pr-20">
                 <p class="text-[11px] sm:text-[12px] text-zinc-500 font-medium leading-relaxed tracking-tight text-left">
-                  <span class="text-white font-black">Note:</span> This reservation deposit secures your unit for 7 days. Our sales team will contact you within 24 hours to complete the purchase process.
+                  <span class="text-theme-text-primary font-black">Note:</span> This reservation deposit secures your unit for 7 days. Our sales team will contact you within 24 hours to complete the purchase process.
                 </p>
               </div>
             </div>

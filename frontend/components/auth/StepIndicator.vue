@@ -4,25 +4,25 @@
     <div class="flex items-center justify-between mb-1">
       <span
         class="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] sm:tracking-[0.1em] transition-colors"
-        :class="currentStep === 1 ? 'text-white' : 'text-zinc-500'"
+        :class="currentStep === 1 ? 'text-theme-text-primary' : 'text-zinc-500'"
       >
         STEP 1
       </span>
       <span
         class="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] sm:tracking-[0.1em] transition-colors"
-        :class="currentStep === 2 ? 'text-white' : 'text-zinc-500'"
+        :class="currentStep === 2 ? 'text-theme-text-primary' : 'text-zinc-500'"
       >
         STEP 2
       </span>
       <span
         class="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] sm:tracking-[0.1em] transition-colors"
-        :class="currentStep === 3 ? 'text-white' : 'text-zinc-500'"
+        :class="currentStep === 3 ? 'text-theme-text-primary' : 'text-zinc-500'"
       >
         STEP 3
       </span>
     </div>
     <!-- Progress bar: fill by width so both ends stay rounded; longer transition to see it animate -->
-    <div class="w-full mt-1.5 h-[0.35rem] rounded-full overflow-hidden bg-white/10">
+    <div class="w-full mt-1.5 h-[0.35rem] rounded-full overflow-hidden bg-theme-border">
       <div
         class="h-full bg-white rounded-full transition-[width] duration-500 ease-out"
         :style="{ width: fillWidth }"

@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-black flex flex-col items-center justify-center gap-6 px-5 sm:px-8 md:px-16 pt-24 pb-16">
+  <div class="min-h-screen bg-theme-bg flex flex-col items-center justify-center gap-6 px-5 sm:px-8 md:px-16 pt-24 pb-16">
     <div class="text-center w-full max-w-5xl">
-      <h1 class="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight mb-4">
+      <h1 class="text-2xl sm:text-4xl font-black text-theme-text-primary tracking-tight leading-tight mb-4">
         Your Reservation Confirmed
       </h1>
       <p class="text-zinc-400 text-base sm:text-lg mb-8 max-w-[42rem] mx-auto text-center">
@@ -10,15 +10,15 @@
 
       <div
         v-if="loading"
-        class="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl p-4 border border-white/5 bg-zinc-900/40 w-full max-w-4xl mx-auto animate-pulse"
+        class="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl p-4 border border-theme-border bg-theme-surface w-full max-w-4xl mx-auto animate-pulse"
       >
-        <div class="sm:col-span-2 aspect-[3/2] rounded-lg bg-white/10" />
+        <div class="sm:col-span-2 aspect-[3/2] rounded-lg bg-theme-border" />
         <div class="flex flex-col gap-4">
-          <div class="rounded-lg bg-white/[0.03] border border-white/5 p-6">
-            <div class="h-4 bg-white/10 rounded w-1/3 mb-2" />
-            <div class="h-6 bg-white/10 rounded w-1/4 mb-6" />
-            <div class="pt-6 border-t border-white/5 flex flex-col gap-2">
-              <div v-for="i in 5" :key="i" class="h-5 bg-white/10 rounded w-full" />
+          <div class="rounded-lg bg-theme-input-bg border border-theme-border p-6">
+            <div class="h-4 bg-theme-border rounded w-1/3 mb-2" />
+            <div class="h-6 bg-theme-border rounded w-1/4 mb-6" />
+            <div class="pt-6 border-t border-theme-border flex flex-col gap-2">
+              <div v-for="i in 5" :key="i" class="h-5 bg-theme-border rounded w-full" />
             </div>
           </div>
         </div>
@@ -26,11 +26,11 @@
 
       <div
         v-else-if="unit"
-        class="group relative grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl p-4 border border-white/5 bg-zinc-900/40 overflow-hidden w-full max-w-4xl mx-auto text-left"
+        class="group relative grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl p-4 border border-theme-border bg-theme-surface overflow-hidden w-full max-w-4xl mx-auto text-left"
       >
-        <div class="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+        <div class="absolute inset-0 bg-gradient-to-br from-theme-input-bg to-transparent pointer-events-none" />
         <div class="relative sm:col-span-2">
-          <div class="relative overflow-hidden rounded-lg aspect-[3/2] bg-white/[0.02]">
+          <div class="relative overflow-hidden rounded-lg aspect-[3/2] bg-theme-input-bg">
             <img
               :src="unit.imageUrl"
               :alt="`Unit ${unit.unitNumber}`"
@@ -39,17 +39,17 @@
           </div>
         </div>
         <div class="flex flex-col gap-4 relative z-10">
-          <div class="rounded-lg bg-white/[0.03] border border-white/5 p-6">
+          <div class="rounded-lg bg-theme-input-bg border border-theme-border p-6">
             <p class="text-xs font-medium uppercase tracking-wider text-zinc-500 mb-1.5">
               Your reservation
             </p>
-            <h3 class="text-xl font-medium text-white tracking-tight leading-none mb-2">
+            <h3 class="text-xl font-medium text-theme-text-primary tracking-tight leading-none mb-2">
               Unit {{ unit.unitNumber }}
             </h3>
             <p class="text-lg text-zinc-400 mb-6">
               R {{ formatPrice(unit.price) }}
             </p>
-            <div class="pt-6 border-t border-white/5 flex flex-col gap-2 text-sm">
+            <div class="pt-6 border-t border-theme-border flex flex-col gap-2 text-sm">
               <p class="text-zinc-500">
                 <span class="text-zinc-400">Bedrooms:</span> {{ unit.bedrooms }}
               </p>

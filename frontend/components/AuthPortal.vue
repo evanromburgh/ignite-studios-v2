@@ -1,42 +1,42 @@
 <template>
-  <div class="fixed inset-0 z-[1000] bg-black flex items-center justify-center px-4 py-6 overflow-y-auto">
+  <div class="fixed inset-0 z-[1000] bg-theme-bg flex items-center justify-center px-4 py-6 overflow-y-auto">
     <div class="w-full max-w-[28rem] sm:max-w-md my-auto space-y-6">
       <!-- Above the box: heading + subtext (screenshot 2 structure) -->
       <div v-if="(mode === 'main' && !forgotSuccess) || mode === 'forgot'" class="text-center">
         <template v-if="mode === 'forgot'">
-          <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Reset password</h2>
+          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Reset password</h2>
           <p class="mt-2 text-zinc-500 text-sm">Enter your email and we’ll send you a link to reset your password.</p>
         </template>
         <template v-else-if="step === 1">
-          <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Sign In or Create Account</h2>
+          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Sign In or Create Account</h2>
           <p class="mt-2 text-zinc-500 text-sm">Enter your email to get started.</p>
         </template>
         <template v-else-if="step === 2 && accountExists === false">
-          <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Create your account</h2>
+          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Create your account</h2>
         </template>
         <template v-else-if="step === 2 && accountExists === true">
-          <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Welcome Back</h2>
+          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Welcome Back</h2>
           <p class="mt-2 text-zinc-500 text-sm">Choose a login method below.</p>
         </template>
         <template v-else-if="step === 3 && signInMethod === 'password'">
-          <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Enter your password</h2>
+          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Enter your password</h2>
         </template>
         <template v-else-if="step === 3 && signInMethod === 'email_code'">
-          <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Check your email</h2>
+          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Check your email</h2>
           <p class="mt-2 text-zinc-500 text-sm">We sent a code to {{ email }}</p>
         </template>
       </div>
 
       <!-- Card: same as portal (moving border + bg #0b0b0b liquid-glass) -->
       <div class="border-beam-container rounded-2xl shadow-2xl overflow-hidden group">
-        <div class="border-beam-inner bg-[#0b0b0b] border-none rounded-[calc(1rem-1px)] p-6 sm:p-10 relative z-10 w-full">
+        <div class="border-beam-inner bg-theme-surface-elevated border-none rounded-[calc(1rem-1px)] p-6 sm:p-10 relative z-10 w-full">
 
           <!-- Forgot password success -->
           <div v-if="forgotSuccess" class="space-y-6 text-center">
             <p class="text-zinc-400 text-sm">Check your email for a link to reset your password.</p>
             <button
               type="button"
-              class="text-sm font-bold text-zinc-300 hover:text-white underline transition-colors"
+              class="text-sm font-bold text-zinc-300 hover:text-theme-text-primary underline transition-colors"
               @click="forgotSuccess = false; resetToStep1()"
             >
               Back to Sign In
@@ -51,7 +51,7 @@
                 v-model="email"
                 required
                 type="email"
-                class="w-full bg-white/[0.03] border border-white/5 rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
               />
             </div>
             <div v-if="error" class="text-[10px] font-bold text-red-400 text-center py-2">{{ error }}</div>
@@ -63,7 +63,7 @@
               <span v-if="loading" class="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
               <span v-else>Send reset link</span>
             </button>
-            <button type="button" class="block w-full text-sm text-zinc-500 hover:text-white transition-colors" @click="mode = 'main'; error = null; resetToStep1()">
+            <button type="button" class="block w-full text-sm text-zinc-500 hover:text-theme-text-primary transition-colors" @click="mode = 'main'; error = null; resetToStep1()">
               Back to Sign In
             </button>
           </form>
@@ -82,7 +82,7 @@
                     v-model="email"
                     required
                     type="email"
-                    class="w-full bg-white/[0.03] border border-white/5 rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div class="space-y-2">
@@ -91,7 +91,7 @@
                     v-model="confirmEmail"
                     required
                     type="email"
-                    class="w-full bg-white/[0.03] border border-white/5 rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
@@ -108,11 +108,11 @@
 
             <!-- Step 2: Create account -->
             <template v-else-if="step === 2 && accountExists === false">
-              <div class="mt-6 rounded-lg bg-white/[0.03] border border-white/5 px-4 py-4 mb-6">
+              <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
                 <div class="flex items-center justify-between gap-2">
                   <div>
                     <p class="text-[10px] sm:text-[11px] font-medium text-zinc-500 uppercase tracking-[0.05em]">CREATING ACCOUNT FOR</p>
-                    <p class="text-[13px] font-medium text-white mt-0.5">{{ email }}</p>
+                    <p class="text-[13px] font-medium text-theme-text-primary mt-0.5">{{ email }}</p>
                   </div>
                   <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="goBackToStep1">Change</button>
                 </div>
@@ -125,7 +125,7 @@
                       v-model="firstName"
                       required
                       type="text"
-                      class="w-full bg-white/[0.03] border border-white/5 rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
                     />
                   </div>
                   <div class="space-y-2">
@@ -134,21 +134,21 @@
                       v-model="lastName"
                       required
                       type="text"
-                      class="w-full bg-white/[0.03] border border-white/5 rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">PHONE NUMBER</label>
                   <div class="relative">
-                    <div class="flex items-center bg-white/[0.03] border border-white/5 rounded-lg overflow-hidden focus-within:border-zinc-500 transition-all h-[46px]">
+                    <div class="flex items-center bg-theme-input-bg border border-theme-border rounded-lg overflow-hidden focus-within:border-zinc-500 transition-all h-[46px]">
                     <div class="relative shrink-0 h-full flex items-center">
                       <button
                         type="button"
                         class="h-full flex items-center gap-1.5 pl-4 pr-2 text-zinc-400 hover:text-zinc-200 transition-colors"
                         @click.stop="phoneCountryDropdownOpen = !phoneCountryDropdownOpen"
                       >
-                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-white/5" aria-hidden="true">
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-theme-input-bg" aria-hidden="true">
                           <img :src="phoneFlagUrl(selectedPhoneCountry.countryCode)" :alt="selectedPhoneCountry.countryCode" class="w-full h-full object-cover" />
                         </span>
                         <span class="text-[0.875rem]">{{ formatPhoneDialCode(selectedPhoneCountry.dialCode) }} ({{ selectedPhoneCountry.countryCode }})</span>
@@ -169,16 +169,16 @@
                   </div>
                   <div
                     v-if="phoneCountryDropdownOpen"
-                    class="absolute top-full left-0 mt-1 z-[100] max-h-64 overflow-auto rounded-lg border border-white/10 bg-[#0b0b0b] shadow-xl py-1 min-w-[14rem]"
+                    class="absolute top-full left-0 mt-1 z-[100] max-h-64 overflow-auto rounded-lg border border-theme-border-strong bg-theme-surface-elevated shadow-xl py-1 min-w-[14rem]"
                   >
                     <button
                       v-for="(c, i) in phoneCountries"
                       :key="i"
                       type="button"
-                      class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-zinc-300 hover:bg-white/10 hover:text-white transition-colors"
+                      class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-zinc-300 hover:bg-theme-input-bg hover:text-theme-text-primary transition-colors"
                       @click.stop="selectPhoneCountry(c); phoneCountryDropdownOpen = false"
                     >
-                      <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-white/5">
+                      <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-theme-input-bg">
                         <img :src="phoneFlagUrl(c.countryCode)" :alt="c.countryCode" class="w-full h-full object-cover" />
                       </span>
                       <span>{{ formatPhoneDialCode(c.dialCode) }} ({{ c.countryCode }})</span>
@@ -188,7 +188,7 @@
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">CREATE PASSWORD</label>
-                  <div class="relative flex items-center bg-white/[0.03] border border-white/5 rounded-lg h-[46px] focus-within:border-zinc-500 transition-all">
+                  <div class="relative flex items-center bg-theme-input-bg border border-theme-border rounded-lg h-[46px] focus-within:border-zinc-500 transition-all">
                     <input
                       v-model="password"
                       required
@@ -203,7 +203,7 @@
                   </div>
                   <div v-if="password.length > 0" class="flex items-center gap-2 pt-1">
                     <div class="flex-1 flex gap-1">
-                      <div v-for="i in 5" :key="i" class="h-1 flex-1 rounded-full" :class="i <= passwordStrength.score ? passwordStrength.color : 'bg-white/10'" />
+                      <div v-for="i in 5" :key="i" class="h-1 flex-1 rounded-full" :class="i <= passwordStrength.score ? passwordStrength.color : 'bg-theme-border'" />
                     </div>
                     <span class="text-[9px] font-black uppercase tracking-widest" :class="passwordStrength.textColor">{{ passwordStrength.label }}</span>
                   </div>
@@ -222,11 +222,11 @@
 
             <!-- Step 2: Welcome back (choose method) -->
             <template v-else-if="step === 2 && accountExists === true">
-              <div class="mt-6 rounded-lg bg-white/[0.03] border border-white/5 px-4 py-4 mb-6">
+              <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
                 <div class="flex items-center justify-between gap-2">
                   <div>
                     <p class="text-[10px] sm:text-[11px] font-medium text-zinc-500 uppercase tracking-[0.05em]">SIGNING IN AS</p>
-                    <p class="text-[13px] font-medium text-white mt-0.5">{{ email }}</p>
+                    <p class="text-[13px] font-medium text-theme-text-primary mt-0.5">{{ email }}</p>
                   </div>
                   <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="goBackToStep1">Change</button>
                 </div>
@@ -241,7 +241,7 @@
                 </button>
                 <button
                   type="button"
-                  class="w-full h-12 bg-transparent border border-white/20 text-white font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-white/5 transition-all"
+                  class="w-full h-12 bg-transparent border border-theme-border-strong text-theme-text-primary font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-theme-input-bg transition-all"
                   @click="signInMethod = 'password'; step = 3"
                 >
                   Continue with password
@@ -251,11 +251,11 @@
 
             <!-- Step 3: Enter password -->
             <template v-else-if="step === 3 && signInMethod === 'password'">
-              <div class="mt-6 rounded-lg bg-white/[0.03] border border-white/5 px-4 py-4 mb-6">
+              <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
                 <div class="flex items-center justify-between gap-2">
                   <div>
                     <p class="text-[10px] sm:text-[11px] font-medium text-zinc-500 uppercase tracking-[0.05em]">SIGNING IN AS</p>
-                    <p class="text-[13px] font-medium text-white mt-0.5">{{ email }}</p>
+                    <p class="text-[13px] font-medium text-theme-text-primary mt-0.5">{{ email }}</p>
                   </div>
                   <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="step = 2">Change</button>
                 </div>
@@ -263,7 +263,7 @@
               <form class="space-y-5" @submit.prevent="handleSignInWithPassword">
                 <div class="space-y-2">
                   <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">PASSWORD</label>
-                  <div class="relative flex items-center bg-white/[0.03] border border-white/5 rounded-lg h-[46px] focus-within:border-zinc-500 transition-all">
+                  <div class="relative flex items-center bg-theme-input-bg border border-theme-border rounded-lg h-[46px] focus-within:border-zinc-500 transition-all">
                     <input
                       v-model="password"
                       required
@@ -278,7 +278,7 @@
                 </div>
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
                 <div class="flex gap-3">
-                  <button type="button" class="flex-1 h-12 bg-white/5 border border-white/10 text-zinc-300 font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-white/10 transition-all" @click="step = 2">Back</button>
+                  <button type="button" class="flex-1 h-12 bg-theme-input-bg border border-theme-border-strong text-zinc-300 font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-theme-input-bg transition-all" @click="step = 2">Back</button>
                   <button
                     type="submit"
                     :disabled="loading"
@@ -293,11 +293,11 @@
 
             <!-- Step 3: Email code (Check your email, 8-digit code) -->
             <template v-else-if="step === 3 && signInMethod === 'email_code'">
-              <div class="mt-6 rounded-lg bg-white/[0.03] border border-white/5 px-4 py-4 mb-6">
+              <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
                 <div class="flex items-center justify-between gap-2">
                   <div>
                     <p class="text-[10px] sm:text-[11px] font-medium text-zinc-500 uppercase tracking-[0.05em]">SIGNING IN AS</p>
-                    <p class="text-[13px] font-medium text-white mt-0.5">{{ email }}</p>
+                    <p class="text-[13px] font-medium text-theme-text-primary mt-0.5">{{ email }}</p>
                   </div>
                   <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="step = 2">Change</button>
                 </div>
@@ -313,7 +313,7 @@
                       type="text"
                       inputmode="numeric"
                       maxlength="1"
-                      class="w-full min-w-0 h-12 text-center text-lg font-bold bg-white/[0.03] border border-white/5 rounded-lg text-zinc-200 focus:border-zinc-500 focus:outline-none transition-all"
+                      class="w-full min-w-0 h-12 text-center text-lg font-bold bg-theme-input-bg border border-theme-border rounded-lg text-zinc-200 focus:border-zinc-500 focus:outline-none transition-all"
                       @keydown="onOtpKeydown($event, i)"
                       @input="onOtpSingleInput($event, i)"
                       @paste="onOtpPaste($event)"
@@ -322,7 +322,7 @@
                 </div>
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
                 <div class="flex gap-3">
-                  <button type="button" class="flex-1 h-12 bg-white/5 border border-white/10 text-zinc-300 font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-white/10 transition-all" @click="step = 2">Back</button>
+                  <button type="button" class="flex-1 h-12 bg-theme-input-bg border border-theme-border-strong text-zinc-300 font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-theme-input-bg transition-all" @click="step = 2">Back</button>
                   <button
                     type="submit"
                     :disabled="loading || otpCode.length !== OTP_LENGTH"
@@ -340,8 +340,8 @@
 
       <!-- Below the box: Forgot Password? and Back to home (stacked underneath one another) -->
       <div v-if="mode === 'main' && step >= 1" class="flex flex-col items-center gap-1">
-        <button type="button" class="text-sm text-zinc-500 hover:text-white transition-colors" @click="mode = 'forgot'; resetToStep1()">Forgot Password?</button>
-        <NuxtLink to="/" class="text-xs text-zinc-500 hover:text-white transition-colors">Back to home</NuxtLink>
+        <button type="button" class="text-sm text-zinc-500 hover:text-theme-text-primary transition-colors" @click="mode = 'forgot'; resetToStep1()">Forgot Password?</button>
+        <NuxtLink to="/" class="text-xs text-zinc-500 hover:text-theme-text-primary transition-colors">Back to home</NuxtLink>
       </div>
     </div>
   </div>

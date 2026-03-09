@@ -1,7 +1,7 @@
 <template>
   <div class="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pt-32 sm:pt-48 pb-24">
     <header class="mb-12 sm:mb-24">
-      <h1 class="text-4xl sm:text-7xl md:text-9xl font-black text-white tracking-tighter leading-[0.8] mb-6 sm:mb-10">
+      <h1 class="text-4xl sm:text-7xl md:text-9xl font-black text-theme-text-primary tracking-tighter leading-[0.8] mb-6 sm:mb-10">
         OFFICIAL<br>
         <span class="text-transparent bg-clip-text bg-gradient-to-r from-zinc-300 via-zinc-100 to-zinc-500 opacity-90 uppercase">Documentation</span>
       </h1>
@@ -10,12 +10,12 @@
       </p>
     </header>
 
-    <div v-if="developmentDocuments.length === 0" class="rounded-xl border border-white/5 bg-zinc-900/40 p-8 sm:p-12 text-center">
+    <div v-if="developmentDocuments.length === 0" class="rounded-xl border border-theme-border bg-theme-surface p-8 sm:p-12 text-center">
       <p class="text-zinc-500 text-base sm:text-lg">
         No documents are available for download yet. Development documentation will appear here once added.
       </p>
       <p class="mt-4 text-zinc-600 text-sm">
-        To add documents: place PDFs in <code class="px-1.5 py-0.5 rounded bg-white/5 text-zinc-400 font-mono text-xs">public/documents/</code> and add entries to <code class="px-1.5 py-0.5 rounded bg-white/5 text-zinc-400 font-mono text-xs">frontend/data/documents.ts</code>.
+        To add documents: place PDFs in <code class="px-1.5 py-0.5 rounded bg-theme-input-bg text-zinc-400 font-mono text-xs">public/documents/</code> and add entries to <code class="px-1.5 py-0.5 rounded bg-theme-input-bg text-zinc-400 font-mono text-xs">frontend/data/documents.ts</code>.
       </p>
     </div>
 
@@ -23,14 +23,14 @@
       <div
         v-for="doc in developmentDocuments"
         :key="doc.id"
-        class="group relative flex flex-col rounded-xl p-6 border border-white/5 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-white/10 transition-all duration-300"
+        class="group relative flex flex-col rounded-xl p-6 border border-theme-border bg-theme-surface hover:bg-theme-surface-hover hover:border-theme-border-strong transition-all duration-300"
       >
-        <div class="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none rounded-xl" />
+        <div class="absolute inset-0 bg-gradient-to-br from-theme-input-bg to-transparent pointer-events-none rounded-xl" />
         <div class="relative z-10 flex flex-col h-full">
           <p v-if="doc.category" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">
             {{ doc.category }}
           </p>
-          <h2 class="text-lg sm:text-xl font-semibold text-white tracking-tight leading-tight mb-2">
+          <h2 class="text-lg sm:text-xl font-semibold text-theme-text-primary tracking-tight leading-tight mb-2">
             {{ doc.title }}
           </h2>
           <p class="text-sm text-zinc-500 leading-relaxed flex-1 mb-6">

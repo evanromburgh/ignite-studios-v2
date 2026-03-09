@@ -260,8 +260,3 @@ export function formatPhoneDialCode(dialCode: string): string {
   }
   return `+${dialCode}`
 }
-
-/** Sorted by dialCode length descending for auto-detect (longest match first) */
-export const phoneCountriesSortedForDetect = [...phoneCountries].sort(
-  (a, b) => b.dialCode.length - a.dialCode.length
-)

@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import lottie from 'lottie-web'
-import eyeAnimation from '~/assets/eye.json'
+import eyeAnimation from '~/assets/dark_eye.json'
 
 const container = ref<HTMLDivElement | null>(null)
 let anim: lottie.AnimationItem | null = null
@@ -13,7 +13,7 @@ let anim: lottie.AnimationItem | null = null
 onMounted(() => {
   if (!container.value) return
 
-  // Load the exact white eye animation from bundled JSON (no network fetch)
+  // Load the dark eye animation from bundled JSON (no network fetch)
   anim = lottie.loadAnimation({
     container: container.value,
     renderer: 'svg',
