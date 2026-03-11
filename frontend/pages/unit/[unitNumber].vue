@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-screen bg-theme-bg">
     <div v-if="unitsLoading" class="flex items-center justify-center min-h-[60vh]">
       <p class="text-zinc-500 text-sm">Loading unit details…</p>
     </div>
@@ -21,51 +21,69 @@
       </div>
     </div>
 
-    <div v-else class="pt-28 sm:pt-36 pb-16 bg-theme-surface">
+    <div v-else class="pt-16 sm:pt-24 pb-16 bg-theme-bg">
       <div class="w-full mx-auto px-4 sm:px-6 lg:px-12">
         <div ref="layoutRow" class="md:flex md:gap-12">
           <!-- Left: media, elevation, context -->
-          <div class="md:w-[60%] space-y-6">
-            <!-- Media carousel -->
-            <div
-              class="relative overflow-hidden rounded-3xl bg-zinc-900 group aspect-square sm:aspect-[5/4]"
-            >
-              <div
-                class="flex h-full w-full transition-transform duration-500 ease-out"
-                :style="{ transform: `translateX(-${activeIndex * 100}%)` }"
+          <div ref="leftColumn" class="md:w-[60%] space-y-6">
+            <!-- Media carousel – Swiper (like Nuxt UI UCarousel) so scroll/snap is handled by the library = no shift -->
+            <div class="relative w-full overflow-hidden rounded-2xl bg-theme-bg group aspect-[3/2]">
+              <Swiper
+                :modules="[Autoplay]"
+                class="unit-gallery-swiper h-full w-full"
+                :slides-per-view="1"
+                :space-between="0"
+                :autoplay="galleryImages.length > 1 ? { delay: 5000, disableOnInteraction: false } : false"
+                @swiper="onGallerySwiper"
+                @real-index-change="onGallerySlideChange"
               >
-                <div
+                <SwiperSlide
                   v-for="(img, index) in galleryImages"
                   :key="img || index"
-                  class="w-full h-full flex-shrink-0 overflow-hidden"
+                  class="!h-full"
                 >
-                  <img
-                    :src="img"
-                    :alt="`Unit ${unit.unitNumber} image ${index + 1}`"
-                    loading="lazy"
-                    class="w-full h-full object-cover transition-transform duration-[4s] ease-out group-hover:scale-105"
-                  />
-                </div>
-              </div>
+                  <div
+                    class="h-full w-full overflow-hidden flex items-center justify-center"
+                    :class="index === floorplanIndex ? 'bg-zinc-900' : 'bg-theme-bg'"
+                  >
+                    <img
+                      :src="img"
+                      :alt="`Unit ${unit.unitNumber} image ${index + 1}`"
+                      loading="lazy"
+                      :class="[
+                        'cursor-zoom-in',
+                        index === floorplanIndex
+                          ? 'max-h-full max-w-full object-contain object-center'
+                          : 'w-full h-full object-cover object-center',
+                      ]"
+                      @click="openLightbox(index)"
+                    >
+                  </div>
+                </SwiperSlide>
+              </Swiper>
 
               <!-- Carousel controls -->
               <button
                 v-if="galleryImages.length > 1"
                 type="button"
-                class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                class="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center text-white hover:text-zinc-200 transition-colors"
                 @click="prevImage"
               >
-                <span class="sr-only">Previous</span>
-                <span class="-ml-px text-xs">&lt;</span>
+                <span class="sr-only">Previous image</span>
+                <svg class="w-8 h-8 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M15 5l-7 7 7 7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
               </button>
               <button
                 v-if="galleryImages.length > 1"
                 type="button"
-                class="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                class="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center text-white hover:text-zinc-200 transition-colors"
                 @click="nextImage"
               >
-                <span class="sr-only">Next</span>
-                <span class="ml-px text-xs">&gt;</span>
+                <span class="sr-only">Next image</span>
+                <svg class="w-8 h-8 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M9 5l7 7-7 7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
               </button>
 
               <!-- Indicators – styled to match hero swiper pagination -->
@@ -77,8 +95,8 @@
                   v-for="(img, index) in galleryImages"
                   :key="img || index"
                   type="button"
-                  class="pointer-events-auto h-2 rounded-full bg-white/40 transition-all duration-200"
-                  :class="index === activeIndex ? 'w-6 bg-white opacity-100' : 'w-2 opacity-50 hover:opacity-80'"
+                  class="pointer-events-auto h-2 rounded-full bg-white transition-all duration-200"
+                  :class="index === activeIndex ? 'w-6 opacity-100' : 'w-2 opacity-40 hover:opacity-75'"
                   @click="goToImage(index)"
                 >
                   <span class="sr-only">Go to slide {{ index + 1 }}</span>
@@ -86,32 +104,39 @@
               </div>
             </div>
 
-            <!-- Small image strip (thumbnails) -->
+            <!-- Caption -->
+            <p class="text-[11px] text-zinc-400 italic text-center">
+              All imagery is illustrative and subject to final design.
+            </p>
+
+            <!-- Thumbnails – fill width of main image, equal columns, 1rem gaps -->
             <div
               v-if="galleryImages.length > 1"
-              class="hidden sm:grid grid-cols-4 gap-3"
+              class="grid grid-cols-4 gap-4 w-full"
             >
               <button
-                v-for="(img, index) in galleryImages.slice(0, 4)"
+                v-for="(img, index) in galleryImages"
                 :key="img || index"
                 type="button"
-                class="relative aspect-square rounded-2xl overflow-hidden border transition-all"
-                :class="index === activeIndex ? 'border-white' : 'border-theme-border hover:border-white/60'"
+                class="aspect-square w-full min-w-0 overflow-hidden rounded-lg transition-opacity hover:opacity-100 flex items-center justify-center"
+                :class="[
+                  activeIndex === index ? 'opacity-100' : 'opacity-25',
+                  index === floorplanIndex ? 'border border-theme-border' : '',
+                ]"
                 @click="goToImage(index)"
               >
                 <img
                   :src="img"
                   :alt="`Thumbnail ${index + 1}`"
                   loading="lazy"
-                  class="w-full h-full object-cover"
+                  :class="[
+                    'rounded-lg',
+                    index === floorplanIndex ? 'max-w-full max-h-full object-contain' : 'w-full h-full object-cover',
+                  ]"
                 />
               </button>
             </div>
 
-            <!-- Caption -->
-            <p class="text-[11px] text-zinc-400 italic">
-              All imagery is illustrative and subject to final design.
-            </p>
           </div>
 
           <!-- Right: details / stats / CTAs -->
@@ -216,12 +241,12 @@
               >
                 <div class="flex items-center justify-evenly gap-0">
                   <div
-                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700"
+                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700"
                   >
                     <span
                       class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
                     >
-                      Beds
+                      Bedrooms
                       <span
                         class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
                         aria-hidden="true"
@@ -233,12 +258,12 @@
                     </span>
                   </div>
                   <div
-                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700"
+                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700"
                   >
                     <span
                       class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
                     >
-                      Baths
+                      Bathrooms
                       <span
                         class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
                         aria-hidden="true"
@@ -250,7 +275,7 @@
                     </span>
                   </div>
                   <div
-                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700"
+                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700"
                   >
                     <span
                       class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
@@ -267,7 +292,7 @@
                     </span>
                   </div>
                   <div
-                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700"
+                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700"
                   >
                     <span
                       class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
@@ -284,7 +309,7 @@
                     </span>
                   </div>
                   <div
-                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700"
+                    class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700"
                   >
                     <span
                       class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
@@ -336,26 +361,23 @@
                 </div>
 
                 <!-- Primary CTAs -->
-                <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                <div class="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-6">
                   <button
                     type="button"
                     :disabled="!isAvailable"
-                    class="w-full sm:w-auto sm:min-w-[170px] h-[44px] flex items-center justify-center rounded-full text-[12px] font-black uppercase text-center leading-none transition-all"
-                    :class="isAvailable
-                      ? 'bg-zinc-900 text-zinc-50 hover:bg-zinc-800'
-                      : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'"
+                    class="w-full sm:w-auto sm:flex-[0.65] sm:min-w-[130px] h-12 flex items-center justify-center bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     @click="isAvailable && onReserveClick()"
                   >
                     Reserve unit
                   </button>
                   <button
                     type="button"
-                    class="w-full sm:w-auto sm:min-w-[170px] h-[44px] inline-flex items-center justify-center gap-1.5 rounded-full border border-zinc-300 bg-white/95 text-zinc-600 text-[12px] font-bold uppercase shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600"
+                    class="w-full sm:w-auto sm:flex-[0.35] sm:min-w-[170px] h-12 inline-flex items-center justify-center gap-1.5 bg-white/95 border border-zinc-300 text-zinc-600 font-black text-[11px] uppercase tracking-wider rounded-lg shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600"
                     :class="isWishlisted ? '!border-red-600 !bg-red-600 !text-white' : ''"
                     @click="onToggleWishlist"
                   >
-                    <IconHeart class="w-3.5 h-3.5 flex-shrink-0" :filled="isWishlisted" />
-                    <span>
+                    <IconHeart class="w-3.5 h-3.5 flex-shrink-0 -mt-[1px]" :filled="isWishlisted" />
+                    <span class="leading-none">
                       {{ isWishlisted ? 'Remove from wishlist' : 'Add to wishlist' }}
                     </span>
                   </button>
@@ -365,6 +387,54 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Image lightbox -->
+    <div
+      v-if="lightboxOpen && galleryImages.length"
+      class="fixed inset-0 z-[200] bg-black/90 flex flex-col"
+      @click="closeLightbox"
+    >
+      <button
+        type="button"
+        class="absolute top-4 right-4 z-[210] flex items-center justify-center text-white hover:text-zinc-200 transition-colors"
+        aria-label="Close image"
+        @click.stop="closeLightbox"
+      >
+        <svg class="w-8 h-8 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M6 6l12 12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M18 6l-12 12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <button
+        v-if="galleryImages.length > 1"
+        type="button"
+        class="absolute left-4 top-1/2 -translate-y-1/2 z-[210] flex items-center justify-center text-white hover:text-zinc-200 transition-colors"
+        aria-label="Previous image"
+        @click.stop="lightboxPrev"
+      >
+        <svg class="w-8 h-8 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M15 5l-7 7 7 7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <button
+        v-if="galleryImages.length > 1"
+        type="button"
+        class="absolute right-4 top-1/2 -translate-y-1/2 z-[210] flex items-center justify-center text-white hover:text-zinc-200 transition-colors"
+        aria-label="Next image"
+        @click.stop="lightboxNext"
+      >
+        <svg class="w-8 h-8 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M9 5l7 7-7 7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <div class="flex-1 flex items-center justify-center px-4 py-8">
+        <img
+          :src="galleryImages[lightboxIndex]"
+          :alt="`Unit ${unit?.unitNumber} image ${lightboxIndex + 1}`"
+          class="max-h-full max-w-full object-contain rounded-2xl shadow-2xl"
+        />
       </div>
     </div>
 
@@ -400,6 +470,9 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Autoplay } from 'swiper/modules'
+import 'swiper/css'
 import { CONFIG } from '~/config'
 import { useUnits } from '~/composables/useUnits'
 import { useWishlist } from '~/composables/useWishlist'
@@ -419,9 +492,15 @@ const reserving = ref(false)
 const returningToList = ref(false)
 const activeIndex = ref(0)
 const heroAutoplayId = ref<number | null>(null)
+const gallerySwiper = ref<{ slidePrev: () => void; slideNext: () => void; slideTo: (i: number) => void } | null>(null)
+
+// Lightbox state
+const lightboxOpen = ref(false)
+const lightboxIndex = ref(0)
 
 // Right panel sticky behavior (measured, fixed alignment)
 const layoutRow = ref<HTMLElement | null>(null)
+const leftColumn = ref<HTMLElement | null>(null)
 const rightPanel = ref<HTMLElement | null>(null)
 const isRightPanelFixed = ref(false)
 const rightPanelStyle = ref<Record<string, string>>({})
@@ -443,7 +522,11 @@ function measureRightPanel() {
   panelInitialHeight.value = rect.height
 
   const rowEl = layoutRow.value
-  if (rowEl) {
+  const leftEl = leftColumn.value
+  if (leftEl) {
+    const leftRect = leftEl.getBoundingClientRect()
+    rowBottom.value = leftRect.bottom + scrollY
+  } else if (rowEl) {
     const rowRect = rowEl.getBoundingClientRect()
     rowBottom.value = rowRect.bottom + scrollY
   }
@@ -465,7 +548,16 @@ function updateRightPanelPosition() {
     }
   }
 
-  const offsetTop = 112 // 28 * 4 (roughly nav + spacing)
+  // Aim to vertically center the right panel next to the media column while sticky,
+  // but never let it sit too close to the very top.
+  const viewportHeight =
+    typeof window !== 'undefined'
+      ? window.innerHeight || document.documentElement.clientHeight || 0
+      : 0
+  let offsetTop = 136
+  if (panelInitialHeight.value != null && viewportHeight > panelInitialHeight.value) {
+    offsetTop = Math.max((viewportHeight - panelInitialHeight.value) / 2, 80)
+  }
   const scrollY = window.scrollY || window.pageYOffset
 
   // Before we reach the panel's original top, do nothing special
@@ -529,6 +621,12 @@ const galleryImages = computed(() => {
   if (unit.value.floorplanUrl) urls.push(unit.value.floorplanUrl)
 
   return urls
+})
+
+const floorplanIndex = computed(() => {
+  if (!unit.value || !unit.value.floorplanUrl) return -1
+  // Floorplan is appended last in galleryImages
+  return galleryImages.value.length - 1
 })
 
 const isAvailable = computed(() => unit.value?.status === 'Available')
@@ -604,23 +702,68 @@ function onToggleWishlist() {
   toggleWishlist(unit.value.id)
 }
 
+function onGallerySwiper(swiper: any) {
+  gallerySwiper.value = swiper
+}
+
+function onGallerySlideChange(swiper: any) {
+  activeIndex.value = swiper.realIndex
+}
+
 function prevImage() {
+  if (gallerySwiper.value) {
+    gallerySwiper.value.slidePrev()
+    return
+  }
   if (galleryImages.value.length <= 1) return
   activeIndex.value =
     (activeIndex.value - 1 + galleryImages.value.length) % galleryImages.value.length
 }
 
 function nextImage() {
+  if (gallerySwiper.value) {
+    gallerySwiper.value.slideNext()
+    return
+  }
   if (galleryImages.value.length <= 1) return
   activeIndex.value =
     (activeIndex.value + 1) % galleryImages.value.length
 }
 
 function goToImage(index: number) {
+  if (gallerySwiper.value) {
+    gallerySwiper.value.slideTo(index)
+    activeIndex.value = index
+    lightboxIndex.value = index
+    return
+  }
   if (!galleryImages.value.length) return
   const len = galleryImages.value.length
   const normalized = ((index % len) + len) % len
   activeIndex.value = normalized
+  lightboxIndex.value = normalized
+}
+
+function openLightbox(index: number) {
+  if (!galleryImages.value.length) return
+  lightboxIndex.value = index
+  lightboxOpen.value = true
+}
+
+function closeLightbox() {
+  lightboxOpen.value = false
+}
+
+function lightboxPrev() {
+  if (!galleryImages.value.length) return
+  const len = galleryImages.value.length
+  lightboxIndex.value = (lightboxIndex.value - 1 + len) % len
+}
+
+function lightboxNext() {
+  if (!galleryImages.value.length) return
+  const len = galleryImages.value.length
+  lightboxIndex.value = (lightboxIndex.value + 1) % len
 }
 
 async function onReserveClick() {
@@ -666,19 +809,6 @@ onMounted(() => {
   updateRightPanelPosition()
   window.addEventListener('scroll', updateRightPanelPosition, { passive: true })
   window.addEventListener('resize', handleResize)
-
-  // Autoplay for unit gallery – mimic hero slider timing
-  if (typeof window !== 'undefined') {
-    if (heroAutoplayId.value != null) {
-      window.clearInterval(heroAutoplayId.value)
-      heroAutoplayId.value = null
-    }
-    if (galleryImages.value.length > 1) {
-      heroAutoplayId.value = window.setInterval(() => {
-        nextImage()
-      }, 5000)
-    }
-  }
 })
 
 onBeforeUnmount(() => {
@@ -689,4 +819,11 @@ onBeforeUnmount(() => {
   }
 })
 </script>
+
+<style scoped>
+.unit-gallery-swiper :deep(.swiper-wrapper),
+.unit-gallery-swiper :deep(.swiper-slide) {
+  height: 100%;
+}
+</style>
 

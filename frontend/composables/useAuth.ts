@@ -63,17 +63,21 @@ export function useAuth() {
     initialAuthFetchDone = true
 
     $supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.access_token) sessionRef.value = { access_token: session.access_token }
       if (session?.access_token) {
+        sessionRef.value = { access_token: session.access_token }
         const { data: { user: serverUser }, error } = await $supabase.auth.getUser()
         if (error || !serverUser) {
+          // Session is invalid or user fetch failed – treat as fully logged out
           await $supabase.auth.signOut()
           currentUser.value = null
           authLoading.value = false
           return
         }
+        await resolveUser(serverUser)
+      } else {
+        // No session at all
+        await resolveUser(null)
       }
-      resolveUser(session?.user ?? null)
       authLoading.value = false
     }).catch((err) => {
       // e.g. NavigatorLockAcquireTimeoutError when auth lock is contended (e.g. after signup)

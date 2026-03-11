@@ -1,14 +1,13 @@
 <template>
   <div>
-    <AuthPortal v-if="!user && !authLoading" />
+    <AuthPortal v-if="!user" />
 
-    <div v-else class="min-h-screen">
-      <header class="mb-12 sm:mb-24 px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pt-8 sm:pt-12">
-          <h1 class="text-4xl sm:text-7xl md:text-9xl font-black text-theme-text-primary tracking-tighter leading-[0.8] mb-6 sm:mb-10">
-          MY<br>
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-zinc-300 via-zinc-100 to-zinc-500 opacity-90">SELECTIONS</span>
+    <div v-else class="nav-section light min-h-screen pt-32 sm:pt-48 pb-24">
+      <header class="mb-10 sm:mb-16 px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56">
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-theme-text-primary tracking-tight mb-2">
+          My Selections
         </h1>
-        <p class="text-base sm:text-xl text-zinc-500 font-light max-w-4xl">
+        <p class="text-base sm:text-lg text-zinc-500 font-normal max-w-3xl">
           Your saved units, all in one place.
         </p>
       </header>

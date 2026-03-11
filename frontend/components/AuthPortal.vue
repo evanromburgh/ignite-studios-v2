@@ -8,21 +8,21 @@
           <p class="mt-2 text-zinc-500 text-sm">Enter your email and we’ll send you a link to reset your password.</p>
         </template>
         <template v-else-if="step === 1">
-          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Sign In or Create Account</h2>
+          <h2 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight">Sign In or Create Account</h2>
           <p class="mt-2 text-zinc-500 text-sm">Enter your email to get started.</p>
         </template>
         <template v-else-if="step === 2 && accountExists === false">
-          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Create your account</h2>
+          <h2 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight">Create your account</h2>
         </template>
         <template v-else-if="step === 2 && accountExists === true">
-          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Welcome Back</h2>
+          <h2 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight">Welcome Back</h2>
           <p class="mt-2 text-zinc-500 text-sm">Choose a login method below.</p>
         </template>
         <template v-else-if="step === 3 && signInMethod === 'password'">
           <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Enter your password</h2>
         </template>
         <template v-else-if="step === 3 && signInMethod === 'email_code'">
-          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Check your email</h2>
+          <h2 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight">Check your email</h2>
           <p class="mt-2 text-zinc-500 text-sm">We sent a code to {{ email }}</p>
         </template>
       </div>
@@ -51,7 +51,7 @@
                 v-model="email"
                 required
                 type="email"
-                class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
               />
             </div>
             <div v-if="error" class="text-[10px] font-bold text-red-400 text-center py-2">{{ error }}</div>
@@ -77,30 +77,30 @@
             <template v-if="step === 1">
               <form class="space-y-5 mt-6" @submit.prevent="handleStep1Continue">
                 <div class="space-y-2">
-                  <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">EMAIL ADDRESS</label>
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">EMAIL ADDRESS</label>
                   <input
                     v-model="email"
                     required
                     type="email"
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">CONFIRM EMAIL</label>
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">CONFIRM EMAIL</label>
                   <input
                     v-model="confirmEmail"
                     required
                     type="email"
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
                 <button
                   type="submit"
                   :disabled="loading"
-                  class="w-full h-12 bg-white text-black font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-zinc-100 transition-all flex items-center justify-center disabled:opacity-50 mt-6"
+                  class="w-full h-12 bg-[#18181B] text-white font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all flex items-center justify-center disabled:opacity-50 mt-6"
                 >
-                  <span v-if="loading" class="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                  <span v-if="loading" class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   <span v-else>Continue</span>
                 </button>
               </form>
@@ -120,26 +120,26 @@
               <form class="space-y-5" @submit.prevent="handleCreateAccount">
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-2">
-                    <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">FIRST NAME</label>
+                    <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">FIRST NAME</label>
                     <input
                       v-model="firstName"
                       required
                       type="text"
-                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
                     />
                   </div>
                   <div class="space-y-2">
-                    <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">LAST NAME</label>
+                    <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">LAST NAME</label>
                     <input
                       v-model="lastName"
                       required
                       type="text"
-                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-zinc-200 text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">PHONE NUMBER</label>
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">PHONE NUMBER</label>
                   <div class="relative">
                     <div class="flex items-center bg-theme-input-bg border border-theme-border rounded-lg overflow-hidden focus-within:border-zinc-500 transition-all h-[46px]">
                     <div class="relative shrink-0 h-full flex items-center">
@@ -162,7 +162,7 @@
                       required
                       type="tel"
                       maxlength="15"
-                      class="flex-1 h-full py-0 pl-2 pr-6 bg-transparent text-zinc-200 focus:outline-none text-base sm:text-[0.875rem] leading-[46px] min-w-0"
+                      class="flex-1 h-full py-0 pl-2 pr-6 bg-transparent text-[#18181B] focus:outline-none text-base sm:text-[0.875rem] leading-[46px] min-w-0"
                       @input="onPhoneInput"
                       @focus="phoneCountryDropdownOpen = false"
                     />
@@ -187,7 +187,7 @@
                 </div>
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">CREATE PASSWORD</label>
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">CREATE PASSWORD</label>
                   <div class="relative flex items-center bg-theme-input-bg border border-theme-border rounded-lg h-[46px] focus-within:border-zinc-500 transition-all">
                     <input
                       v-model="password"
@@ -195,7 +195,7 @@
                       autocomplete="new-password"
                       :type="showPassword ? 'text' : 'password'"
                       :minlength="passwordMinLength"
-                      class="w-full h-full pl-6 pr-12 bg-transparent py-0 leading-[46px] text-zinc-200 focus:outline-none text-base sm:text-[0.875rem] rounded-lg"
+                      class="w-full h-full pl-6 pr-12 bg-transparent py-0 leading-[46px] text-[#18181B] focus:outline-none text-base sm:text-[0.875rem] rounded-lg"
                     />
                     <button type="button" class="absolute right-3 text-zinc-500 hover:text-zinc-300 text-xs" @click="showPassword = !showPassword">
                       {{ showPassword ? 'Hide' : 'Show' }}
@@ -212,9 +212,9 @@
                 <button
                   type="submit"
                   :disabled="loading"
-                  class="w-full h-12 bg-zinc-100 text-zinc-950 font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-white transition-all flex items-center justify-center disabled:opacity-50"
+                  class="w-full h-12 bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all flex items-center justify-center disabled:opacity-50"
                 >
-                  <span v-if="loading" class="w-5 h-5 border-2 border-zinc-400 border-t-zinc-950 rounded-full animate-spin" />
+                  <span v-if="loading" class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   <span v-else>Create Account</span>
                 </button>
               </form>
@@ -234,7 +234,7 @@
               <div class="space-y-3">
                 <button
                   type="button"
-                  class="w-full h-12 bg-white text-black font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-zinc-100 transition-all"
+                  class="w-full h-12 bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all"
                   @click="handleContinueWithEmailCode"
                 >
                   Continue with email code
@@ -269,7 +269,7 @@
                       required
                       autocomplete="current-password"
                       :type="showPassword ? 'text' : 'password'"
-                      class="w-full h-full pl-6 pr-12 bg-transparent py-0 leading-[46px] text-zinc-200 focus:outline-none text-base sm:text-[0.875rem] rounded-lg"
+                      class="w-full h-full pl-6 pr-12 bg-transparent py-0 leading-[46px] text-[#18181B] focus:outline-none text-base sm:text-[0.875rem] rounded-lg"
                     />
                     <button type="button" class="absolute right-3 text-zinc-500 hover:text-zinc-300 text-xs" @click="showPassword = !showPassword">
                       {{ showPassword ? 'Hide' : 'Show' }}
@@ -278,13 +278,13 @@
                 </div>
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
                 <div class="flex gap-3">
-                  <button type="button" class="flex-1 h-12 bg-theme-input-bg border border-theme-border-strong text-zinc-300 font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-theme-input-bg transition-all" @click="step = 2">Back</button>
+                  <button type="button" class="flex-1 h-12 bg-transparent border border-theme-border-strong text-theme-text-primary font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-theme-input-bg transition-all" @click="step = 2">Back</button>
                   <button
                     type="submit"
                     :disabled="loading"
-                    class="flex-1 h-12 bg-zinc-100 text-zinc-950 font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-white disabled:opacity-50 flex items-center justify-center transition-all"
+                    class="flex-1 h-12 bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] disabled:opacity-50 flex items-center justify-center transition-all"
                   >
-                    <span v-if="loading" class="w-5 h-5 border-2 border-zinc-400 border-t-zinc-950 rounded-full animate-spin" />
+                    <span v-if="loading" class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                     <span v-else>Sign In</span>
                   </button>
                 </div>
@@ -304,7 +304,7 @@
               </div>
               <form class="space-y-6" @submit.prevent="handleVerifyOtp">
                 <div class="space-y-2">
-                  <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">ONE-TIME CODE</label>
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">ONE-TIME CODE</label>
                   <div class="grid grid-cols-8 gap-2 w-full">
                     <input
                       v-for="(_, i) in OTP_LENGTH"
@@ -313,7 +313,7 @@
                       type="text"
                       inputmode="numeric"
                       maxlength="1"
-                      class="w-full min-w-0 h-12 text-center text-lg font-bold bg-theme-input-bg border border-theme-border rounded-lg text-zinc-200 focus:border-zinc-500 focus:outline-none transition-all"
+                      class="w-full min-w-0 h-12 text-center text-lg font-bold bg-theme-input-bg border border-theme-border rounded-lg text-[#18181B] focus:border-zinc-500 focus:outline-none transition-all"
                       @keydown="onOtpKeydown($event, i)"
                       @input="onOtpSingleInput($event, i)"
                       @paste="onOtpPaste($event)"
@@ -322,13 +322,13 @@
                 </div>
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
                 <div class="flex gap-3">
-                  <button type="button" class="flex-1 h-12 bg-theme-input-bg border border-theme-border-strong text-zinc-300 font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-theme-input-bg transition-all" @click="step = 2">Back</button>
+                  <button type="button" class="flex-1 h-12 bg-transparent border border-theme-border-strong text-theme-text-primary font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-theme-input-bg transition-all" @click="step = 2">Back</button>
                   <button
                     type="submit"
                     :disabled="loading || otpCode.length !== OTP_LENGTH"
-                    class="flex-1 h-12 bg-white text-black font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-zinc-100 disabled:opacity-50 flex items-center justify-center transition-all"
+                    class="flex-1 h-12 bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] disabled:opacity-50 flex items-center justify-center transition-all"
                   >
-                    <span v-if="loading" class="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    <span v-if="loading" class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                     <span v-else>Verify</span>
                   </button>
                 </div>
@@ -340,7 +340,7 @@
 
       <!-- Below the box: Forgot Password? and Back to home (stacked underneath one another) -->
       <div v-if="mode === 'main' && step >= 1" class="flex flex-col items-center gap-1">
-        <button type="button" class="text-sm text-zinc-500 hover:text-theme-text-primary transition-colors" @click="mode = 'forgot'; resetToStep1()">Forgot Password?</button>
+        <button type="button" class="text-sm font-medium text-zinc-500 hover:text-theme-text-primary transition-colors" @click="mode = 'forgot'; resetToStep1()">Forgot Password?</button>
         <NuxtLink to="/" class="text-xs text-zinc-500 hover:text-theme-text-primary transition-colors">Back to home</NuxtLink>
       </div>
     </div>

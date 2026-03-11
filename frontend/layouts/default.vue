@@ -12,16 +12,18 @@
 
         <nav
       class="fixed top-0 left-0 right-0 z-[150] flex flex-col transition-all duration-300"
-      :class="scrolled ? 'bg-theme-overlay-nav/95 backdrop-blur-xl border-b border-white/10 shadow-sm' : 'bg-theme-overlay-nav/80 backdrop-blur-sm border-b border-transparent'"
+      :class="navBackgroundClass"
     >
       <div class="pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 h-16 sm:h-24 flex items-center justify-between flex-shrink-0">
         <NuxtLink
           to="/"
-          class="cursor-pointer group flex items-center shrink-0"
+          class="cursor-pointer flex items-center shrink-0"
         >
-          <span class="text-2xl sm:text-3xl font-black tracking-tighter text-white transition-colors leading-none">IGNITE</span>
-          <span class="h-5 sm:h-5 w-px bg-white/70 mx-2 sm:mx-4" />
-          <span class="text-[9px] sm:text-[10px] font-black text-white uppercase tracking-[0.3em] sm:tracking-[0.5em] leading-none">STUDIOS</span>
+          <img
+            :src="logoSrc"
+            alt="Ignite Studios"
+            class="h-5 sm:h-6 w-auto"
+          />
         </NuxtLink>
 
         <div class="flex items-center gap-3 sm:gap-4">
@@ -29,22 +31,22 @@
           <div class="hidden lg:flex items-center space-x-10 mr-6">
             <NuxtLink
               to="/"
-              class="h-[46px] px-2 text-[10px] uppercase tracking-[0.15em] transition-colors flex items-center"
-              :class="isPropertiesPage ? 'text-white font-black' : 'text-zinc-300 font-bold'"
+              class="h-[46px] px-2 text-[12px] uppercase tracking-[0.15em] transition-colors flex items-center"
+              :class="navLinkClass(isPropertiesPage)"
             >
               Properties
             </NuxtLink>
             <NuxtLink
               to="/documents"
-              class="h-[46px] px-2 text-[10px] uppercase tracking-[0.15em] transition-colors flex items-center"
-              :class="isDocumentsPage ? 'text-white font-black' : 'text-zinc-300 font-bold'"
+              class="h-[46px] px-2 text-[12px] uppercase tracking-[0.15em] transition-colors flex items-center"
+              :class="navLinkClass(isDocumentsPage)"
             >
               Documents
             </NuxtLink>
             <NuxtLink
               to="/contact"
-              class="h-[46px] px-2 text-[10px] uppercase tracking-[0.15em] transition-colors flex items-center"
-              :class="isContactPage ? 'text-white font-black' : 'text-zinc-300 font-bold'"
+              class="h-[46px] px-2 text-[12px] uppercase tracking-[0.15em] transition-colors flex items-center"
+              :class="navLinkClass(isContactPage)"
             >
               Contact
             </NuxtLink>
@@ -55,13 +57,13 @@
               <button
                 type="button"
                 title="Profile Settings"
-                class="w-9 h-9 sm:w-[46px] sm:h-[46px] flex items-center justify-center rounded-full transition-all group overflow-hidden relative border pointer-events-none lg:pointer-events-auto cursor-default lg:cursor-pointer"
-                :class="showUserMenu ? 'bg-theme-accent-green text-white border-theme-accent-green' : 'bg-theme-input-bg border-theme-border-strong text-theme-text-muted lg:hover:text-theme-text-primary lg:hover:border-theme-border-strong'"
+                class="w-9 h-9 sm:w-[46px] sm:h-[46px] flex items-center justify-center rounded-full transition-all group overflow-hidden relative pointer-events-none lg:pointer-events-auto cursor-default lg:cursor-pointer"
+                :class="profileButtonClass"
                 @click="showUserMenu = !showUserMenu"
               >
                 <span class="relative z-10 text-[9px] sm:text-[10px] font-black">{{ userInitials }}</span>
                 <div
-                  v-if="!showUserMenu"
+                  v-if="!showUserMenu && isDarkNavTheme"
                   class="absolute inset-0 bg-gradient-to-tr from-theme-input-bg to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
                 />
               </button>
@@ -122,16 +124,16 @@
           >
             <div class="w-5 h-5 relative flex items-center justify-center">
               <span
-                class="absolute block w-5 h-0.5 bg-white transition-all duration-300 ease-in-out"
-                :class="showMobileMenu ? 'rotate-45 top-[9px]' : 'top-[3px]'"
+                class="absolute block w-5 h-0.5 transition-all duration-300 ease-in-out"
+                :class="[showMobileMenu ? 'rotate-45 top-[9px]' : 'top-[3px]', mobileIconBarClass]"
               />
               <span
-                class="absolute block w-5 h-0.5 bg-white transition-all duration-300 ease-in-out top-[9px]"
-                :class="showMobileMenu ? 'opacity-0 scale-0' : 'opacity-100 scale-100'"
+                class="absolute block w-5 h-0.5 transition-all duration-300 ease-in-out top-[9px]"
+                :class="[showMobileMenu ? 'opacity-0 scale-0' : 'opacity-100 scale-100', mobileIconBarClass]"
               />
               <span
-                class="absolute block w-5 h-0.5 bg-white transition-all duration-300 ease-in-out"
-                :class="showMobileMenu ? '-rotate-45 top-[9px]' : 'top-[15px]'"
+                class="absolute block w-5 h-0.5 transition-all duration-300 ease-in-out"
+                :class="[showMobileMenu ? '-rotate-45 top-[9px]' : 'top-[15px]', mobileIconBarClass]"
               />
             </div>
           </button>
@@ -145,40 +147,40 @@
       >
         <div class="flex flex-col items-stretch pt-0 pb-6 pl-5 pr-5 sm:pl-8 sm:pr-8">
           <div class="w-full flex">
-            <NuxtLink to="/" class="w-full max-w-xs mx-auto h-12 flex items-center text-[10px] uppercase tracking-wider" :class="isPropertiesPage ? 'text-white font-black' : 'text-zinc-300 font-bold'" @click="showMobileMenu = false">
+            <NuxtLink to="/" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isPropertiesPage)" @click="showMobileMenu = false">
               Properties
             </NuxtLink>
           </div>
           <div class="w-full h-px bg-white/10 my-1" />
           <div class="w-full flex">
-            <NuxtLink to="/documents" class="w-full max-w-xs mx-auto h-12 flex items-center text-[10px] uppercase tracking-wider" :class="isDocumentsPage ? 'text-white font-black' : 'text-zinc-300 font-bold'" @click="showMobileMenu = false">
+            <NuxtLink to="/documents" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isDocumentsPage)" @click="showMobileMenu = false">
               Documents
             </NuxtLink>
           </div>
           <div class="w-full h-px bg-white/10 my-1" />
           <div class="w-full flex">
-            <NuxtLink to="/contact" class="w-full max-w-xs mx-auto h-12 flex items-center text-[10px] uppercase tracking-wider" :class="isContactPage ? 'text-white font-black' : 'text-zinc-300 font-bold'" @click="showMobileMenu = false">
+            <NuxtLink to="/contact" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isContactPage)" @click="showMobileMenu = false">
               Contact
             </NuxtLink>
           </div>
           <template v-if="user">
             <div class="w-full h-px bg-white/10 my-1" />
             <div class="w-full flex">
-              <NuxtLink to="/reservations" class="w-full max-w-xs mx-auto h-12 flex items-center gap-3 text-[10px] uppercase tracking-wider" :class="isReservationsPage ? 'text-white font-black' : 'text-zinc-300 font-bold'" @click="showMobileMenu = false">
+              <NuxtLink to="/reservations" class="w-full max-w-xs mx-auto h-12 flex items-center gap-3 text-[12px] uppercase tracking-wider" :class="navLinkClass(isReservationsPage)" @click="showMobileMenu = false">
                 My Reservations
                 <span class="inline-grid place-items-center w-5 h-5 min-w-5 min-h-5 rounded-full ml-auto text-[9px] font-black tabular-nums" :class="reservationsCount > 0 ? 'bg-emerald-500 text-white' : 'bg-theme-input-bg text-theme-text-muted-2'">{{ reservationsCount }}</span>
               </NuxtLink>
             </div>
             <div class="w-full h-px bg-white/10 my-1" />
             <div class="w-full flex">
-              <NuxtLink to="/wishlist" class="w-full max-w-xs mx-auto h-12 flex items-center gap-3 text-[10px] uppercase tracking-wider" :class="isWishlistPage ? 'text-white font-black' : 'text-zinc-300 font-bold'" @click="showMobileMenu = false">
+              <NuxtLink to="/wishlist" class="w-full max-w-xs mx-auto h-12 flex items-center gap-3 text-[12px] uppercase tracking-wider" :class="navLinkClass(isWishlistPage)" @click="showMobileMenu = false">
                 Wishlist
                 <span class="inline-grid place-items-center w-5 h-5 min-w-5 min-h-5 rounded-full ml-auto text-[9px] font-black tabular-nums" :class="wishlistCount > 0 ? 'bg-red-500 text-white' : 'bg-theme-input-bg text-theme-text-muted-2'">{{ wishlistCount }}</span>
               </NuxtLink>
             </div>
             <div class="w-full h-px bg-white/10 my-1" />
             <div class="w-full flex">
-              <button type="button" class="w-full max-w-xs mx-auto h-12 flex items-center justify-between text-[10px] font-black uppercase tracking-widest" :class="isLoggingOut ? 'text-theme-text-muted' : 'text-red-500'" @click="handleLogoutMobile">
+              <button type="button" class="w-full max-w-xs mx-auto h-12 flex items-center justify-between text-[12px] font-black uppercase tracking-widest" :class="isLoggingOut ? 'text-theme-text-muted' : 'text-red-500'" @click="handleLogoutMobile">
                 {{ isLoggingOut ? 'Ending Session...' : 'Sign Out' }}
                 <svg v-if="!isLoggingOut" class="w-4 h-4 ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -219,7 +221,10 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick } from 'vue'
 import IconEyeLottie from '~/components/icons/IconEyeLottie.client.vue'
+import logoLight from '~/assets/branding/logo_light.svg'
+import logoDark from '~/assets/branding/logo_dark.svg'
 
 const route = useRoute()
 const { user, logout } = useAuth()
@@ -228,13 +233,112 @@ const { reservationsCount } = useReservationsCount()
 const { onlineCount } = useGlobalPresence()
 
 const showUserMenu = ref(false)
+const isPropertiesPage = computed(() => route.path === '/' || route.path === '')
+const isDocumentsPage = computed(() => route.path === '/documents')
+const isContactPage = computed(() => route.path === '/contact')
+const isReservationsPage = computed(() => route.path === '/reservations')
+const isWishlistPage = computed(() => route.path === '/wishlist')
+
 const showMobileMenu = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
 const isLoggingOut = ref(false)
 const scrolled = ref(false)
+const currentNavTheme = ref<'dark' | 'light'>(isPropertiesPage.value ? 'dark' : 'light')
 
-function updateScrolled() {
+const isDarkNavTheme = computed(() => currentNavTheme.value === 'dark')
+
+const navBackgroundClass = computed(() =>
+  scrolled.value
+    ? 'bg-theme-overlay-nav/95 backdrop-blur-xl border-b border-white/10 shadow-sm'
+    : 'bg-transparent border-b border-transparent',
+)
+
+function navLinkClass(isActive: boolean) {
+  if (isDarkNavTheme.value) {
+    return isActive ? 'text-white font-semibold' : 'text-white font-normal'
+  }
+  return isActive ? 'text-[#18181B] font-semibold' : 'text-[#18181B] font-normal'
+}
+
+const mobileIconBarClass = computed(() =>
+  isDarkNavTheme.value ? 'bg-white' : 'bg-[#18181B]',
+)
+
+const logoSrc = computed(() => (isDarkNavTheme.value ? logoLight : logoDark))
+
+const profileButtonClass = computed(() => {
+  if (!user.value) return ''
+
+  if (!isDarkNavTheme.value) {
+    // Light nav theme (dark logo/text): solid dark circle, no border
+    return showUserMenu.value
+      ? 'bg-theme-accent-green text-white'
+      : 'bg-[#18181B] text-white hover:bg-[#27272a]'
+  }
+
+  // Dark nav theme (white logo/text): light pill, no border
+  return showUserMenu.value
+    ? 'bg-theme-accent-green text-white'
+    : 'bg-theme-input-bg text-theme-text-muted lg:hover:text-theme-text-primary'
+})
+
+function updateScrolledAndTheme() {
   scrolled.value = window.scrollY > 20
+
+  if (typeof window === 'undefined') return
+
+  const navEl = document.querySelector<HTMLElement>('nav')
+  const navHeight = navEl?.offsetHeight ?? 96
+
+  // Special-case properties page: hero slider (dark) then light content.
+  // Keep dark theme while the nav bar overlaps the dark hero section.
+  if (isPropertiesPage.value) {
+    const hero = document.querySelector<HTMLElement>('.nav-section.dark')
+    if (hero) {
+      const heroTop = hero.offsetTop
+      const heroBottom = heroTop + hero.offsetHeight
+      const navBottom = window.scrollY + navHeight
+      currentNavTheme.value = navBottom <= heroBottom ? 'dark' : 'light'
+      return
+    }
+  }
+
+  const sections = Array.from(
+    document.querySelectorAll<HTMLElement>('.nav-section'),
+  )
+  if (!sections.length) {
+    currentNavTheme.value = 'light'
+    return
+  }
+
+  let darkCoveringNav = false
+  let themeCoveringNav: 'dark' | 'light' | null = null
+
+  sections.forEach((el) => {
+    const rect = el.getBoundingClientRect()
+    const theme: 'dark' | 'light' = el.classList.contains('dark') ? 'dark' : 'light'
+
+    // Section intersects the vertical space behind the nav bar
+    const intersectsNav = rect.top < navHeight && rect.bottom > 0
+    if (!intersectsNav) return
+
+    if (theme === 'dark') {
+      darkCoveringNav = true
+    }
+    if (!themeCoveringNav) {
+      themeCoveringNav = theme
+    }
+  })
+
+  if (darkCoveringNav) {
+    currentNavTheme.value = 'dark'
+  } else if (themeCoveringNav) {
+    currentNavTheme.value = themeCoveringNav
+  } else {
+    const firstTheme: 'dark' | 'light' =
+      sections[0].classList.contains('dark') ? 'dark' : 'light'
+    currentNavTheme.value = firstTheme
+  }
 }
 
 const userInitials = computed(() => {
@@ -244,12 +348,6 @@ const userInitials = computed(() => {
   }
   return user.value.email ? user.value.email[0].toUpperCase() : '?'
 })
-
-const isPropertiesPage = computed(() => route.path === '/' || route.path === '')
-const isDocumentsPage = computed(() => route.path === '/documents')
-const isContactPage = computed(() => route.path === '/contact')
-const isReservationsPage = computed(() => route.path === '/reservations')
-const isWishlistPage = computed(() => route.path === '/wishlist')
 
 function onClickOutside(e: MouseEvent) {
   if (userMenuRef.value && !userMenuRef.value.contains(e.target as Node)) {
@@ -272,19 +370,29 @@ function handleLogoutMobile() {
 onMounted(() => {
   document.addEventListener('mousedown', onClickOutside)
   window.addEventListener('resize', onResize)
-  window.addEventListener('scroll', updateScrolled, { passive: true })
-  updateScrolled()
+  window.addEventListener('scroll', updateScrolledAndTheme, { passive: true })
+  updateScrolledAndTheme()
 })
+
+// Re-evaluate theme when route changes (e.g., navigating between pages)
+watch(
+  () => route.fullPath,
+  async () => {
+    await nextTick()
+    updateScrolledAndTheme()
+  },
+)
 
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', onClickOutside)
   window.removeEventListener('resize', onResize)
-  window.removeEventListener('scroll', updateScrolled)
+  window.removeEventListener('scroll', updateScrolledAndTheme)
   document.body.style.overflow = ''
 })
 
 function onResize() {
   if (window.innerWidth >= 1024) showMobileMenu.value = false
+  updateScrolledAndTheme()
 }
 
 watch(showMobileMenu, (open) => {

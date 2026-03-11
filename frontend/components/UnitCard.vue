@@ -20,7 +20,8 @@
         <span class="pointer-events-auto text-lg font-bold text-zinc-900 tracking-tight leading-none drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]">{{ unit.unitNumber }}</span>
         <button
           type="button"
-          class="pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-zinc-300 bg-white/95 text-zinc-600 text-[10px] font-bold uppercase tracking-widest shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600"
+          :disabled="!isAvailable && !isAdmin"
+          class="pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-zinc-300 bg-white/95 text-zinc-600 text-[10px] font-bold uppercase tracking-widest shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:hover:bg-white/95 disabled:hover:text-zinc-400 disabled:hover:border-zinc-300"
           :class="isWishlisted ? '!border-red-600 !bg-red-600 !text-white' : ''"
           @click.stop="onToggleWishlist(unit.id)"
         >
@@ -33,7 +34,7 @@
         v-if="showOverlay"
         class="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
       >
-        <span class="px-5 py-2 rounded-full bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em]">
+        <span class="px-9 py-3 rounded-full bg-zinc-900 text-white text-[12px] font-black uppercase tracking-[0.2em]">
           {{ overlayLabel }}
         </span>
       </div>
@@ -55,7 +56,7 @@
 
         <!-- Feature icons: 1 Bedroom, 2 Bathroom, 3 Parking, 4 Unit Type, 5 Unit Size -->
         <div class="flex items-center justify-evenly gap-4 border-t border-b border-zinc-200/80 py-[1.5rem]">
-          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700" title="Bedrooms">
+          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
             <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
               Bedrooms
               <span class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800" aria-hidden="true" />
@@ -63,7 +64,7 @@
             <IconBed class="w-4 h-4 text-zinc-700 flex-shrink-0" />
             <span>{{ unit.bedrooms }}</span>
           </div>
-          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700" title="Bathrooms">
+          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
             <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
               Bathrooms
               <span class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800" aria-hidden="true" />
@@ -71,7 +72,7 @@
             <IconBath class="w-4 h-4 text-zinc-700 flex-shrink-0" />
             <span>{{ unit.bathrooms }}</span>
           </div>
-          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700" title="Parking">
+          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
             <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
               Parking
               <span class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800" aria-hidden="true" />
@@ -79,7 +80,7 @@
             <IconCar class="w-4 h-4 text-zinc-700 flex-shrink-0" />
             <span>{{ unit.parking }}</span>
           </div>
-          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700" title="Unit Type">
+          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
             <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
               Unit Type
               <span class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800" aria-hidden="true" />
@@ -87,7 +88,7 @@
             <IconLayout class="w-4 h-4 text-zinc-700 flex-shrink-0" />
             <span>{{ unit.unitType || '—' }}</span>
           </div>
-          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-default text-[11px] text-zinc-700" title="Unit Size">
+          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
             <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
               Unit Size
               <span class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800" aria-hidden="true" />

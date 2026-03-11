@@ -24,7 +24,7 @@
     <!-- Progress bar: fill by width so both ends stay rounded; longer transition to see it animate -->
     <div class="w-full mt-1.5 h-[0.35rem] rounded-full overflow-hidden bg-theme-border">
       <div
-        class="h-full bg-white rounded-full transition-[width] duration-500 ease-out"
+        class="h-full rounded-full transition-[width] duration-500 ease-out bg-[#18181B]"
         :style="{ width: fillWidth }"
       />
     </div>

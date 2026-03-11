@@ -94,9 +94,16 @@ const route = useRoute()
 const { $supabase } = useNuxtApp()
 const unit = ref<Unit | null>(null)
 const loading = ref(true)
+const storageBucket = 'units'
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('en-US').format(price).replace(/,/g, ' ')
+}
+
+function getPublicUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  const { data } = $supabase.storage.from(storageBucket).getPublicUrl(path)
+  return data.publicUrl ?? null
 }
 
 function mapRow(row: any): Unit {
@@ -118,10 +125,10 @@ function mapRow(row: any): Unit {
     unitType: row.unit_type,
     floor: row.floor ?? null,
     direction: row.direction ?? null,
-    imageUrl: row.image_url,
-    imageUrl2: row.image_url_2 ?? null,
-    imageUrl3: row.image_url_3 ?? null,
-    floorplanUrl: row.floorplan_url ?? null,
+    imageUrl: (getPublicUrl(row.image_key_1) ?? '') as string,
+    imageUrl2: getPublicUrl(row.image_key_2),
+    imageUrl3: getPublicUrl(row.image_key_3),
+    floorplanUrl: getPublicUrl(row.floorplan_key),
     viewers: rawViewers,
     lockExpiresAt,
     lockedBy: row.locked_by,

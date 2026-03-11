@@ -1,6 +1,6 @@
 <template>
   <div>
-    <AuthPortal v-if="!user && !authLoading" />
+    <AuthPortal v-if="!user" />
 
     <div v-else class="min-h-screen">
       <!-- One-time toast after returning from payment cancel (bottom-right, compact) -->
@@ -22,7 +22,7 @@
         </button>
       </div>
       <!-- Hero header: Swiper slider (same structure as reference) -->
-      <header class="relative min-h-screen h-svh sm:h-screen overflow-hidden group bg-theme-bg">
+      <header class="nav-section dark relative min-h-screen h-svh sm:h-screen overflow-hidden group bg-theme-bg">
         <div class="absolute inset-0 z-10">
           <ClientOnly>
             <Swiper
@@ -211,7 +211,7 @@
       </div>
 
       <!-- Unit results section -->
-      <section class="w-[75%] mx-auto pb-10">
+      <section class="nav-section light w-[75%] mx-auto pb-10">
         <div v-if="unitsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem] animate-pulse">
           <div
             v-for="i in 8"
