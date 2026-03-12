@@ -120,7 +120,7 @@
             </p>
             <p class="mt-1 text-[13px]" style="color: rgb(0, 0, 0);">
               <span class="hidden sm:inline">
-                Switch how you browse units: <span class="font-semibold">Grid</span>, <span class="font-semibold">List</span>, <span class="font-semibold">Elevation</span>, or <span class="font-semibold">Floor</span>.
+                Switch how you browse units: <span class="font-semibold">Grid</span> or <span class="font-semibold">List</span>.
               </span>
             </p>
           </div>
@@ -171,47 +171,14 @@
                 <span class="text-[11px] sm:text-xs font-medium">List</span>
                 <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #000000; --tw-ring-offset-color: #FFFFFF;" />
               </button>
-              <button
-                type="button"
-                data-view-mode="ELEVATION"
-                class="hidden sm:flex relative z-10 group flex-1 min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-1.5"
-                :class="viewMode === 'ELEVATION' ? 'text-white' : 'text-black'"
-                :style="{ background: 'transparent' }"
-                aria-pressed="viewMode === 'ELEVATION'"
-                @click="viewMode = 'ELEVATION'"
-              >
-                <span class="shrink-0 w-[14px] h-[14px] flex items-center justify-center" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-full h-full shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </span>
-                <span class="text-[11px] sm:text-xs font-medium">Elevation</span>
-                <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #000000; --tw-ring-offset-color: #FFFFFF;" />
-              </button>
-              <button
-                type="button"
-                data-view-mode="FLOOR"
-                class="hidden sm:flex relative z-10 group flex-1 min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-1.5"
-                :class="viewMode === 'FLOOR' ? 'text-white' : 'text-black'"
-                :style="{ background: 'transparent' }"
-                aria-pressed="viewMode === 'FLOOR'"
-                @click="viewMode = 'FLOOR'"
-              >
-                <span class="shrink-0 w-[14px] h-[14px] flex items-center justify-center" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-full h-full shrink-0" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                    <path d="M8.235 1.559a.5.5 0 0 0-.47 0l-7.5 4a.5.5 0 0 0 0 .882L3.188 8 .264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l2.922-1.559a.5.5 0 0 0 0-.882zm3.515 7.008L14.438 10 8 13.433 1.562 10 4.25 8.567l3.515 1.874a.5.5 0 0 0 .47 0zM8 9.433 1.562 6 8 2.567 14.438 6z"/>
-                  </svg>
-                </span>
-                <span class="text-[11px] sm:text-xs font-medium">Floor</span>
-                <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #000000; --tw-ring-offset-color: #FFFFFF;" />
-              </button>
+              <!-- Elevation and Floor view modes temporarily removed -->
             </div>
           </div>
         </div>
       </div>
 
       <!-- Unit results section -->
-      <section class="nav-section light w-[75%] mx-auto pb-10">
+      <section class="nav-section light w-[75%] mx-auto pb-20">
         <div v-if="unitsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem] animate-pulse">
           <div
             v-for="i in 8"
@@ -228,19 +195,39 @@
           <h3 class="text-2xl md:text-3xl font-black text-zinc-600 uppercase tracking-[0.5em]">No Matches</h3>
         </div>
 
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem]">
-          <UnitCard
-            v-for="unit in displayedUnits"
-            :key="unit.id"
-            :unit="unit"
-            :is-wishlisted="wishlistIds.includes(unit.id)"
-            :server-clock-offset-ms="serverClockOffsetMs"
-            :current-user-id="user?.id ?? null"
-            :reserving-unit-id="reservingUnitId"
-            @select="onSelectUnit"
-            @reserve="onReserveUnit"
-            @toggle-wishlist="onToggleWishlist"
-          />
+        <div v-else>
+          <div
+            v-if="viewMode === 'GRID'"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem]"
+          >
+            <UnitCard
+              v-for="unit in displayedUnits"
+              :key="unit.id"
+              :unit="unit"
+              :is-wishlisted="wishlistIds.includes(unit.id)"
+              :server-clock-offset-ms="serverClockOffsetMs"
+              :current-user-id="user?.id ?? null"
+              :reserving-unit-id="reservingUnitId"
+              @select="onSelectUnit"
+              @reserve="onReserveUnit"
+              @toggle-wishlist="onToggleWishlist"
+            />
+          </div>
+
+          <div v-else-if="viewMode === 'LIST'" class="space-y-3">
+            <UnitListRow
+              v-for="unit in displayedUnits"
+              :key="unit.id"
+              :unit="unit"
+              :is-wishlisted="wishlistIds.includes(unit.id)"
+              :server-clock-offset-ms="serverClockOffsetMs"
+              :current-user-id="user?.id ?? null"
+              :reserving-unit-id="reservingUnitId"
+              @select="onSelectUnit"
+              @reserve="onReserveUnit"
+              @toggle-wishlist="onToggleWishlist"
+            />
+          </div>
         </div>
       </section>
     </div>
@@ -254,6 +241,7 @@ import 'swiper/css'
 import 'swiper/css/pagination'
 import AuthPortal from '~/components/AuthPortal.vue'
 import UnitCard from '~/components/UnitCard.vue'
+import UnitListRow from '~/components/UnitListRow.vue'
 import FilterBar from '~/components/FilterBar.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useUnits } from '~/composables/useUnits'
