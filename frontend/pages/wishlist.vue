@@ -2,7 +2,7 @@
   <div>
     <AuthPortal v-if="!user" />
 
-    <div v-else class="nav-section light min-h-screen pt-32 sm:pt-48 pb-24">
+    <div v-else class="nav-section light min-h-screen pt-[11rem] pb-20">
       <header class="mb-10 sm:mb-16 px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56">
         <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-theme-text-primary tracking-tight mb-2">
           My Selections
@@ -12,7 +12,7 @@
         </p>
       </header>
 
-      <section class="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pb-10">
+      <section class="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pb-0">
         <div v-if="wishlistLoading && wishlistUnits.length === 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem] animate-pulse">
           <div
             v-for="i in 6"

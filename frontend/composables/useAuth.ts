@@ -12,21 +12,29 @@ function mapUserSync(supabaseUser: any): AppUser | null {
     firstName: meta.first_name ?? null,
     lastName: meta.last_name ?? null,
     phone: meta.phone ?? null,
+    idPassportNumber: null,
+    reasonForBuying: null,
   }
 }
 
-async function fetchRole(supabase: any, userId: string): Promise<AppUser['role']> {
+async function fetchRole(supabase: any, userId: string): Promise<{ role: AppUser['role']; idPassportNumber?: string | null; reasonForBuying?: string | null }> {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, id_passport_number, reason_for_buying')
       .eq('id', userId)
       .single()
 
-    if (error || !data) return 'user'
-    return (data.role as AppUser['role']) ?? 'user'
+    if (error || !data) {
+      return { role: 'user', idPassportNumber: null, reasonForBuying: null }
+    }
+    return {
+      role: (data.role as AppUser['role']) ?? 'user',
+      idPassportNumber: (data.id_passport_number as string | null) ?? null,
+      reasonForBuying: (data.reason_for_buying as string | null) ?? null,
+    }
   } catch {
-    return 'user'
+    return { role: 'user', idPassportNumber: null, reasonForBuying: null }
   }
 }
 
@@ -49,10 +57,12 @@ export function useAuth() {
         currentUser.value = null
         return
       }
-      currentUser.value = user
-      const role = await fetchRole($supabase, user.id)
-      if (role !== user.role) {
-        currentUser.value = { ...user, role }
+      const profile = await fetchRole($supabase, user.id)
+      currentUser.value = {
+        ...user,
+        role: profile.role,
+        idPassportNumber: profile.idPassportNumber ?? null,
+        reasonForBuying: profile.reasonForBuying ?? null,
       }
     }
 
@@ -101,6 +111,8 @@ export function useAuth() {
     firstName?: string,
     lastName?: string,
     phone?: string,
+    idPassport?: string,
+    reasonForBuying?: string,
   ) => {
     const { data, error } = await $supabase.auth.signUp({
       email,
@@ -117,12 +129,18 @@ export function useAuth() {
 
     if (error) throw error
 
-    // Mirror phone update behaviour from React app
-    if (data.user?.id && phone) {
-      await $supabase
-        .from('profiles')
-        .update({ phone: phone.trim() })
-        .eq('id', data.user.id)
+    // Mirror phone update behaviour from React app and also store ID/Passport + Reason for Buying in profiles
+    if (data.user?.id) {
+      const updates: Record<string, string> = {}
+      if (phone) updates.phone = phone.trim()
+      if (idPassport) updates.id_passport_number = idPassport.trim()
+      if (reasonForBuying) updates.reason_for_buying = reasonForBuying.trim()
+      if (Object.keys(updates).length > 0) {
+        await $supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', data.user.id)
+      }
     }
 
     // Fire-and-forget Zoho lead creation: use session from signUp response so token is valid
@@ -150,6 +168,8 @@ export function useAuth() {
               lastName,
               email,
               phone: phone || '',
+              idPassport,
+              reasonForBuying,
             },
             headers: {
               'Content-Type': 'application/json',

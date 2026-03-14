@@ -7,7 +7,7 @@ The **main app** for Ignite Studios. The repo root is this app.
 - **Framework:** Nuxt 3 (Vue)
 - **Styling:** Tailwind CSS
 - **Backend:** Supabase
-- **Payments:** PayFast (via Supabase Edge Functions)
+- **Payments:** Paystack (via Supabase Edge Functions)
 
 ## Setup
 
@@ -35,8 +35,8 @@ The **main app** for Ignite Studios. The repo root is this app.
 - **App env:** Use `.env` in the repo root. Do not commit it.
 - **Supabase CLI:** When running Supabase commands (migrations, functions), use the backend workdir:  
   `supabase --workdir backend <command>` or set `SUPABASE_WORKDIR=backend`.
-- **Supabase Edge Function secrets** (Zoho, PayFast, return/cancel URLs): set in **Supabase Dashboard** → Project Settings → Edge Functions → Secrets.  
-  Set `PAYFAST_RETURN_URL` and `PAYFAST_CANCEL_URL` to your app URLs (e.g. `https://your-domain.com/payment-success` and `.../payment-cancel`).
+- **Supabase Edge Function secrets** (Zoho, Paystack): set in **Supabase Dashboard** → Project Settings → Edge Functions → Secrets.  
+  Set `PAYSTACK_SECRET_KEY` and optionally `PAYSTACK_CALLBACK_URL` (e.g. `https://your-domain.com/payment-success`). See `backend/supabase/functions/README.md` for full list.
 
 ## Deploy
 

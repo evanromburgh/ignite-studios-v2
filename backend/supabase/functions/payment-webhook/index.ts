@@ -16,6 +16,24 @@ function jsonOk(body: string, init?: ResponseInit) {
   });
 }
 
+async function hmacSha512Hex(secret: string, message: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-512' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    new TextEncoder().encode(message)
+  );
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 serve(async (req) => {
   console.log('payment-webhook invoked', { method: req.method, url: req.url });
   
@@ -30,15 +48,15 @@ serve(async (req) => {
 
     const contentType = req.headers.get('content-type') || '';
     const bodyText = await req.text();
-    
+
     console.log('Request content-type:', contentType);
     console.log('Request body (first 500 chars):', bodyText.substring(0, 500));
-    
-    let paymentData: Record<string, string> = {};
+
+    let paymentData: Record<string, unknown> = {};
     if (contentType.includes('application/json')) {
       try {
-        paymentData = JSON.parse(bodyText);
-        console.log('Parsed JSON payment data:', paymentData);
+        paymentData = JSON.parse(bodyText) as Record<string, unknown>;
+        console.log('Parsed JSON payment data (event):', (paymentData as any).event);
       } catch (e) {
         console.error('Failed to parse JSON:', e);
       }
@@ -50,38 +68,74 @@ serve(async (req) => {
       console.log('Parsed form-urlencoded payment data:', paymentData);
     }
 
-    const paymentReference = String(paymentData.m_payment_id || '').trim();
-    const paymentStatus = paymentData.payment_status?.toUpperCase() || paymentData.payment_status;
+    let paymentReference = '';
+    let finalStatus: 'COMPLETE' | 'CANCELLED' | null = null;
 
-    console.log('Payment reference (raw):', paymentReference);
-    console.log('Payment reference length:', paymentReference.length);
-    console.log('Payment reference type:', typeof paymentReference);
-    console.log('Payment status (raw):', paymentData.payment_status);
-    console.log('Payment status (normalized):', paymentStatus);
+    // Paystack: JSON body with event + data
+    const paystackEvent = paymentData.event as string | undefined;
+    const paystackData = paymentData.data as Record<string, unknown> | undefined;
+    if (contentType.includes('application/json') && paystackEvent && paystackData) {
+      const paystackSecret = Deno.env.get('PAYSTACK_SECRET_KEY')?.trim();
+      if (paystackSecret) {
+        const signature = req.headers.get('x-paystack-signature') || '';
+        const expectedHash = await hmacSha512Hex(paystackSecret, bodyText);
+        if (signature !== expectedHash) {
+          console.error('Paystack webhook signature mismatch');
+          return jsonOk('OK');
+        }
+      }
+      const ref = paystackData.reference as string | undefined;
+      const status = String(paystackData.status ?? '').toLowerCase();
+      if (paystackEvent === 'charge.success' && status === 'success') {
+        finalStatus = 'COMPLETE';
+        paymentReference = String(ref ?? '').trim();
+      } else if (
+        paystackEvent === 'charge.failed' ||
+        paystackEvent === 'charge.reversed' ||
+        status === 'failed' ||
+        status === 'cancelled'
+      ) {
+        finalStatus = 'CANCELLED';
+        paymentReference = String(ref ?? '').trim();
+      }
+      if (!paymentReference || !finalStatus) {
+        console.log('Paystack event ignored:', paystackEvent, status);
+        return jsonOk('OK');
+      }
+      console.log('Paystack webhook:', paystackEvent, 'reference:', paymentReference, 'finalStatus:', finalStatus);
+    } else {
+      // PayFast: form body with m_payment_id and payment_status
+      paymentReference = String((paymentData.m_payment_id as string) || '').trim();
+      const paymentStatus = ((paymentData.payment_status as string) || '').toUpperCase();
+      const isComplete = paymentStatus === 'COMPLETE';
+      const isCancelled =
+        paymentStatus === 'CANCELLED' || paymentStatus === 'CANCEL' || paymentStatus === 'CANCELED';
+      if (!paymentReference || (!isComplete && !isCancelled)) {
+        console.log('Skipping - no payment reference or invalid status (PayFast)');
+        return jsonOk('OK');
+      }
+      finalStatus = isComplete ? 'COMPLETE' : 'CANCELLED';
+      console.log('PayFast webhook:', paymentReference, 'finalStatus:', finalStatus);
+    }
 
-    const normalizedStatus = paymentStatus?.toUpperCase();
-    const isComplete = normalizedStatus === 'COMPLETE';
-    const isCancelled = normalizedStatus === 'CANCELLED' || normalizedStatus === 'CANCEL' || normalizedStatus === 'CANCELED';
-    
-    console.log('isComplete:', isComplete, 'isCancelled:', isCancelled);
-    
-    if (!paymentReference || (!isComplete && !isCancelled)) {
-      console.log('Skipping - no payment reference or invalid status');
+    if (!paymentReference || !finalStatus) {
+      console.log('Skipping - missing reference or finalStatus');
       return jsonOk('OK');
     }
-    
-    const finalStatus = isComplete ? 'COMPLETE' : 'CANCELLED';
+
     console.log('Processing payment with finalStatus:', finalStatus);
 
     // Ensure we're working with a string and decode any URL encoding
     const decodedReference = decodeURIComponent(paymentReference);
     console.log('Decoded payment reference:', decodedReference);
     
-    // Reference format: unitId|zohoContactId|timestamp (pipe so UUID with dashes doesn't split into extra parts)
-    const parts = decodedReference.split('|');
+    // Reference format: unitId.zohoContactId.timestamp (Paystack) or unitId|zohoContactId|timestamp (legacy PayFast)
+    const parts = decodedReference.includes('|')
+      ? decodedReference.split('|')
+      : decodedReference.split('.');
     console.log('Payment reference parts (array):', JSON.stringify(parts));
     console.log('Payment reference parts count:', parts.length);
-    console.log('SEARCH_TARGET: PayFast sent m_payment_id=', decodedReference, '-> we will search Zoho for unitId=', parts[0], 'contactId=', parts[1]);
+    console.log('SEARCH_TARGET: reference=', decodedReference, '-> we will search Zoho for unitId=', parts[0], 'contactId=', parts[1]);
     
     if (parts.length !== 3) {
       console.error('Invalid payment reference format:', decodedReference, 'parts length:', parts.length, 'parts:', parts);

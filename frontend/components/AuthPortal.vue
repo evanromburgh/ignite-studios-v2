@@ -106,7 +106,7 @@
               </form>
             </template>
 
-            <!-- Step 2: Create account -->
+            <!-- Step 2: Create account (basic details) -->
             <template v-else-if="step === 2 && accountExists === false">
               <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
                 <div class="flex items-center justify-between gap-2">
@@ -117,7 +117,7 @@
                   <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="goBackToStep1">Change</button>
                 </div>
               </div>
-              <form class="space-y-5" @submit.prevent="handleCreateAccount">
+              <form class="space-y-5" @submit.prevent="handleCreateAccountStep2">
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-2">
                     <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">FIRST NAME</label>
@@ -208,6 +208,57 @@
                     <span class="text-[9px] font-black uppercase tracking-widest" :class="passwordStrength.textColor">{{ passwordStrength.label }}</span>
                   </div>
                 </div>
+                <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
+                <button
+                  type="submit"
+                  :disabled="loading"
+                  class="w-full h-12 bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all flex items-center justify-center disabled:opacity-50"
+                >
+                  <span v-if="loading" class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  <span v-else>Continue</span>
+                </button>
+              </form>
+            </template>
+
+            <!-- Step 3: Signup – ID / Passport & Reason for Buying -->
+            <template v-else-if="step === 3 && accountExists === false">
+              <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
+                <div class="flex items-center justify-between gap-2">
+                  <div>
+                    <p class="text-[10px] sm:text-[11px] font-medium text-zinc-500 uppercase tracking-[0.05em]">FINALIZE ACCOUNT</p>
+                    <p class="text-[13px] font-medium text-theme-text-primary mt-0.5">{{ email }}</p>
+                  </div>
+                  <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="step = 2">Back</button>
+                </div>
+              </div>
+              <form class="space-y-5" @submit.prevent="handleCreateAccount">
+                <div class="space-y-2">
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
+                    ID / Passport Number
+                  </label>
+                  <input
+                    v-model="idPassport"
+                    required
+                    type="text"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
+                    Reason for Buying
+                  </label>
+                  <select
+                    v-model="reasonForBuying"
+                    required
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] pt-[13px] pb-[13px] leading-[1.25] focus:border-zinc-500 focus:outline-none text-[#18181B] text-base sm:text-[0.875rem] transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled>Select reason</option>
+                    <option value="Primary Residence">Primary Residence</option>
+                    <option value="Investment Property">Investment Property</option>
+                  </select>
+                </div>
+
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
                 <button
                   type="submit"
@@ -370,6 +421,8 @@ const email = ref('')
 const confirmEmail = ref('')
 const password = ref('')
 const phone = ref('')
+const idPassport = ref('')
+const reasonForBuying = ref('')
 const phoneCountryDropdownOpen = ref(false)
 
 const selectedPhoneCountry = ref(
@@ -517,6 +570,23 @@ async function handleContinueWithEmailCode() {
   }
 }
 
+async function handleCreateAccountStep2() {
+  error.value = null
+  if (!firstName.value.trim()) {
+    error.value = 'First name is required.'
+    return
+  }
+  if (!lastName.value.trim()) {
+    error.value = 'Last name is required.'
+    return
+  }
+  if (password.value.length < passwordMinLength) {
+    error.value = `Password must be at least ${passwordMinLength} characters.`
+    return
+  }
+  step.value = 3
+}
+
 async function handleCreateAccount() {
   error.value = null
   if (!firstName.value.trim()) {
@@ -531,11 +601,28 @@ async function handleCreateAccount() {
     error.value = `Password must be at least ${passwordMinLength} characters.`
     return
   }
+  if (!idPassport.value.trim()) {
+    error.value = 'ID / Passport Number is required.'
+    return
+  }
+  if (!reasonForBuying.value.trim()) {
+    error.value = 'Reason for Buying is required.'
+    return
+  }
   loading.value = true
   try {
     const fullName = `${firstName.value} ${lastName.value}`.trim()
     const fullPhone = `+${selectedPhoneCountry.value.dialCode}${phone.value}`
-    await signUp(email.value, password.value, fullName, firstName.value, lastName.value, fullPhone)
+    await signUp(
+      email.value,
+      password.value,
+      fullName,
+      firstName.value,
+      lastName.value,
+      fullPhone,
+      idPassport.value.trim(),
+      reasonForBuying.value.trim(),
+    )
     await navigateTo('/')
   } catch (err: any) {
     error.value = err?.message || err?.error?.message || 'Something went wrong.'

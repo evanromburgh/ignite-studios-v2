@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen">
+  <div class="bg-theme-bg">
     <div v-if="!user || !unitNumberDisplay" class="flex items-center justify-center min-h-[60vh]">
       <p class="text-zinc-500">Redirecting…</p>
     </div>
 
-    <div v-else class="pt-32 sm:pt-48 pb-0">
-      <div class="max-w-[1400px] mx-auto px-5 sm:px-8">
+    <div v-else class="pt-[11rem] pb-20 bg-theme-bg">
+      <div class="w-full mx-auto px-4 sm:px-6 lg:px-12">
         <div v-if="acquireError" class="mb-8 p-6 rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-200">
           <p class="text-sm font-bold uppercase tracking-wide">{{ acquireError }}</p>
           <NuxtLink to="/" class="inline-block mt-4 text-[11px] font-black uppercase text-theme-text-primary hover:underline">Browse units</NuxtLink>
@@ -15,220 +15,182 @@
           <p class="mt-2 text-[13px] text-zinc-400">Someone else has this unit in their reservation. It will be available again when their session expires.</p>
           <NuxtLink to="/" class="inline-block mt-4 text-[11px] font-black uppercase text-theme-text-primary hover:underline">Browse units</NuxtLink>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-16">
-          <!-- Form column -->
-          <div class="lg:col-span-2">
-            <header class="mb-8 sm:mb-16">
-              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-2">
-                <h1 class="text-2xl sm:text-3xl md:text-5xl font-semibold text-theme-text-primary tracking-tighter leading-none">
-                  Reserve Unit {{ unitNumberDisplay }}
-                </h1>
-                <div v-if="acquiringLock" class="flex items-center gap-3 sm:gap-4">
-                  <span class="text-[12px] sm:text-[13px] text-zinc-500 font-medium">Securing your reservation…</span>
-                </div>
-                <div v-else-if="lockExpiresAtMs" class="flex items-center gap-3 sm:gap-4">
-                  <div class="relative flex h-2 w-2 flex-shrink-0">
-                    <span
-                      class="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping"
-                      :class="timerPingClass"
-                    />
-                    <span
-                      class="relative inline-flex rounded-full h-2 w-2"
-                      :class="timerMainClass"
-                    />
-                  </div>
-                  <p class="text-[12px] sm:text-[13px] md:text-[15px] font-medium text-zinc-500 tracking-tight flex items-center gap-2 whitespace-nowrap">
-                    <span class="uppercase tracking-widest font-bold text-[10px]">Reservation Expires in</span>
-                    <span class="text-theme-text-primary font-bold tabular-nums bg-theme-input-bg px-3 sm:px-4 py-1.5 rounded-lg border border-theme-border-strong">
-                      {{ formatTime(timeLeft) }}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </header>
 
-            <form class="space-y-5 w-full mb-0" @submit.prevent="onSubmit">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                  <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] ml-1">First Name</label>
-                  <input
-                    v-model="firstName"
-                    required
-                    type="text"
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
-                  />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] ml-1">Last Name</label>
-                  <input
-                    v-model="lastName"
-                    required
-                    type="text"
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
-                  />
-                </div>
+        <div class="md:flex md:gap-12 md:items-center">
+          <!-- Left: unit image (matches Unit page proportions) -->
+          <div class="md:w-[60%]">
+            <div class="relative w-full overflow-hidden rounded-2xl bg-[#18181B] group aspect-[3/2] flex items-center justify-center">
+              <img
+                v-if="unit?.floorplanUrl"
+                :src="unit.floorplanUrl"
+                :alt="`Unit ${unit.unitNumber} floorplan`"
+                class="max-h-full max-w-full object-contain object-center"
+                loading="lazy"
+              />
+              <img
+                v-else-if="unit?.imageUrl"
+                :src="unit.imageUrl"
+                :alt="`Unit ${unit.unitNumber} image`"
+                class="w-full h-full object-cover object-center"
+                loading="lazy"
+              />
+              <div
+                v-else
+                class="flex items-center justify-center w-full h-full text-sm text-zinc-500"
+              >
+                Floorplan coming soon for Unit {{ unitNumberDisplay }}.
               </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                  <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] ml-1">Phone Number</label>
-                  <div class="relative">
-                    <div class="flex items-center bg-theme-input-bg border border-theme-border rounded-lg overflow-hidden focus-within:border-zinc-500 transition-all h-[46px]">
-                      <div class="relative shrink-0 h-full flex items-center">
-                        <button
-                          type="button"
-                          class="h-full flex items-center gap-1.5 pl-4 pr-2 text-zinc-400 hover:text-zinc-200 transition-colors"
-                          @click.stop="phoneCountryDropdownOpen = !phoneCountryDropdownOpen"
-                        >
-                          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-theme-input-bg" aria-hidden="true">
-                            <img :src="phoneFlagUrl(selectedPhoneCountry.countryCode)" :alt="selectedPhoneCountry.countryCode" class="w-full h-full object-cover">
-                          </span>
-                          <span class="text-[0.875rem]">{{ formatPhoneDialCode(selectedPhoneCountry.dialCode) }} ({{ selectedPhoneCountry.countryCode }})</span>
-                          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                      </div>
-                      <input
-                        :value="phone"
-                        required
-                        type="tel"
-                        maxlength="15"
-                        class="flex-1 h-full py-0 pl-2 pr-6 bg-transparent text-zinc-200 focus:outline-none text-base sm:text-[0.875rem] leading-[46px] min-w-0"
-                        @input="onPhoneInput"
-                        @focus="phoneCountryDropdownOpen = false"
-                      >
-                    </div>
-                    <div
-                      v-if="phoneCountryDropdownOpen"
-                      class="absolute top-full left-0 mt-1 z-[100] max-h-64 overflow-auto rounded-lg border border-theme-border-strong bg-theme-surface-elevated shadow-xl py-1 min-w-[14rem]"
-                    >
-                      <button
-                        v-for="(c, i) in phoneCountries"
-                        :key="i"
-                        type="button"
-                        class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-zinc-300 hover:bg-theme-input-bg hover:text-theme-text-primary transition-colors"
-                        @click.stop="selectPhoneCountry(c); phoneCountryDropdownOpen = false"
-                      >
-                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-theme-input-bg">
-                          <img :src="phoneFlagUrl(c.countryCode)" :alt="c.countryCode" class="w-full h-full object-cover">
-                        </span>
-                        <span>{{ formatPhoneDialCode(c.dialCode) }} ({{ c.countryCode }})</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="space-y-2">
-                  <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] ml-1">Email Address</label>
-                  <input
-                    v-model="email"
-                    required
-                    type="email"
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
-                  />
-                </div>
-              </div>
-
-              <div class="space-y-2">
-                <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] ml-1">ID / Passport Number</label>
-                <input
-                  v-model="idPassport"
-                  required
-                  type="text"
-                  class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all"
-                />
-              </div>
-
-              <div class="space-y-2">
-                <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] ml-1">Reason for Buying</label>
-                <select
-                  v-model="reasonForBuying"
-                  required
-                  class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] pt-[13px] pb-[13px] leading-[1.25] focus:border-zinc-500 focus:outline-none text-zinc-200 text-base sm:text-[0.875rem] transition-all appearance-none cursor-pointer"
-                >
-                  <option value="" disabled class="bg-zinc-900">Select reason</option>
-                  <option value="Primary Residence" class="bg-zinc-900">Primary Residence</option>
-                  <option value="Investment Property" class="bg-zinc-900">Investment Property</option>
-                </select>
-              </div>
-
-              <div v-if="error" class="text-[10px] font-bold text-red-400 py-2">{{ error }}</div>
-
-              <div class="flex flex-col sm:flex-row gap-3 sm:gap-6 pt-4">
-                <button
-                  type="submit"
-                  :disabled="loading || timeLeft <= 0 || isLockedByOther || acquiringLock || !!acquireError"
-                  class="w-full sm:w-auto sm:min-w-[160px] sm:flex-1 h-[46px] flex items-center justify-center rounded-lg text-[11px] font-black uppercase tracking-normal text-center leading-none transition-all bg-zinc-100 text-zinc-950 hover:bg-white shadow-xl disabled:bg-zinc-800 disabled:text-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-zinc-800 disabled:shadow-none"
-                >
-                  <span v-if="loading">PROCESSING...</span>
-                  <span v-else-if="acquiringLock">SECURING...</span>
-                  <span v-else-if="isLockedByOther">RESERVED BY SOMEONE ELSE</span>
-                  <span v-else-if="timeLeft <= 0">RESERVATION EXPIRED</span>
-                  <span v-else>PROCEED TO PAYMENT</span>
-                </button>
-                <button
-                  type="button"
-                  :disabled="canceling"
-                  class="px-10 h-[46px] border border-theme-border-strong text-zinc-300 text-[11px] font-black uppercase tracking-normal rounded-lg hover:bg-theme-input-bg transition-all leading-none flex items-center justify-center disabled:opacity-70 disabled:cursor-wait"
-                  @click="onCancel"
-                >
-                  {{ canceling ? 'CANCELING...' : 'CANCEL' }}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
 
-          <!-- Summary column -->
-          <div class="lg:col-span-1">
-            <div class="lg:sticky lg:top-32 flex flex-col gap-8 sm:gap-10">
-              <div class="!bg-theme-surface hover:!bg-theme-input-bg p-6 sm:p-10 relative overflow-hidden rounded-2xl border border-theme-border hover:border-theme-border-strong shadow-xl transition-all duration-500">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-theme-input-bg rounded-full -mr-16 -mt-16 blur-3xl transition-all" aria-hidden="true" />
-                <h2 class="text-lg sm:text-xl font-black text-theme-text-primary mb-6 sm:mb-8 tracking-tighter leading-tight">
-                  Reservation Summary
-                </h2>
-                <div class="flex flex-col">
-                  <div class="flex items-center justify-between mb-1 sm:text-[0.875rem] sm:leading-[1.1rem]">
-                    <span class="text-zinc-500 font-medium text-sm tracking-tight">Unit Number</span>
-                    <span class="text-zinc-100 font-bold text-sm text-right whitespace-nowrap sm:text-[0.875rem] sm:leading-[1.1rem]">Unit {{ unitNumberDisplay }}</span>
-                  </div>
-                  <template v-if="unit">
-                    <div class="flex items-center justify-between mb-1 sm:text-[0.875rem] sm:leading-[1.1rem]">
-                      <span class="text-zinc-500 font-medium text-sm tracking-tight">Bedrooms</span>
-                      <span class="text-zinc-100 font-bold text-sm text-right whitespace-nowrap sm:text-[0.875rem] sm:leading-[1.1rem]">{{ unit.bedrooms }}</span>
+          <!-- Right: reservation content (same width as Unit details panel) -->
+          <div class="mt-10 md:mt-0 md:w-[40%] md:flex md:items-center">
+            <div class="flex flex-col items-stretch w-full">
+              <div class="rounded-3xl px-20 text-center">
+                <h1 class="text-4xl sm:text-5xl font-semibold text-theme-text-primary tracking-tight leading-none mb-6">
+                  Reserve Unit {{ unitNumberDisplay }}
+                </h1>
+                <p class="text-[12px] sm:text-[13px] text-zinc-500 max-w-[30rem] mx-auto mb-4">
+                  Please pay the
+                  <span class="font-semibold text-theme-text-primary">
+                    non-refundable reservation fee of R10 000
+                  </span>
+                  to secure your unit before the time runs out.
+                </p>
+                <div
+                  v-if="unit"
+                  class="my-8 rounded-2xl bg-transparent"
+                >
+                  <p class="text-sm sm:text-base font-semibold text-theme-text-primary mb-5">
+                    Selling price: R {{ formatPrice(unit.price) }}
+                  </p>
+                  <div class="flex items-center justify-evenly gap-0 rounded-2xl bg-[#ffffff] py-8">
+                    <div
+                      class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700"
+                    >
+                      <span
+                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
+                      >
+                        Bedrooms
+                        <span
+                          class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <IconBed class="w-4 h-4 text-zinc-700 flex-shrink-0" />
+                      <span class="font-semibold text-theme-text-primary">
+                        {{ unit.bedrooms }}
+                      </span>
                     </div>
-                    <div class="flex items-center justify-between mb-1 sm:text-[0.875rem] sm:leading-[1.1rem]">
-                      <span class="text-zinc-500 font-medium text-sm tracking-tight">Bathrooms</span>
-                      <span class="text-zinc-100 font-bold text-sm text-right whitespace-nowrap sm:text-[0.875rem] sm:leading-[1.1rem]">{{ unit.bathrooms }}</span>
+                    <div
+                      class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700"
+                    >
+                      <span
+                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
+                      >
+                        Bathrooms
+                        <span
+                          class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <IconBath class="w-4 h-4 text-zinc-700 flex-shrink-0" />
+                      <span class="font-semibold text-theme-text-primary">
+                        {{ unit.bathrooms }}
+                      </span>
                     </div>
-                    <div class="flex items-center justify-between mb-1 sm:text-[0.875rem] sm:leading-[1.1rem]">
-                      <span class="text-zinc-500 font-medium text-sm tracking-tight">Parking</span>
-                      <span class="text-zinc-100 font-bold text-sm text-right whitespace-nowrap sm:text-[0.875rem] sm:leading-[1.1rem]">{{ unit.parking }}</span>
+                    <div
+                      class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700"
+                    >
+                      <span
+                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
+                      >
+                        Parking
+                        <span
+                          class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <IconCar class="w-4 h-4 text-zinc-700 flex-shrink-0" />
+                      <span class="font-semibold text-theme-text-primary">
+                        {{ unit.parking || 1 }}
+                      </span>
                     </div>
-                    <div class="flex items-center justify-between mb-1 sm:text-[0.875rem] sm:leading-[1.1rem]">
-                      <span class="text-zinc-500 font-medium text-sm tracking-tight">Unit Type</span>
-                      <span class="text-zinc-100 font-bold text-sm text-right whitespace-nowrap sm:text-[0.875rem] sm:leading-[1.1rem]">{{ unit.unitType }}</span>
+                    <div
+                      class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700"
+                    >
+                      <span
+                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
+                      >
+                        Unit Type
+                        <span
+                          class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <IconLayout class="w-4 h-4 text-zinc-700 flex-shrink-0" />
+                      <span class="font-semibold text-theme-text-primary">
+                        {{ unit.unitType || '—' }}
+                      </span>
                     </div>
-                    <div class="flex items-center justify-between mb-1 sm:text-[0.875rem] sm:leading-[1.1rem]">
-                      <span class="text-zinc-500 font-medium text-sm tracking-tight">Unit Size</span>
-                      <span class="text-zinc-100 font-bold text-sm text-right whitespace-nowrap sm:text-[0.875rem] sm:leading-[1.1rem]">{{ unit.sizeSqm }} m²</span>
-                    </div>
-                    <div class="flex items-center justify-between mb-6 sm:mb-8 sm:text-[0.875rem] sm:leading-[1.1rem]">
-                      <span class="text-zinc-500 font-medium text-sm tracking-tight">Selling Price</span>
-                      <span class="text-zinc-100 font-bold text-sm text-right whitespace-nowrap sm:text-[0.875rem] sm:leading-[1.1rem]">R {{ formatPrice(unit.price) }}</span>
-                    </div>
-                  </template>
-                  <div class="pt-6 sm:pt-8 border-t border-theme-border-strong">
-                    <div class="flex items-center justify-between">
-                      <span class="text-theme-text-primary font-black text-base sm:text-xl tracking-tighter">Total Payable Now</span>
-                      <span class="text-theme-text-primary text-base sm:text-xl font-black tracking-tighter text-right whitespace-nowrap">R {{ formatPrice(CONFIG.RESERVATION_DEPOSIT) }}</span>
+                    <div
+                      class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700"
+                    >
+                      <span
+                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100"
+                      >
+                        Unit Size
+                        <span
+                          class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <IconSize class="w-4 h-4 text-zinc-700 flex-shrink-0" />
+                      <span class="font-semibold text-theme-text-primary">
+                        {{ unit.sizeSqm }}m²
+                      </span>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div class="px-2 sm:pl-2 sm:pr-20">
-                <p class="text-[11px] sm:text-[12px] text-zinc-500 font-medium leading-relaxed tracking-tight text-left">
-                  <span class="text-theme-text-primary font-black">Note:</span> This reservation deposit secures your unit for 7 days. Our sales team will contact you within 24 hours to complete the purchase process.
-                </p>
+
+                <div class="rounded-2xl max-w-xs mx-auto mb-8">
+                  <p class="text-[10px] font-black tracking-[0.25em] text-zinc-400 uppercase mb-0">
+                    Expires in
+                  </p>
+                  <div class="inline-flex items-center justify-center gap-2">
+                    <span class="text-4xl font-black text-theme-text-primary tabular-nums">
+                      {{ formatTime(timeLeft) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div v-if="error" class="text-[11px] font-bold text-red-500 mb-4">
+                  {{ error }}
+                </div>
+
+                <div class="mt-2 flex flex-col gap-3">
+                  <button
+                    type="button"
+                    :disabled="loading || timeLeft <= 0 || isLockedByOther || acquiringLock || !!acquireError"
+                    class="w-full h-12 flex items-center justify-center bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    @click="onSubmit"
+                  >
+                    <span v-if="loading">Processing…</span>
+                    <span v-else-if="acquiringLock">Securing…</span>
+                    <span v-else-if="isLockedByOther">Reserved by someone else</span>
+                    <span v-else-if="timeLeft <= 0">Reservation expired</span>
+                    <span v-else>Proceed to payment</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    :disabled="canceling"
+                    class="mt-2 self-center inline-flex items-center justify-center text-[10px] font-black uppercase tracking-wide text-zinc-400 hover:text-zinc-600 disabled:opacity-60"
+                    @click="onCancel"
+                  >
+                    Cancel reservation
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -241,6 +203,11 @@
 <script setup lang="ts">
 import { CONFIG } from '~/config'
 import { phoneCountries, formatPhoneDialCode } from '~/data/phoneCountries'
+import IconBed from '~/components/icons/IconBed.vue'
+import IconBath from '~/components/icons/IconBath.vue'
+import IconCar from '~/components/icons/IconCar.vue'
+import IconSize from '~/components/icons/IconSize.vue'
+import IconLayout from '~/components/icons/IconLayout.vue'
 
 const RESERVE_UNIT_ID = 'ignite_reserve_unitId'
 const RESERVE_LOCK_EXPIRES_AT = 'ignite_reserve_lockExpiresAt'
@@ -279,16 +246,7 @@ const isLockedByOther = computed(() => {
 })
 
 const timeLeft = ref(0)
-const timerMainClass = computed(() => {
-  if (timeLeft.value > 420) return 'bg-emerald-500'
-  if (timeLeft.value > 180) return 'bg-amber-500'
-  return 'bg-red-500'
-})
-const timerPingClass = computed(() => {
-  if (timeLeft.value > 420) return 'bg-emerald-400'
-  if (timeLeft.value > 180) return 'bg-amber-400'
-  return 'bg-red-400'
-})
+const expiryHandled = ref(false)
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('en-US').format(price).replace(/,/g, ' ')
@@ -349,14 +307,24 @@ async function releaseLockAndClearAsync(): Promise<void> {
 watch(lockExpiresAtMs, (ms) => {
   if (ms == null) {
     timeLeft.value = 0
+    expiryHandled.value = false
     return
   }
   const tick = () => {
     const remaining = Math.max(0, Math.floor((ms - effectiveNow()) / 1000))
     timeLeft.value = remaining
-    if (remaining > 0) {
-      setTimeout(tick, 1000)
+    if (remaining <= 0) {
+      if (!expiryHandled.value) {
+        expiryHandled.value = true
+        clearReserveSession()
+        if (typeof window !== 'undefined') {
+          window.alert('Reservation expired')
+        }
+        navigateTo('/', { replace: true })
+      }
+      return
     }
+    setTimeout(tick, 1000)
   }
   tick()
 }, { immediate: true })
@@ -367,9 +335,42 @@ const email = ref('')
 const phone = ref('')
 const idPassport = ref('')
 const reasonForBuying = ref('')
+const profileIdPassport = ref('')
+const profileReasonForBuying = ref('')
 const loading = ref(false)
 const canceling = ref(false)
 const error = ref<string | null>(null)
+
+declare global {
+  interface Window {
+    PaystackPop?: {
+      new (): {
+        newTransaction: (opts: {
+          key: string
+          email: string
+          amount: number
+          ref: string
+          currency?: string
+          onSuccess: (tx: { reference: string }) => void
+          onCancel: () => void
+        }) => void
+      }
+    }
+  }
+}
+
+async function loadPaystackScript() {
+  if (typeof window === 'undefined') return
+  if (window.PaystackPop) return
+  await new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = 'https://js.paystack.co/v2/inline.js'
+    script.async = true
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('Failed to load Paystack'))
+    document.body.appendChild(script)
+  })
+}
 
 // Phone country selector (same as AuthPortal)
 const phoneCountryDropdownOpen = ref(false)
@@ -423,6 +424,26 @@ onMounted(async () => {
   $supabase.auth.getSession().then(({ data: { session } }) => {
     if (session) accessTokenRef.value = session.access_token
   })
+
+  // Preload Paystack script so the popup appears faster on click
+  loadPaystackScript().catch(() => {})
+
+  // Load ID/Passport and Reason for Buying from profiles so reservation can reuse signup data
+  try {
+    if (user.value?.id) {
+      const { data } = await $supabase
+        .from('profiles')
+        .select('id_passport_number, reason_for_buying')
+        .eq('id', user.value.id)
+        .single()
+      if (data) {
+        profileIdPassport.value = (data.id_passport_number as string | null) ?? ''
+        profileReasonForBuying.value = (data.reason_for_buying as string | null) ?? ''
+      }
+    }
+  } catch {
+    // ignore profile fetch errors; reservation will fall back to form values
+  }
 
   const setupBeforeUnload = () => {
     beforeUnloadHandler = () => {
@@ -619,6 +640,25 @@ async function onSubmit() {
   error.value = null
   loading.value = true
   try {
+    // Ensure required fields are populated even though we no longer show the form
+    if (!firstName.value && user.value?.firstName) firstName.value = user.value.firstName
+    if (!lastName.value && user.value?.lastName) lastName.value = user.value.lastName
+    if (!email.value && user.value?.email) email.value = user.value.email
+    if (!phone.value && user.value?.phone) {
+      const raw = user.value.phone.trim()
+      let digits = raw.replace(/\D/g, '')
+      if (digits.startsWith('0')) digits = digits.substring(1)
+      const za = phoneCountries.find((c) => c.countryCode === 'ZA')
+      if (za && digits.startsWith(za.dialCode) && digits.length > za.dialCode.length) {
+        selectedPhoneCountry.value = za
+        phone.value = digits.slice(za.dialCode.length).replace(/^0+/, '')
+      } else if (digits.length <= 15) {
+        phone.value = digits
+      }
+    }
+    if (!idPassport.value) idPassport.value = 'Pending'
+    if (!reasonForBuying.value) reasonForBuying.value = 'Not specified'
+
     // Match portal: get session at submit time, and refresh if missing (portal does this in reservationService)
     let token = accessTokenRef.value?.trim() ?? null
     if (!token) {
@@ -663,14 +703,26 @@ async function onSubmit() {
     const config = useRuntimeConfig()
     const supabaseUrl = (config.public.supabaseUrl as string)?.trim()
     const supabaseAnonKey = (config.public.supabaseAnonKey as string)?.trim()
-    if (!supabaseUrl || !supabaseAnonKey) {
+    const paystackKey = (config.public.paystackPublicKey as string | undefined)?.trim() ?? ''
+    if (!supabaseUrl || !supabaseAnonKey || !paystackKey) {
       error.value = 'App configuration error. Please try again.'
       loading.value = false
       return
     }
 
+    const idPassportToSend = (profileIdPassport.value || idPassport.value).trim()
+    const reasonToSend = (profileReasonForBuying.value || reasonForBuying.value).trim()
+
     const doSubmit = (accessToken: string) =>
-      $fetch<{ paymentUrl?: string; paymentReference?: string; error?: string; message?: string }>(
+      $fetch<{
+        paymentUrl?: string
+        paymentReference?: string
+        error?: string
+        message?: string
+        email?: string
+        amountInCents?: number
+        currency?: string
+      }>(
         `${supabaseUrl}/functions/v1/submit-reservation`,
         {
           method: 'POST',
@@ -679,8 +731,8 @@ async function onSubmit() {
             surname: lastName.value.trim(),
             email: email.value.trim(),
             phone: `+${selectedPhoneCountry.value.dialCode}${phone.value}`.trim(),
-            idPassport: idPassport.value.trim(),
-            reasonForBuying: reasonForBuying.value.trim(),
+            idPassport: idPassportToSend,
+            reasonForBuying: reasonToSend,
             unitId: unitId.value,
             unitNumber: unitNumberDisplay.value,
           },
@@ -716,18 +768,58 @@ async function onSubmit() {
       return
     }
 
-    if (payload?.paymentUrl) {
-      if (typeof localStorage !== 'undefined' && payload.paymentReference) {
+    // Prefer inline Paystack popup using payment reference returned by submit-reservation
+    if (
+      paystackKey &&
+      payload?.paymentReference &&
+      payload?.email &&
+      typeof payload?.amountInCents === 'number'
+    ) {
+      if (typeof localStorage !== 'undefined') {
         localStorage.setItem('payment_reference', payload.paymentReference)
       }
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem('ignite_reservation_redirecting', unitId.value || 'true')
       }
-      window.location.href = payload.paymentUrl
+      try {
+        await loadPaystackScript()
+        const Pop = window.PaystackPop
+        if (!Pop) {
+          throw new Error('Paystack popup not available')
+        }
+        const paystack = new Pop()
+        paystack.newTransaction({
+          key: paystackKey,
+          email: payload.email,
+          amount: payload.amountInCents,
+          ref: payload.paymentReference,
+          currency: payload.currency || 'ZAR',
+          onSuccess: () => {
+            error.value = null
+            navigateTo('/payment-success')
+          },
+          onCancel: () => {
+            // Best-effort cancel hook so Zoho + Supabase are updated
+            $fetch(`${supabaseUrl}/functions/v1/cancel-reservation`, {
+              method: 'POST',
+              body: { paymentReference: payload.paymentReference },
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+                apikey: supabaseAnonKey,
+              },
+            }).catch(() => {})
+            navigateTo('/', { replace: true })
+          },
+        })
+      } catch (e: any) {
+        error.value = e?.message || 'Could not open payment. Please try again.'
+      }
       return
     }
 
-    error.value = payload?.message ?? 'Reservation created. Payment link not available — please contact support.'
+    error.value =
+      payload?.message ?? 'Reservation created. Payment link not available — please contact support.'
   } catch (e: any) {
     const status = e?.statusCode ?? e?.status
     const msg = e?.data?.error ?? e?.data?.message ?? e?.message

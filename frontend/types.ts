@@ -6,6 +6,8 @@ export interface AppUser {
   firstName?: string | null
   lastName?: string | null
   phone?: string | null
+  idPassportNumber?: string | null
+  reasonForBuying?: string | null
 }
 
 export interface Unit {

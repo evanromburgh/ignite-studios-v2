@@ -18,7 +18,14 @@
       <!-- Unit number and wishlist over the image -->
       <div class="absolute inset-0 flex items-start justify-between p-5 pointer-events-none">
         <span class="pointer-events-auto text-lg font-bold text-zinc-900 tracking-tight leading-none drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]">{{ unit.unitNumber }}</span>
+        <span
+          v-if="isMyUnitsCard"
+          class="pointer-events-none inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-orange-500 text-white text-[10px] font-bold uppercase tracking-widest shadow-sm"
+        >
+          Reserved
+        </span>
         <button
+          v-else
           type="button"
           :disabled="!isAvailable && !isAdmin"
           class="pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-zinc-300 bg-white/95 text-zinc-600 text-[10px] font-bold uppercase tracking-widest shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:hover:bg-white/95 disabled:hover:text-zinc-400 disabled:hover:border-zinc-300"
@@ -43,7 +50,7 @@
     <!-- Details: left = floor, facing, unit type (dark gray); right = price -->
     <div class="flex flex-col">
       <div class="px-[1.25rem]">
-        <div class="flex justify-between items-start gap-4 py-[1.5rem]">
+        <div class="flex justify-between items-start gap-4 py-8">
           <div class="min-w-0">
             <p v-if="unit.floor" class="text-[14px] font-bold text-zinc-900 uppercase tracking-wide leading-tight">{{ (unit.floor || '').toUpperCase() }} FLOOR</p>
             <p v-if="unit.direction" class="text-[12px] text-zinc-700 mt-0.5 leading-tight">{{ unit.direction }} Facing</p>
@@ -55,7 +62,7 @@
         </div>
 
         <!-- Feature icons: 1 Bedroom, 2 Bathroom, 3 Parking, 4 Unit Type, 5 Unit Size -->
-        <div class="flex items-center justify-evenly gap-4 border-t border-b border-zinc-200/80 py-[1.5rem]">
+        <div class="flex items-center justify-evenly gap-4 border-t border-b border-zinc-200/80 py-8">
           <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
             <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
               Bedrooms
@@ -99,17 +106,18 @@
         </div>
       </div>
 
-      <!-- Bottom section: no padding on any side -->
-      <div class="grid grid-cols-2 border-zinc-200/80">
+      <!-- Bottom section: single full-width View Details on My Units, else two buttons -->
+      <div :class="isMyUnitsCard ? '' : 'grid grid-cols-2 border-zinc-200/80'">
         <button
           type="button"
-          :disabled="!isAvailable && !isAdmin"
-          class="-mt-px pt-[calc(1.25rem+1px)] pb-5 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 hover:bg-[#18181B] hover:text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center"
+          :disabled="!isMyUnitsCard && !isAvailable && !isAdmin"
+          class="-mt-px pt-[calc(1.25rem+1px)] pb-5 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 hover:bg-[#18181B] hover:text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center w-full"
           @click.stop="onSelect(unit)"
         >
           View Details
         </button>
         <button
+          v-if="!isMyUnitsCard"
           type="button"
           :disabled="(!isAvailable && !isAdmin) || isReserving"
           class="-mt-px -ml-px pl-px pt-[calc(1.25rem+1px)] pb-5 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 border-l border-zinc-200/80 hover:bg-[#18181B] hover:text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center"
@@ -140,8 +148,10 @@ const props = withDefaults(
     serverClockOffsetMs?: number
     currentUserId?: string | null
     reservingUnitId?: string | null
+    /** When true (e.g. on My Units page): no Reserved overlay, top-right shows "Reserved" label, single full-width View Details button */
+    isMyUnitsCard?: boolean
   }>(),
-  { isWishlisted: false, isAdmin: false, hideReservedOverlay: false, serverClockOffsetMs: 0, currentUserId: undefined, reservingUnitId: null },
+  { isWishlisted: false, isAdmin: false, hideReservedOverlay: false, serverClockOffsetMs: 0, currentUserId: undefined, reservingUnitId: null, isMyUnitsCard: false },
 )
 
 const emit = defineEmits<{
@@ -157,6 +167,7 @@ const isLocked = computed(() => timeLeft.value > 0 && props.unit.status === 'Ava
 const isReserving = computed(() => props.reservingUnitId === props.unit.id)
 const isAvailable = computed(() => props.unit.status === 'Available' && !isLocked.value)
 const showOverlay = computed(() =>
+  !props.isMyUnitsCard &&
   !props.isAdmin &&
   !props.hideReservedOverlay &&
   (props.unit.status !== 'Available' || isLocked.value),
@@ -190,7 +201,7 @@ const overlayLabel = computed(() => {
 })
 
 function onSelect(unit: Unit) {
-  if (!isAvailable.value && !props.isAdmin) return
+  if (!props.isMyUnitsCard && !isAvailable.value && !props.isAdmin) return
   emit('select', unit)
 }
 

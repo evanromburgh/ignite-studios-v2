@@ -82,7 +82,7 @@ serve(async (req) => {
       });
     }
     
-    const { firstName, lastName, email, phone } = body;
+    const { firstName, lastName, email, phone, idPassport, reasonForBuying } = body;
 
     if (!firstName || !lastName || !email) {
       console.error('Missing required fields:', { firstName: !!firstName, lastName: !!lastName, email: !!email });
@@ -206,10 +206,14 @@ serve(async (req) => {
       Email: email,
       Lead_Status: 'New Lead',
       Lead_Source: 'Reservation Portal',
+      Reason_for_Buying: reasonForBuying,
     };
     if (phone != null && String(phone).trim() !== '') {
       const digits = String(phone).replace(/\D/g, '');
       zohoLead.Phone = digits.startsWith('27') ? `+${digits}` : `+27${digits}`;
+    }
+    if (idPassport != null && String(idPassport).trim() !== '') {
+      zohoLead.ID_Passport_Number = String(idPassport).trim();
     }
 
     let finalLeadId: string;

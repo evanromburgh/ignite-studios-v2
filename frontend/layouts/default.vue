@@ -37,18 +37,27 @@
               Properties
             </NuxtLink>
             <NuxtLink
+              v-if="user"
+              to="/wishlist"
+              class="h-[46px] px-2 text-[12px] uppercase tracking-[0.15em] transition-colors flex items-center"
+              :class="navLinkClass(isWishlistPage)"
+            >
+              Wishlist
+            </NuxtLink>
+            <NuxtLink
+              v-if="user"
+              to="/reservations"
+              class="h-[46px] px-2 text-[12px] uppercase tracking-[0.15em] transition-colors flex items-center"
+              :class="navLinkClass(isReservationsPage)"
+            >
+              My Units
+            </NuxtLink>
+            <NuxtLink
               to="/documents"
               class="h-[46px] px-2 text-[12px] uppercase tracking-[0.15em] transition-colors flex items-center"
               :class="navLinkClass(isDocumentsPage)"
             >
-              Documents
-            </NuxtLink>
-            <NuxtLink
-              to="/contact"
-              class="h-[46px] px-2 text-[12px] uppercase tracking-[0.15em] transition-colors flex items-center"
-              :class="navLinkClass(isContactPage)"
-            >
-              Contact
+              Downloads
             </NuxtLink>
           </div>
 
@@ -57,15 +66,13 @@
               <button
                 type="button"
                 title="Profile Settings"
-                class="w-9 h-9 sm:w-[46px] sm:h-[46px] flex items-center justify-center rounded-full transition-all group overflow-hidden relative pointer-events-none lg:pointer-events-auto cursor-default lg:cursor-pointer"
+                class="w-9 h-9 sm:w-[46px] sm:h-[46px] flex items-center justify-center rounded-full transition-all group relative pointer-events-none lg:pointer-events-auto cursor-default lg:cursor-pointer"
                 :class="profileButtonClass"
                 @click="showUserMenu = !showUserMenu"
               >
-                <span class="relative z-10 text-[9px] sm:text-[10px] font-black">{{ userInitials }}</span>
-                <div
-                  v-if="!showUserMenu && isDarkNavTheme"
-                  class="absolute inset-0 bg-gradient-to-tr from-theme-input-bg to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
-                />
+                <span class="relative z-10 text-[9px] sm:text-[10px] font-black">
+                  {{ userInitials }}
+                </span>
               </button>
 
               <div
@@ -73,31 +80,21 @@
                 class="hidden lg:block absolute top-full right-0 mt-3 sm:mt-[1.3rem] w-56 sm:w-64 bg-theme-overlay-dropdown rounded-xl p-2 border border-theme-border shadow-xl z-[200]"
               >
                 <NuxtLink
-                  to="/reservations"
+                  to="/profile"
                   class="w-full flex items-center px-4 h-12 rounded-lg text-theme-text-muted hover:bg-zinc-100 hover:text-theme-text-primary transition-all group mb-1"
                   @click="showUserMenu = false"
                 >
-                  <span class="text-[10px] font-black uppercase tracking-widest">My Reservations</span>
-                  <span
-                    v-if="reservationsCount > 0"
-                    class="ml-auto bg-emerald-500 text-white text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-lg"
-                  >
-                    {{ reservationsCount }}
+                  <span class="text-[10px] font-black uppercase tracking-widest">
+                    My Profile
                   </span>
-                </NuxtLink>
-                <div class="h-px bg-theme-border mx-2 my-1" />
-                <NuxtLink
-                  to="/wishlist"
-                  class="w-full flex items-center px-4 h-12 rounded-lg text-theme-text-muted hover:bg-zinc-100 hover:text-theme-text-primary transition-all group mb-1"
-                  @click="showUserMenu = false"
-                >
-                  <span class="text-[10px] font-black uppercase tracking-widest">Wishlist</span>
-                  <span
-                    v-if="wishlistCount > 0"
-                    class="ml-auto bg-red-500 text-white text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-lg"
+                  <svg
+                    class="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    aria-hidden="true"
                   >
-                    {{ wishlistCount }}
-                  </span>
+                    <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z" />
+                  </svg>
                 </NuxtLink>
                 <div class="h-px bg-theme-border mx-2 my-1" />
                 <button
@@ -154,28 +151,20 @@
           <div class="w-full h-px bg-white/10 my-1" />
           <div class="w-full flex">
             <NuxtLink to="/documents" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isDocumentsPage)" @click="showMobileMenu = false">
-              Documents
-            </NuxtLink>
-          </div>
-          <div class="w-full h-px bg-white/10 my-1" />
-          <div class="w-full flex">
-            <NuxtLink to="/contact" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isContactPage)" @click="showMobileMenu = false">
-              Contact
+              Downloads
             </NuxtLink>
           </div>
           <template v-if="user">
             <div class="w-full h-px bg-white/10 my-1" />
             <div class="w-full flex">
-              <NuxtLink to="/reservations" class="w-full max-w-xs mx-auto h-12 flex items-center gap-3 text-[12px] uppercase tracking-wider" :class="navLinkClass(isReservationsPage)" @click="showMobileMenu = false">
-                My Reservations
-                <span class="inline-grid place-items-center w-5 h-5 min-w-5 min-h-5 rounded-full ml-auto text-[9px] font-black tabular-nums" :class="reservationsCount > 0 ? 'bg-emerald-500 text-white' : 'bg-theme-input-bg text-theme-text-muted-2'">{{ reservationsCount }}</span>
+              <NuxtLink to="/wishlist" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isWishlistPage)" @click="showMobileMenu = false">
+                Wishlist
               </NuxtLink>
             </div>
             <div class="w-full h-px bg-white/10 my-1" />
             <div class="w-full flex">
-              <NuxtLink to="/wishlist" class="w-full max-w-xs mx-auto h-12 flex items-center gap-3 text-[12px] uppercase tracking-wider" :class="navLinkClass(isWishlistPage)" @click="showMobileMenu = false">
-                Wishlist
-                <span class="inline-grid place-items-center w-5 h-5 min-w-5 min-h-5 rounded-full ml-auto text-[9px] font-black tabular-nums" :class="wishlistCount > 0 ? 'bg-red-500 text-white' : 'bg-theme-input-bg text-theme-text-muted-2'">{{ wishlistCount }}</span>
+              <NuxtLink to="/reservations" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isReservationsPage)" @click="showMobileMenu = false">
+                My Units
               </NuxtLink>
             </div>
             <div class="w-full h-px bg-white/10 my-1" />
@@ -213,8 +202,87 @@
       </div>
     </div>
 
-    <footer class="bg-[#18181b] text-zinc-300 pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 pt-12 sm:pt-20 flex flex-col lg:flex-row justify-between items-center text-[11px] font-black uppercase gap-8 sm:gap-12 pb-12 sm:pb-20">
-      <p>&copy; {{ new Date().getFullYear() }} Ignite Studios</p>
+    <footer class="bg-black text-white px-5 sm:px-8 md:px-24 pt-12 sm:pt-20 pb-10 sm:pb-20 text-[11px]">
+      <div class="w-full space-y-10">
+        <div>
+          <img
+            :src="logoLight"
+            alt="Ignite Studios"
+            class="h-6 w-auto mb-6"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-16">
+          <!-- Contact -->
+          <div class="space-y-2">
+            <h3 class="text-[11px] font-black uppercase tracking-[0.2em] mb-3">
+              Contact
+            </h3>
+            <a
+              href="mailto:info@ignitestudios.co.za"
+              class="text-[12px] font-medium tracking-normal text-zinc-200 hover:text-white transition-colors"
+            >
+              info@ignitestudios.co.za
+            </a>
+          </div>
+
+          <!-- Quick links -->
+          <div class="space-y-2">
+            <h3 class="text-[11px] font-black uppercase tracking-[0.2em] mb-3">
+              Quick Links
+            </h3>
+            <NuxtLink
+              to="/wishlist"
+              class="block text-[12px] font-medium tracking-normal text-zinc-300 hover:text-white transition-colors mb-1"
+            >
+              Wishlist
+            </NuxtLink>
+            <NuxtLink
+              to="/reservations"
+              class="block text-[12px] font-medium tracking-normal text-zinc-300 hover:text-white transition-colors mb-1"
+            >
+              My Units
+            </NuxtLink>
+            <NuxtLink
+              to="/documents"
+              class="block text-[12px] font-medium tracking-normal text-zinc-300 hover:text-white transition-colors"
+            >
+              Downloads
+            </NuxtLink>
+          </div>
+
+          <!-- Terms -->
+          <div class="space-y-2">
+            <h3 class="text-[11px] font-black uppercase tracking-[0.2em] mb-3">
+              Terms &amp; Conditions
+            </h3>
+            <span class="block text-[12px] font-medium tracking-normal text-zinc-300 mb-1">
+              Privacy Policy
+            </span>
+            <span class="block text-[12px] font-medium tracking-normal text-zinc-300 mb-1">
+              Disclaimer
+            </span>
+            <span class="block text-[12px] font-medium tracking-normal text-zinc-300">
+              Cookie Settings
+            </span>
+          </div>
+
+          <!-- Back to top -->
+          <div class="flex lg:items-start lg:justify-end items-center justify-start">
+            <button
+              type="button"
+              class="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-300 hover:text-white transition-colors"
+              @click="scrollToTop"
+            >
+              Back to top
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-10 pt-10 border-t border-white/10 flex items-center justify-between text-[10px] text-zinc-500">
+          <span>&copy; {{ new Date().getFullYear() }} Ignite Studios</span>
+        </div>
+      </div>
     </footer>
     </div>
   </div>
@@ -228,14 +296,11 @@ import logoDark from '~/assets/branding/logo_dark.svg'
 
 const route = useRoute()
 const { user, logout } = useAuth()
-const { wishlistCount } = useWishlistCount()
-const { reservationsCount } = useReservationsCount()
 const { onlineCount } = useGlobalPresence()
 
 const showUserMenu = ref(false)
 const isPropertiesPage = computed(() => route.path === '/' || route.path === '')
 const isDocumentsPage = computed(() => route.path === '/documents')
-const isContactPage = computed(() => route.path === '/contact')
 const isReservationsPage = computed(() => route.path === '/reservations')
 const isWishlistPage = computed(() => route.path === '/wishlist')
 
@@ -247,11 +312,15 @@ const currentNavTheme = ref<'dark' | 'light'>(isPropertiesPage.value ? 'dark' : 
 
 const isDarkNavTheme = computed(() => currentNavTheme.value === 'dark')
 
-const navBackgroundClass = computed(() =>
-  scrolled.value
-    ? 'bg-theme-overlay-nav/95 backdrop-blur-xl border-b border-white/10 shadow-sm'
-    : 'bg-transparent border-b border-transparent',
-)
+const navBackgroundClass = computed(() => {
+  if (scrolled.value) {
+    return 'bg-theme-overlay-nav/95 backdrop-blur-xl border-b border-white/10 shadow-sm'
+  }
+  if (!isPropertiesPage.value) {
+    return 'bg-transparent border-b border-theme-border'
+  }
+  return 'bg-transparent border-b border-transparent'
+})
 
 function navLinkClass(isActive: boolean) {
   if (isDarkNavTheme.value) {
@@ -269,17 +338,13 @@ const logoSrc = computed(() => (isDarkNavTheme.value ? logoLight : logoDark))
 const profileButtonClass = computed(() => {
   if (!user.value) return ''
 
-  if (!isDarkNavTheme.value) {
-    // Light nav theme (dark logo/text): solid dark circle, no border
-    return showUserMenu.value
-      ? 'bg-theme-accent-green text-white'
-      : 'bg-[#18181B] text-white hover:bg-[#27272a]'
+  if (isDarkNavTheme.value) {
+    // Dark nav theme (white logo/text): always solid white circle with dark text
+    return 'bg-white text-[#18181B]'
   }
 
-  // Dark nav theme (white logo/text): light pill, no border
-  return showUserMenu.value
-    ? 'bg-theme-accent-green text-white'
-    : 'bg-theme-input-bg text-theme-text-muted lg:hover:text-theme-text-primary'
+  // Light nav theme (dark logo/text): always solid dark circle with white text
+  return 'bg-[#18181B] text-white hover:bg-[#27272a]'
 })
 
 function updateScrolledAndTheme() {
@@ -398,6 +463,11 @@ function onResize() {
 watch(showMobileMenu, (open) => {
   document.body.style.overflow = open ? 'hidden' : ''
 })
+
+function scrollToTop() {
+  if (typeof window === 'undefined') return
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 </script>
 
 <style scoped>

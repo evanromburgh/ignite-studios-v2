@@ -34,6 +34,8 @@ export default defineNuxtConfig({
       imageCacheBust: process.env.NUXT_PUBLIC_IMAGE_CACHE_BUST || '',
       /** Per-client theme: object of CSS variable names to values, e.g. { '--theme-bg': '#0f0f0f' }. Set via NUXT_PUBLIC_THEME_* or in nuxt.config. */
       theme: {},
+      /** Paystack public key for inline checkout popup (pk_test_... or pk_live_...). */
+      paystackPublicKey: process.env.NUXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
     },
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     cronSecret: process.env.CRON_SECRET || '',

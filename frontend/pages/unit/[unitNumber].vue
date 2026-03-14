@@ -21,8 +21,19 @@
       </div>
     </div>
 
-    <div v-else class="pt-16 sm:pt-24 pb-16 bg-theme-bg">
+    <div v-else class="pt-16 sm:pt-24 pb-20 bg-theme-bg">
       <div class="w-full mx-auto px-4 sm:px-6 lg:px-12">
+        <div class="h-[5rem] flex items-center">
+          <NuxtLink
+            to="/"
+            class="inline-flex items-center gap-1.5 text-zinc-500 text-[11px] font-bold uppercase tracking-wider hover:text-zinc-700 transition-colors"
+          >
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Back to all units
+          </NuxtLink>
+        </div>
         <div ref="layoutRow" class="md:flex md:gap-12">
           <!-- Left: media, elevation, context -->
           <div ref="leftColumn" class="md:w-[60%] space-y-6">
@@ -140,7 +151,13 @@
           </div>
 
           <!-- Right: details / stats / CTAs -->
-          <div class="mt-10 md:mt-0 md:w-[40%]">
+          <div class="mt-10 md:mt-0 md:w-[40%] relative">
+            <!-- When sticky, reserve space so when we unfix the panel scrolls as normal content -->
+            <div
+              v-if="isRightPanelFixed && panelInitialHeight != null"
+              :style="{ height: `${panelInitialHeight}px`, minHeight: `${panelInitialHeight}px` }"
+              aria-hidden="true"
+            />
             <!-- Details card: whole right section -->
             <div
               ref="rightPanel"
@@ -156,16 +173,16 @@
                 </span>
                 <span
                   v-if="unit.unitType"
-                  class="bg-theme-input-bg text-theme-text-primary text-[10px] font-bold uppercase px-3 py-1 rounded-full"
+                  class="bg-white text-theme-text-primary text-[10px] font-bold uppercase px-3 py-1 rounded-full"
                 >
                   {{ unit.unitType }} layout
                 </span>
                 <span
                   v-if="unit.status !== 'Available'"
-                  class="text-[10px] font-bold uppercase px-3 py-1 rounded-full border"
+                  class="text-[10px] font-bold uppercase px-3 py-1 rounded-full"
                   :class="unit.status === 'Sold'
-                    ? 'border-red-500 text-red-400'
-                    : 'border-amber-400 text-amber-300'"
+                    ? 'border border-red-500 text-red-400'
+                    : 'bg-orange-500 text-white'"
                 >
                   {{ unit.status }}
                 </span>
@@ -186,16 +203,11 @@
                   Ignite Studios. Property Sales, Reimagined.
                 </p>
                 <p class="mt-1 text-sm text-theme-text-primary">
-                  <span class="font-semibold">Layout:</span>
-                  <span class="font-medium">
-                    {{ unit.unitType || '—' }}
-                  </span>
-                </p>
-                <p class="text-sm text-theme-text-primary">
-                  <span class="font-semibold">Unit:</span>
-                  <span class="font-medium">
-                    {{ unit.unitNumber }}
-                  </span>
+                  <span class="font-semibold">Unit: </span>
+                  <span class="font-medium">{{ unit.unitNumber }}</span>
+                  <span class="text-zinc-500" aria-hidden="true"> · </span>
+                  <span class="font-semibold">Layout: </span>
+                  <span class="font-medium">{{ unit.unitType || '—' }}</span>
                 </p>
               </div>
 
@@ -372,9 +384,10 @@
                   </button>
                   <button
                     type="button"
-                    class="w-full sm:w-auto sm:flex-[0.35] sm:min-w-[170px] h-12 inline-flex items-center justify-center gap-1.5 bg-theme-bg border border-zinc-300 text-zinc-600 font-black text-[11px] uppercase tracking-wider rounded-lg shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600"
+                    :disabled="!isAvailable"
+                    class="w-full sm:w-auto sm:flex-[0.35] sm:min-w-[170px] h-12 inline-flex items-center justify-center gap-1.5 bg-theme-bg border border-zinc-300 text-zinc-600 font-black text-[11px] uppercase tracking-wider rounded-lg shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-theme-bg disabled:hover:text-zinc-600 disabled:hover:border-zinc-300"
                     :class="isWishlisted ? '!border-red-600 !bg-red-600 !text-white' : ''"
-                    @click="onToggleWishlist"
+                    @click="isAvailable && onToggleWishlist()"
                   >
                     <IconHeart class="w-3.5 h-3.5 flex-shrink-0 -mt-[1px]" :filled="isWishlisted" />
                     <span class="leading-none">
@@ -435,33 +448,6 @@
           :alt="`Unit ${unit?.unitNumber} image ${lightboxIndex + 1}`"
           class="max-h-full max-w-full object-contain rounded-2xl shadow-2xl"
         />
-      </div>
-    </div>
-
-    <!-- Back to all units bar directly above footer -->
-    <div class="bg-theme-bg">
-      <div class="w-full mx-auto px-4 sm:px-6 lg:px-12 py-6 flex justify-center">
-        <button
-          type="button"
-          class="flex items-center gap-2 text-[11px] font-semibold uppercase text-zinc-400 hover:text-zinc-100 transition-colors"
-          @click="goBackToList"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-3.5 h-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          <span>Back to all units</span>
-        </button>
       </div>
     </div>
   </div>
@@ -548,29 +534,38 @@ function updateRightPanelPosition() {
     }
   }
 
-  // Aim to vertically center the right panel next to the media column while sticky,
-  // but never let it sit too close to the very top.
-  const viewportHeight =
-    typeof window !== 'undefined'
-      ? window.innerHeight || document.documentElement.clientHeight || 0
-      : 0
-  let offsetTop = 136
-  if (panelInitialHeight.value != null && viewportHeight > panelInitialHeight.value) {
-    offsetTop = Math.max((viewportHeight - panelInitialHeight.value) / 2, 80)
-  }
+  // Match the gap from nav border to content: nav height + "Back to all units" row (pt-6 + link + mb-1.1rem ≈ 66px).
+  const navHeight = typeof window !== 'undefined' && window.innerWidth >= 640 ? 96 : 64
+  const backRowHeight = 80 // 5rem
+  const offsetTop = navHeight + backRowHeight
   const scrollY = window.scrollY || window.pageYOffset
 
-  // Before we reach the panel's original top, do nothing special
+  // Before we reach the panel's original top, normal flow (no sticky, no absolute)
   if (scrollY + offsetTop < panelInitialTop.value) {
     isRightPanelFixed.value = false
     rightPanelStyle.value = {}
     return
   }
 
-  // Once we've scrolled past the original top, keep it fixed,
-  // but don't let it scroll past the bottom of the left column (row bottom).
-  let top = offsetTop
+  // Once we've scrolled past the original top, keep it fixed only until
+  // the bottom of the left column. Past that, pin to bottom of right column
+  // so it scrolls with the page (no jump) instead of snapping to flow position.
+  if (rowBottom.value != null && panelInitialHeight.value != null) {
+    const rowBottomViewport = rowBottom.value - scrollY
+    const maxTop = rowBottomViewport - panelInitialHeight.value
+    if (maxTop < offsetTop) {
+      isRightPanelFixed.value = false
+      rightPanelStyle.value = {
+        position: 'absolute',
+        bottom: '0',
+        left: '0',
+        width: '100%',
+      }
+      return
+    }
+  }
 
+  let top = offsetTop
   if (rowBottom.value != null && panelInitialHeight.value != null) {
     const rowBottomViewport = rowBottom.value - scrollY
     const maxTop = rowBottomViewport - panelInitialHeight.value

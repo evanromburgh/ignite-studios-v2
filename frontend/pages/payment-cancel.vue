@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-theme-bg flex flex-col items-center justify-center gap-6 px-5">
+  <div class="min-h-screen bg-theme-bg flex flex-col items-center justify-center gap-6 px-5 pt-[11rem] pb-16">
     <div class="flex items-center animate-pulse">
       <span class="text-2xl sm:text-4xl font-black tracking-tighter text-theme-text-primary leading-none">IGNITE</span>
       <div class="h-4 sm:h-6 w-[1px] bg-zinc-800 mx-3 sm:mx-4" />

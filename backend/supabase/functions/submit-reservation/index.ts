@@ -1,6 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import CryptoJS from 'https://esm.sh/crypto-js@4.2.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -284,14 +283,15 @@ serve(async (req) => {
     let finalContactId: string;
     
     if (zohoContactId) {
-      const contactUpdate = {
+      const contactUpdate: Record<string, string> = {
         First_Name: name,
         Last_Name: surname,
         Email: email,
         Phone: `+27${phone}`,
-        'ID_Passport_Number': idPassport,
+        'ID_Passport_Number': idPassport.trim(),
       };
-      
+      console.log('[submit-reservation] Contact update payload ID_Passport_Number:', contactUpdate['ID_Passport_Number']);
+
       const updateUrl = `${zohoApiUrl}/Contacts/${zohoContactId}`;
       const updateResponse = await fetch(updateUrl, {
         method: 'PUT',
@@ -303,17 +303,21 @@ serve(async (req) => {
       });
 
       if (!updateResponse.ok) {
-        console.error('Zoho contact update error:', await updateResponse.text());
+        const errText = await updateResponse.text();
+        console.error('Zoho contact update error:', updateResponse.status, errText);
+      } else {
+        console.log('[submit-reservation] Zoho contact update OK for', zohoContactId);
       }
       finalContactId = zohoContactId;
     } else {
-      const newContact = {
+      const newContact: Record<string, string> = {
         First_Name: name,
         Last_Name: surname,
         Email: email,
         Phone: `+27${phone}`,
-        'ID_Passport_Number': idPassport,
+        'ID_Passport_Number': idPassport.trim(),
       };
+      console.log('[submit-reservation] Contact create payload ID_Passport_Number:', newContact['ID_Passport_Number']);
       
       const createUrl = `${zohoApiUrl}/Contacts`;
       const createResponse = await fetch(createUrl, {
@@ -354,6 +358,23 @@ serve(async (req) => {
       });
     }
 
+    if (idPassport.trim()) {
+      const passportOnlyUrl = `${zohoApiUrl}/Contacts/${finalContactId}`;
+      const passportOnlyRes = await fetch(passportOnlyUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Zoho-oauthtoken ${access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ data: [{ 'ID_Passport_Number': idPassport.trim() }] }),
+      });
+      if (!passportOnlyRes.ok) {
+        console.error('[submit-reservation] ID_Passport_Number-only update failed:', passportOnlyRes.status, await passportOnlyRes.text());
+      } else {
+        console.log('[submit-reservation] ID_Passport_Number updated for contact', finalContactId);
+      }
+    }
+
     // Store unit+contact -> user so payment-webhook can add unit to profile.reserved_unit_ids on success
     const { error: pendingErr } = await supabase
       .from('pending_reservations')
@@ -374,6 +395,7 @@ serve(async (req) => {
       'Payment_Status': 'Pending',
       'Deposit': 10000,
       'Reason_for_Buying': reasonForBuying,
+      'ID_Passport_Number': idPassport.trim(),
     };
 
     const moduleApiName = 'Unit_Reservations';
@@ -426,112 +448,20 @@ serve(async (req) => {
       }
     }
 
-    const payfastMerchantId = Deno.env.get('PAYFAST_MERCHANT_ID');
-    const payfastMerchantKey = Deno.env.get('PAYFAST_MERCHANT_KEY');
-    const payfastEnv = Deno.env.get('PAYFAST_ENV') || 'sandbox';
-    const payfastPassphrase = Deno.env.get('PAYFAST_PASSPHRASE') || '';
-    const payfastReturnUrl = Deno.env.get('PAYFAST_RETURN_URL') || 'https://yourdomain.com/payment-success';
-    const payfastCancelUrl = Deno.env.get('PAYFAST_CANCEL_URL') || 'https://yourdomain.com/payment-cancel';
-    
-    let paymentUrl: string | null = null;
-    let paymentReference: string | null = null;
-
-    if (payfastMerchantId && payfastMerchantKey) {
-      try {
-        const timestamp = Date.now();
-        // Use pipe delimiter so UUID (unitId) doesn't get split — webhook expects exactly 3 parts
-        paymentReference = `${unitId}|${finalContactId}|${timestamp}`;
-        
-        const payfastBaseUrl = payfastEnv === 'production' 
-          ? 'https://www.payfast.co.za/eng/process'
-          : 'https://sandbox.payfast.co.za/eng/process';
-        
-        const supabaseProjectUrl = Deno.env.get('SUPABASE_URL') || '';
-        const notifyUrl = `${supabaseProjectUrl}/functions/v1/payment-webhook`;
-        
-        const amount = '10000.00';
-        const cancelUrlWithRef = `${payfastCancelUrl}?ref=${encodeURIComponent(paymentReference)}`;
-        
-        // Remove leading zero from phone number if present (PayFast format: 27XXXXXXXXX, not 270XXXXXXXXX)
-        let payfastPhone = phone.trim();
-        if (payfastPhone.startsWith('0')) {
-          payfastPhone = payfastPhone.substring(1); // Remove leading 0
-        }
-        // Ensure phone is 9 digits (without leading 0)
-        payfastPhone = payfastPhone.replace(/\D/g, '').substring(0, 9);
-        
-        const payfastParams: Record<string, string> = {
-          merchant_id: payfastMerchantId,
-          merchant_key: payfastMerchantKey,
-          return_url: payfastReturnUrl,
-          cancel_url: cancelUrlWithRef,
-          notify_url: notifyUrl,
-          name_first: name.trim(),
-          name_last: surname.trim(),
-          email_address: email.trim(),
-          cell_number: `27${payfastPhone}`,
-          m_payment_id: paymentReference,
-          amount: amount,
-          item_name: `Unit ${unitNumber} Reservation Deposit`,
-          item_description: `Reservation deposit for Unit ${unitNumber}`,
-        };
-        
-        const paramOrder = [
-          'merchant_id',
-          'merchant_key',
-          'return_url',
-          'cancel_url',
-          'notify_url',
-          'name_first',
-          'name_last',
-          'email_address',
-          'cell_number',
-          'm_payment_id',
-          'amount',
-          'item_name',
-          'item_description'
-        ];
-        
-        const paramPairs: string[] = [];
-        for (const key of paramOrder) {
-          const value = payfastParams[key];
-          if (value && value !== '' && value !== null && value !== undefined) {
-            const encodedValue = encodeURIComponent(String(value).trim()).replace(/%20/g, '+');
-            paramPairs.push(`${key}=${encodedValue}`);
-          }
-        }
-        
-        const paramString = paramPairs.join('&');
-        const signatureString = payfastPassphrase && payfastPassphrase.trim() !== ''
-          ? `${paramString}&passphrase=${encodeURIComponent(payfastPassphrase.trim()).replace(/%20/g, '+')}`
-          : paramString;
-        
-        const signature = CryptoJS.MD5(signatureString).toString();
-        payfastParams.signature = signature;
-        
-        const queryParams: string[] = [];
-        for (const key of Object.keys(payfastParams)) {
-          const value = payfastParams[key];
-          if (value && value !== '' && value !== null && value !== undefined) {
-            const encodedValue = encodeURIComponent(String(value).trim()).replace(/%20/g, '+');
-            queryParams.push(`${key}=${encodedValue}`);
-          }
-        }
-        
-        const queryString = queryParams.join('&');
-        paymentUrl = `${payfastBaseUrl}?${queryString}`;
-      } catch (payfastError: any) {
-        console.error('Error generating PayFast payment URL:', payfastError?.message);
-      }
-    }
+    // Generate reference for Paystack (webhook uses this ref)
+    const timestamp = Date.now();
+    const paymentReference = `${unitId}.${finalContactId}.${timestamp}`;
+    const amountCents = 10000 * 100; // ZAR cents
 
     return new Response(
       JSON.stringify({
         success: true,
         zohoContactId: finalContactId,
         zohoReservationId: reservationId,
-        paymentUrl: paymentUrl,
-        paymentReference: paymentReference,
+        paymentReference,
+        email: email.trim(),
+        amountInCents: amountCents,
+        currency: 'ZAR',
         message: 'Reservation created successfully in Zoho CRM',
       }),
       {
