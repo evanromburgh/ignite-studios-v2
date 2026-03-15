@@ -1,18 +1,28 @@
 <template>
   <div class="min-h-screen bg-theme-bg text-theme-text-primary relative">
     <div class="min-h-screen flex flex-col">
-        <!-- Mobile menu backdrop -->
+        <!-- Mobile-only bar background: keeps transparent/scrolled state; never turns white when menu opens -->
+        <div
+          aria-hidden="true"
+          class="fixed top-0 left-0 right-0 h-16 sm:h-24 z-[150] pointer-events-none transition-all duration-300 lg:hidden"
+          :class="navBackgroundClass"
+        />
+        <!-- White panel slides down over the bar (z-160); tap to close -->
         <div
           role="presentation"
           aria-hidden="!showMobileMenu"
-          class="lg:hidden fixed inset-0 z-[140] bg-black/20 backdrop-blur-[5px] transition-opacity duration-300"
-          :class="showMobileMenu ? 'opacity-100' : 'opacity-0 pointer-events-none'"
+          class="lg:hidden fixed top-0 left-0 right-0 z-[160] bg-white overflow-hidden mobile-menu-panel"
+          :class="[
+            showMobileMenu && panelSlideDone ? 'translate-y-0 pointer-events-auto mobile-menu-panel--sized' : '-translate-y-full pointer-events-none'
+          ]"
+          :style="whitePanelStyle"
           @click="showMobileMenu = false"
         />
 
         <nav
-      class="fixed top-0 left-0 right-0 z-[150] flex flex-col transition-all duration-300"
-      :class="navBackgroundClass"
+      ref="navRef"
+      class="fixed top-0 left-0 right-0 z-[170] lg:z-[150] flex flex-col transition-all duration-300"
+      :class="[navBackgroundClass, 'max-lg:!bg-transparent max-lg:!border-transparent', menuMeasuring && 'mobile-menu-measuring']"
     >
       <div class="pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 h-16 sm:h-24 flex items-center justify-between flex-shrink-0">
         <NuxtLink
@@ -117,7 +127,7 @@
             type="button"
             class="lg:hidden w-5 h-5 sm:w-[46px] sm:h-[46px] flex items-center justify-center rounded-lg relative shrink-0"
             aria-label="Toggle navigation menu"
-            @click="showMobileMenu = !showMobileMenu"
+            @click="toggleMobileMenu()"
           >
             <div class="w-5 h-5 relative flex items-center justify-center">
               <span
@@ -137,10 +147,10 @@
         </div>
       </div>
 
-      <!-- Mobile menu -->
+      <!-- Mobile menu (expanded but invisible when menuMeasuring so we can measure height) -->
       <div
-        class="lg:hidden overflow-hidden transition-all duration-300 ease-in-out"
-        :class="showMobileMenu ? 'max-h-[70vh] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'"
+        class="lg:hidden overflow-hidden mobile-menu-dropdown"
+        :class="showMobileMenu ? 'max-h-[70vh] opacity-100' : menuMeasuring ? 'max-h-[70vh] opacity-0' : 'max-h-0 opacity-0 pointer-events-none'"
       >
         <div class="flex flex-col items-stretch pt-0 pb-6 pl-5 pr-5 sm:pl-8 sm:pr-8">
           <div class="w-full flex">
@@ -148,26 +158,34 @@
               Properties
             </NuxtLink>
           </div>
-          <div class="w-full h-px bg-white/10 my-1" />
+          <template v-if="user">
+            <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
+            <div class="w-full flex">
+              <NuxtLink to="/wishlist" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isWishlistPage)" @click="showMobileMenu = false">
+                Wishlist
+              </NuxtLink>
+            </div>
+            <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
+            <div class="w-full flex">
+              <NuxtLink to="/reservations" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isReservationsPage)" @click="showMobileMenu = false">
+                My Units
+              </NuxtLink>
+            </div>
+          </template>
+          <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
           <div class="w-full flex">
             <NuxtLink to="/documents" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isDocumentsPage)" @click="showMobileMenu = false">
               Downloads
             </NuxtLink>
           </div>
           <template v-if="user">
-            <div class="w-full h-px bg-white/10 my-1" />
+            <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
             <div class="w-full flex">
-              <NuxtLink to="/wishlist" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isWishlistPage)" @click="showMobileMenu = false">
-                Wishlist
+              <NuxtLink to="/profile" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isProfilePage)" @click="showMobileMenu = false">
+                Profile
               </NuxtLink>
             </div>
-            <div class="w-full h-px bg-white/10 my-1" />
-            <div class="w-full flex">
-              <NuxtLink to="/reservations" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isReservationsPage)" @click="showMobileMenu = false">
-                My Units
-              </NuxtLink>
-            </div>
-            <div class="w-full h-px bg-white/10 my-1" />
+            <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
             <div class="w-full flex">
               <button type="button" class="w-full max-w-xs mx-auto h-12 flex items-center justify-between text-[12px] font-black uppercase tracking-widest" :class="isLoggingOut ? 'text-theme-text-muted' : 'text-red-500'" @click="handleLogoutMobile">
                 {{ isLoggingOut ? 'Ending Session...' : 'Sign Out' }}
@@ -202,86 +220,94 @@
       </div>
     </div>
 
-    <footer class="bg-black text-white px-5 sm:px-8 md:px-24 pt-12 sm:pt-20 pb-10 sm:pb-20 text-[11px]">
-      <div class="w-full space-y-10">
-        <div>
+    <!-- Chat / Contact Agent widget (on index, only after scrolling past hero) -->
+    <Transition name="chat-widget-appear">
+      <ChatWidget v-if="showChatWidget" />
+    </Transition>
+
+    <footer class="footer-main relative bg-black text-white pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 pt-[4.5rem] sm:pt-16 pb-[4.25rem]">
+      <!-- Main footer: Logo + Contact + Quick Links + Terms & Conditions -->
+      <div class="footer-content flex flex-col gap-14 lg:grid lg:grid-cols-2 lg:items-start lg:gap-20 pb-[4.5rem] sm:pb-16">
+        <!-- Logo -->
+        <div class="flex flex-col items-start text-left">
           <img
             :src="logoLight"
             alt="Ignite Studios"
-            class="h-6 w-auto mb-6"
+            class="h-6 w-auto"
           />
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-16">
+        <!-- Contact, Quick Links, Terms & Conditions -->
+        <div class="grid grid-cols-1 sm:grid-cols-[auto_auto_auto] gap-10 sm:gap-14 sm:justify-between">
           <!-- Contact -->
-          <div class="space-y-2">
-            <h3 class="text-[11px] font-black uppercase tracking-[0.2em] mb-3">
+          <div class="footer-col space-y-4 sm:w-max sm:min-w-max">
+            <h3 class="text-[11px] font-bold uppercase tracking-wider text-white">
               Contact
             </h3>
             <a
-              href="mailto:info@ignitestudios.co.za"
-              class="text-[12px] font-medium tracking-normal text-zinc-200 hover:text-white transition-colors"
+              href="mailto:info@ignite-studios.co.za"
+              class="block text-[12px] text-[#CCCCCC] hover:text-white transition-colors leading-relaxed"
             >
-              info@ignitestudios.co.za
+              info@ignite-studios.co.za
             </a>
           </div>
 
-          <!-- Quick links -->
-          <div class="space-y-2">
-            <h3 class="text-[11px] font-black uppercase tracking-[0.2em] mb-3">
+          <!-- Quick Links -->
+          <div class="footer-col space-y-4 sm:w-max sm:min-w-max">
+            <h3 class="text-[11px] font-bold uppercase tracking-wider text-white">
               Quick Links
             </h3>
-            <NuxtLink
-              to="/wishlist"
-              class="block text-[12px] font-medium tracking-normal text-zinc-300 hover:text-white transition-colors mb-1"
-            >
-              Wishlist
-            </NuxtLink>
-            <NuxtLink
-              to="/reservations"
-              class="block text-[12px] font-medium tracking-normal text-zinc-300 hover:text-white transition-colors mb-1"
-            >
-              My Units
-            </NuxtLink>
-            <NuxtLink
-              to="/documents"
-              class="block text-[12px] font-medium tracking-normal text-zinc-300 hover:text-white transition-colors"
-            >
-              Downloads
-            </NuxtLink>
+            <nav class="flex flex-col gap-3">
+              <NuxtLink
+                to="/wishlist"
+                class="text-[12px] text-[#CCCCCC] hover:text-white transition-colors leading-relaxed"
+              >
+                Wishlist
+              </NuxtLink>
+              <NuxtLink
+                to="/reservations"
+                class="text-[12px] text-[#CCCCCC] hover:text-white transition-colors leading-relaxed"
+              >
+                My Units
+              </NuxtLink>
+              <NuxtLink
+                to="/documents"
+                class="text-[12px] text-[#CCCCCC] hover:text-white transition-colors leading-relaxed"
+              >
+                Downloads
+              </NuxtLink>
+            </nav>
           </div>
 
-          <!-- Terms -->
-          <div class="space-y-2">
-            <h3 class="text-[11px] font-black uppercase tracking-[0.2em] mb-3">
+          <!-- Terms & Conditions -->
+          <div class="footer-col space-y-4 sm:w-max sm:min-w-max">
+            <h3 class="text-[11px] font-bold uppercase tracking-wider text-white">
               Terms &amp; Conditions
             </h3>
-            <span class="block text-[12px] font-medium tracking-normal text-zinc-300 mb-1">
-              Privacy Policy
-            </span>
-            <span class="block text-[12px] font-medium tracking-normal text-zinc-300 mb-1">
-              Disclaimer
-            </span>
-            <span class="block text-[12px] font-medium tracking-normal text-zinc-300">
-              Cookie Settings
-            </span>
-          </div>
-
-          <!-- Back to top -->
-          <div class="flex lg:items-start lg:justify-end items-center justify-start">
-            <button
-              type="button"
-              class="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-300 hover:text-white transition-colors"
-              @click="scrollToTop"
-            >
-              Back to top
-            </button>
+            <nav class="flex flex-col gap-3">
+              <span class="text-[12px] text-[#CCCCCC] hover:text-white transition-colors leading-relaxed cursor-pointer">Privacy Policy</span>
+              <span class="text-[12px] text-[#CCCCCC] hover:text-white transition-colors leading-relaxed cursor-pointer">Disclaimer</span>
+              <span class="text-[12px] text-[#CCCCCC] hover:text-white transition-colors leading-relaxed cursor-pointer">Cookie Settings</span>
+            </nav>
           </div>
         </div>
+      </div>
 
-        <div class="mt-10 pt-10 border-t border-white/10 flex items-center justify-between text-[10px] text-zinc-500">
-          <span>&copy; {{ new Date().getFullYear() }} Ignite Studios</span>
-        </div>
+      <!-- Bottom bar: line separator, then copyright + back to top -->
+      <div class="footer-bottom border-t border-white/10 flex items-center justify-between pt-5 sm:pt-6 pb-0">
+        <p class="m-0 text-[12px] text-[#CCCCCC] font-normal">
+          © {{ new Date().getFullYear() }} Ignite Studios. All rights reserved.
+        </p>
+        <button
+          type="button"
+          class="flex items-center justify-center w-10 h-10 rounded-full text-[#CCCCCC] hover:text-white hover:bg-white/10 transition-colors shrink-0"
+          aria-label="Back to top"
+          @click="scrollToTop"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
       </div>
     </footer>
     </div>
@@ -303,15 +329,29 @@ const isPropertiesPage = computed(() => route.path === '/' || route.path === '')
 const isDocumentsPage = computed(() => route.path === '/documents')
 const isReservationsPage = computed(() => route.path === '/reservations')
 const isWishlistPage = computed(() => route.path === '/wishlist')
+const isProfilePage = computed(() => route.path === '/profile')
 
 const showMobileMenu = ref(false)
+const navRef = ref<HTMLElement | null>(null)
+const navHeightPx = ref(0)
+/** Expand dropdown invisibly to measure nav height before opening panel (avoids full-height then pop) */
+const menuMeasuring = ref(false)
+/** When true, panel has finished sliding down (so we show translateY(0)); starts false on open so panel slides from top */
+const panelSlideDone = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
 const isLoggingOut = ref(false)
 const scrolled = ref(false)
+/** Chat widget visible on all pages except index; on index, only after scrolling past the hero */
+const showChatWidget = ref(!isPropertiesPage.value)
 const currentNavTheme = ref<'dark' | 'light'>(isPropertiesPage.value ? 'dark' : 'light')
 
 const isDarkNavTheme = computed(() => currentNavTheme.value === 'dark')
 
+/** When mobile menu is open or we're measuring height, use light theme (dark logo/items on white) */
+const effectiveNavTheme = computed(() => (showMobileMenu.value || menuMeasuring.value ? 'light' : currentNavTheme.value))
+const effectiveIsDarkNavTheme = computed(() => effectiveNavTheme.value === 'dark')
+
+/** Bar background: never force white for menu open — white comes from the sliding panel only */
 const navBackgroundClass = computed(() => {
   if (scrolled.value) {
     return 'bg-theme-overlay-nav/95 backdrop-blur-xl border-b border-white/10 shadow-sm'
@@ -321,30 +361,35 @@ const navBackgroundClass = computed(() => {
   }
   return 'bg-transparent border-b border-transparent'
 })
-
 function navLinkClass(isActive: boolean) {
-  if (isDarkNavTheme.value) {
+  if (effectiveIsDarkNavTheme.value) {
     return isActive ? 'text-white font-semibold' : 'text-white font-normal'
   }
   return isActive ? 'text-[#18181B] font-semibold' : 'text-[#18181B] font-normal'
 }
 
 const mobileIconBarClass = computed(() =>
-  isDarkNavTheme.value ? 'bg-white' : 'bg-[#18181B]',
+  effectiveIsDarkNavTheme.value ? 'bg-white' : 'bg-[#18181B]',
 )
 
-const logoSrc = computed(() => (isDarkNavTheme.value ? logoLight : logoDark))
+const logoSrc = computed(() => (effectiveIsDarkNavTheme.value ? logoLight : logoDark))
 
 const profileButtonClass = computed(() => {
   if (!user.value) return ''
 
-  if (isDarkNavTheme.value) {
-    // Dark nav theme (white logo/text): always solid white circle with dark text
+  if (effectiveIsDarkNavTheme.value) {
+    // Dark nav theme (white logo/text): solid white circle with dark text
     return 'bg-white text-[#18181B]'
   }
 
-  // Light nav theme (dark logo/text): always solid dark circle with white text
+  // Light nav theme (dark logo/text): solid dark circle with white text
   return 'bg-[#18181B] text-white hover:bg-[#27272a]'
+})
+
+/** White panel height: use nav height so it never changes during open/close (avoids panel “dropping” before slide-up on close) */
+const whitePanelStyle = computed(() => {
+  if (navHeightPx.value) return { height: `${navHeightPx.value}px` }
+  return { height: '100vh' }
 })
 
 function updateScrolledAndTheme() {
@@ -364,9 +409,20 @@ function updateScrolledAndTheme() {
       const heroBottom = heroTop + hero.offsetHeight
       const navBottom = window.scrollY + navHeight
       currentNavTheme.value = navBottom <= heroBottom ? 'dark' : 'light'
+      // Show chat widget as soon as the user scrolls (bottom of hero has moved up from the bottom of the viewport)
+      const heroRect = hero.getBoundingClientRect()
+      showChatWidget.value = heroRect.bottom < window.innerHeight
+      const footer = document.querySelector<HTMLElement>('.footer-main')
+      if (footer && footer.getBoundingClientRect().top < window.innerHeight) {
+        showChatWidget.value = false
+      }
       return
     }
+    showChatWidget.value = false
+    return
   }
+
+  showChatWidget.value = !isProfilePage.value
 
   const sections = Array.from(
     document.querySelectorAll<HTMLElement>('.nav-section'),
@@ -403,6 +459,15 @@ function updateScrolledAndTheme() {
     const firstTheme: 'dark' | 'light' =
       sections[0].classList.contains('dark') ? 'dark' : 'light'
     currentNavTheme.value = firstTheme
+  }
+
+  // Hide chat widget when footer has entered the viewport
+  const footer = document.querySelector<HTMLElement>('.footer-main')
+  if (footer) {
+    const footerRect = footer.getBoundingClientRect()
+    if (footerRect.top < window.innerHeight) {
+      showChatWidget.value = false
+    }
   }
 }
 
@@ -449,6 +514,8 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  navResizeObserver?.disconnect()
+  navResizeObserver = null
   document.removeEventListener('mousedown', onClickOutside)
   window.removeEventListener('resize', onResize)
   window.removeEventListener('scroll', updateScrolledAndTheme)
@@ -460,8 +527,47 @@ function onResize() {
   updateScrolledAndTheme()
 }
 
+let navResizeObserver: ResizeObserver | null = null
+
+function startOpenSequence() {
+  if (!navRef.value) return
+  panelSlideDone.value = false
+  menuMeasuring.value = true
+  nextTick(() => {
+    if (!navRef.value) return
+    navHeightPx.value = navRef.value.offsetHeight
+    menuMeasuring.value = false
+    showMobileMenu.value = true
+    // Double rAF so the panel is painted at -100% before we transition to 0 (otherwise open has no visible slide)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        panelSlideDone.value = true
+      })
+    })
+  })
+}
+
+function toggleMobileMenu() {
+  if (showMobileMenu.value) {
+    showMobileMenu.value = false
+    panelSlideDone.value = false
+  } else {
+    startOpenSequence()
+  }
+}
+
 watch(showMobileMenu, (open) => {
   document.body.style.overflow = open ? 'hidden' : ''
+  if (open && navRef.value) {
+    navResizeObserver = new ResizeObserver(() => {
+      if (navRef.value) navHeightPx.value = navRef.value.offsetHeight
+    })
+    navResizeObserver.observe(navRef.value)
+  } else {
+    panelSlideDone.value = false
+    navResizeObserver?.disconnect()
+    navResizeObserver = null
+  }
 })
 
 function scrollToTop() {
@@ -471,6 +577,37 @@ function scrollToTop() {
 </script>
 
 <style scoped>
+/* Footer: logo + sections, then bottom bar with copyright and back to top */
+.footer-main {
+  min-height: 0;
+}
+
+.footer-col {
+  min-width: 0;
+}
+
+/* Mobile menu panel: smooth slide on open and close; height only transitions when resizing (not during open slide) */
+.mobile-menu-panel {
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.mobile-menu-panel.mobile-menu-panel--sized {
+  transition:
+    transform 0.32s cubic-bezier(0.32, 0.72, 0, 1),
+    height 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Match dropdown expand/collapse to panel for unified open/close */
+.mobile-menu-dropdown {
+  transition:
+    max-height 0.32s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* When measuring, dropdown expands instantly (no transition) for accurate height */
+.mobile-menu-measuring .mobile-menu-dropdown {
+  transition: none;
+}
+
 /* Nuxt DevTools bar styling */
 .browsing-anchor {
   --browsing-widget-bg: var(--theme-surface-elevated);
@@ -559,5 +696,23 @@ function scrollToTop() {
   opacity: 0.5;
   max-width: 200px;
   margin-left: 3px;
+}
+
+/* Chat widget: enter = slide up from bottom + fade; leave = fade only */
+.chat-widget-appear-enter-active {
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.chat-widget-appear-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.chat-widget-appear-enter-from {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+.chat-widget-appear-leave-to {
+  opacity: 0;
 }
 </style>

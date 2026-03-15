@@ -1,10 +1,10 @@
 <template>
   <div class="bg-theme-bg">
-    <div v-if="!user || !unitNumberDisplay" class="flex items-center justify-center min-h-[60vh]">
+    <div v-if="!user || !unitNumberDisplay" class="flex items-center justify-center min-h-[60svh]">
       <p class="text-zinc-500">Redirecting…</p>
     </div>
 
-    <div v-else class="pt-[11rem] pb-20 bg-theme-bg">
+    <div v-else class="pt-[11rem] pb-16 bg-theme-bg">
       <div class="w-full mx-auto px-4 sm:px-6 lg:px-12">
         <div v-if="acquireError" class="mb-8 p-6 rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-200">
           <p class="text-sm font-bold uppercase tracking-wide">{{ acquireError }}</p>

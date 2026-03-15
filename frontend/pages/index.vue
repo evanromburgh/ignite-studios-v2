@@ -21,8 +21,8 @@
           </svg>
         </button>
       </div>
-      <!-- Hero header: Swiper slider (same structure as reference) -->
-      <header class="nav-section dark relative min-h-screen h-svh sm:h-screen overflow-hidden group bg-theme-bg">
+      <!-- Hero header: Swiper slider; use svh on mobile so it fits within visible viewport (avoids iOS browser chrome overflow) -->
+      <header class="nav-section dark relative min-h-svh h-svh sm:min-h-screen sm:h-screen overflow-hidden group bg-theme-bg">
         <div class="absolute inset-0 z-10">
           <ClientOnly>
             <Swiper
@@ -61,7 +61,7 @@
             </template>
           </ClientOnly>
         </div>
-        <div class="relative z-20 flex min-h-screen flex-col justify-center px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pt-16 sm:pt-24 pb-[11rem] sm:pb-32 pointer-events-none">
+        <div class="relative z-20 flex min-h-full flex-col justify-center items-center px-5 pt-0 pb-0 sm:pt-24 sm:pb-32 sm:px-8 md:px-24 lg:px-40 xl:px-56 pointer-events-none">
           <h1 class="text-center text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight mb-2">
             Browse Units
           </h1>
@@ -72,65 +72,133 @@
         <!-- Filter bar: not inside hero; rendered fixed or anchored below -->
       </header>
 
-      <!-- Sticky filterbar: anchor slot (in-flow when scrolled past threshold) -->
-      <div
-        class="relative z-30 w-full pointer-events-auto"
-        :style="sticky.anchorWrapperStyle"
-      >
-        <div v-if="sticky.isAnchored" class="filterbar-container">
-          <FilterBar
-            :filters="filters"
-            :view-mode="viewMode"
-            :unit-types="unitTypes"
-            :floor-options="floorOptions"
-            :direction-options="directionOptions"
-            @update:filters="filters = $event"
-            @update:view-mode="viewMode = $event"
-          />
+      <!-- Sticky filterbar: desktop/tablet only (sm and up); mobile uses Filters drawer below -->
+      <div class="hidden sm:block">
+        <!-- Sticky filterbar: anchor slot (in-flow when scrolled past threshold) -->
+        <div
+          class="relative z-30 w-full pointer-events-auto"
+          :style="sticky.anchorWrapperStyle"
+        >
+          <div v-if="sticky.isAnchored" class="filterbar-container">
+            <FilterBar
+              :filters="filters"
+              :view-mode="viewMode"
+              :unit-types="unitTypes"
+              :floor-options="floorOptions"
+              :direction-options="directionOptions"
+              @update:filters="filters = $event"
+              @update:view-mode="viewMode = $event"
+            />
+          </div>
+          <div v-else :style="{ height: sticky.barHeightPx }" aria-hidden="true" />
         </div>
-        <div v-else :style="{ height: sticky.barHeightPx }" aria-hidden="true" />
+
+        <!-- Sticky filterbar: fixed at bottom until anchor threshold -->
+        <div
+          v-show="!sticky.isAnchored"
+          ref="stickyFixedBarRef"
+          class="z-20 pointer-events-auto"
+          :style="sticky.fixedBarStyle"
+        >
+          <div class="filterbar-container">
+            <FilterBar
+              :filters="filters"
+              :view-mode="viewMode"
+              :unit-types="unitTypes"
+              :floor-options="floorOptions"
+              :direction-options="directionOptions"
+              @update:filters="filters = $event"
+              @update:view-mode="viewMode = $event"
+            />
+          </div>
+        </div>
       </div>
 
-      <!-- Sticky filterbar: fixed at bottom until anchor threshold -->
-      <div
-        v-show="!sticky.isAnchored"
-        ref="stickyFixedBarRef"
-        class="z-20 pointer-events-auto"
-        :style="sticky.fixedBarStyle"
-      >
-        <div class="filterbar-container">
-          <FilterBar
-            :filters="filters"
-            :view-mode="viewMode"
-            :unit-types="unitTypes"
-            :floor-options="floorOptions"
-            :direction-options="directionOptions"
-            @update:filters="filters = $event"
-            @update:view-mode="viewMode = $event"
-          />
-        </div>
+      <!-- Mobile only: Filters button in flow just below hero (opens bottom sheet) -->
+      <div class="w-full px-4 pt-4 pb-2 sm:hidden">
+        <button
+          type="button"
+          class="w-full h-12 rounded-xl bg-[#ffffff] text-[#18181B] text-[12px] font-bold uppercase tracking-widest hover:bg-zinc-100 transition-colors flex items-center justify-center gap-2"
+          aria-label="Open filters"
+          @click="showFiltersDrawer = true"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          Show Filters
+        </button>
       </div>
+
+      <!-- Mobile: bottom sheet with FilterBar -->
+      <Teleport to="body">
+        <Transition name="filters-drawer">
+          <div
+            v-if="showFiltersDrawer"
+            class="fixed inset-0 z-[200] sm:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filter units"
+          >
+            <div
+              class="absolute inset-0 bg-black/40"
+              aria-hidden="true"
+              @click="showFiltersDrawer = false"
+            />
+            <div class="absolute bottom-0 left-0 right-0 max-h-[88vh] overflow-hidden bg-white rounded-t-2xl shadow-2xl flex flex-col filters-drawer-panel">
+              <div class="filters-drawer-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 pb-6">
+                <FilterBar
+                  :embedded="true"
+                  :hide-clear="true"
+                  :filters="filters"
+                  :view-mode="viewMode"
+                  :unit-types="unitTypes"
+                  :floor-options="floorOptions"
+                  :direction-options="directionOptions"
+                  @update:filters="filters = $event"
+                  @update:view-mode="viewMode = $event"
+                />
+                <div class="mt-4 flex items-center justify-between">
+                  <button
+                    type="button"
+                    class="filter-bar-clear inline-flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-zinc-300 capitalize transition-colors underline underline-offset-2"
+                    @click="resetFilters()"
+                  >
+                    <svg class="w-[13px] h-[13px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Clear All Filters
+                  </button>
+                  <button
+                    type="button"
+                    class="text-xs font-medium text-zinc-500 hover:text-zinc-300 capitalize transition-colors underline underline-offset-2"
+                    @click="showFiltersDrawer = false"
+                  >
+                    Hide Filters
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
 
       <!-- Choose your view (above unit cards) — matches reference structure and styling -->
-      <div class="mt-[5rem] mb-[2.5rem] w-full flex justify-center px-2">
+      <div class="mt-8 sm:mt-[5rem] mb-[2.5rem] w-full flex justify-center px-2">
         <div class="w-full max-w-lg flex flex-col items-center">
           <div class="text-center mb-[1.25rem]">
             <p class="text-[11px] font-semibold uppercase tracking-[0.25em]" style="color: rgb(0, 0, 0);">
               Choose your view
             </p>
             <p class="mt-1 text-[13px]" style="color: rgb(0, 0, 0);">
-              <span class="hidden sm:inline">
-                Switch how you browse units: <span class="font-semibold">Grid</span> or <span class="font-semibold">List</span>.
-              </span>
+              Switch how you browse units: <span class="font-semibold">Grid</span> or <span class="font-semibold">List</span>.
             </p>
           </div>
           <div class="w-full flex justify-center">
             <div
               ref="viewSwitcherContainerRef"
-              class="relative inline-flex w-full items-center rounded-full p-1 shadow-sm"
+              class="relative inline-flex w-full max-w-[85%] sm:max-w-none items-center rounded-full p-1 bg-white"
               role="tablist"
               aria-label="View switcher"
-              style="background: rgb(255, 255, 255); border: 1px solid rgb(255, 255, 255);"
             >
               <!-- Sliding pill: animates to active button -->
               <div
@@ -140,7 +208,7 @@
               <button
                 type="button"
                 data-view-mode="GRID"
-                class="relative z-10 flex group flex-1 min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-1.5"
+                class="relative z-10 flex group flex-1 min-h-10 sm:min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-2 sm:py-1.5"
                 :class="viewMode === 'GRID' ? 'text-white' : 'text-black'"
                 :style="{ background: 'transparent' }"
                 aria-pressed="viewMode === 'GRID'"
@@ -151,13 +219,13 @@
                     <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zm6.5.5A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5z"/>
                   </svg>
                 </span>
-                <span class="text-[11px] sm:text-xs font-medium">Grid</span>
+                <span class="text-[11px] sm:text-xs font-medium leading-none">Grid</span>
                 <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #000000; --tw-ring-offset-color: #FFFFFF;" />
               </button>
               <button
                 type="button"
                 data-view-mode="LIST"
-                class="relative z-10 flex group flex-1 min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-1.5"
+                class="relative z-10 flex group flex-1 min-h-10 sm:min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-2 sm:py-1.5"
                 :class="viewMode === 'LIST' ? 'text-white' : 'text-black'"
                 :style="{ background: 'transparent' }"
                 aria-pressed="viewMode === 'LIST'"
@@ -168,7 +236,7 @@
                     <path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m-3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2m0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2m0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
                   </svg>
                 </span>
-                <span class="text-[11px] sm:text-xs font-medium">List</span>
+                <span class="text-[11px] sm:text-xs font-medium leading-none">List</span>
                 <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #000000; --tw-ring-offset-color: #FFFFFF;" />
               </button>
               <!-- Elevation and Floor view modes temporarily removed -->
@@ -177,8 +245,8 @@
         </div>
       </div>
 
-      <!-- Unit results section -->
-      <section class="nav-section light w-[75%] mx-auto pb-20">
+      <!-- Unit results section: full width + padding on mobile; 75% centered from sm up -->
+      <section class="nav-section light w-full px-4 sm:w-[75%] sm:mx-auto pb-16">
         <div v-if="unitsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem] animate-pulse">
           <div
             v-for="i in 8"
@@ -252,10 +320,11 @@ import type { Unit, SearchFilters, ViewMode } from '~/types'
 const { user, authLoading, sessionRef } = useAuth()
 const { units, loading: unitsLoading, error: unitsError } = useUnits()
 const { wishlistIds, toggle: toggleWishlist } = useWishlist()
-const { filters, viewMode } = useUnitFilters()
+const { filters, viewMode, resetFilters } = useUnitFilters()
 const { serverClockOffsetMs } = useServerClock()
 const reservingUnitId = ref<string | null>(null)
 const showPaymentCancelledToast = ref(false)
+const showFiltersDrawer = ref(false)
 
 const stickyFixedBarRef = ref<HTMLElement | null>(null)
 const sticky = useStickyFilterbar(stickyFixedBarRef)
@@ -274,11 +343,15 @@ function updateViewSwitcherPill() {
     const cRect = container.getBoundingClientRect()
     const bRect = activeBtn.getBoundingClientRect()
     const border = 1
+    // Size and position pill so external white space (gap to container) is equal top, left, and bottom.
+    // Container has p-1 (4px). Pill uses pad for top/height; for left, use pad when Grid (first tab) so left gap matches.
+    const pad = 4
+    const pillLeft = viewMode.value === 'GRID' ? pad : bRect.left - cRect.left - border
     pillStyle.value = {
-      left: bRect.left - cRect.left - border,
-      top: bRect.top - cRect.top - border,
+      left: pillLeft,
+      top: pad,
       width: bRect.width,
-      height: bRect.height,
+      height: cRect.height - pad * 2,
       background: 'rgb(24, 24, 27)',
     }
   })
@@ -442,17 +515,61 @@ function onToggleWishlist(unitId: string) {
   toggleWishlist(unitId)
 }
 
+watch(showFiltersDrawer, (open) => {
+  if (typeof document === 'undefined') return
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
 onMounted(() => {
   if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('show_payment_cancelled_toast')) {
     sessionStorage.removeItem('show_payment_cancelled_toast')
     showPaymentCancelledToast.value = true
   }
 })
+
+onBeforeUnmount(() => {
+  if (showFiltersDrawer.value && typeof document !== 'undefined') {
+    document.body.style.overflow = ''
+  }
+})
 </script>
 
 <style scoped>
+/* Mobile filters drawer: backdrop fade + panel slide up */
+.filters-drawer-enter-active,
+.filters-drawer-leave-active {
+  transition: opacity 0.25s ease;
+}
+.filters-drawer-enter-active > div.absolute.bottom-0,
+.filters-drawer-leave-active > div.absolute.bottom-0 {
+  transition: transform 0.3s ease;
+}
+.filters-drawer-enter-from,
+.filters-drawer-leave-to {
+  opacity: 0;
+}
+.filters-drawer-enter-from > div.absolute.bottom-0,
+.filters-drawer-leave-to > div.absolute.bottom-0 {
+  transform: translateY(100%);
+}
+.filters-drawer-enter-to > div.absolute.bottom-0,
+.filters-drawer-leave-from > div.absolute.bottom-0 {
+  transform: translateY(0);
+}
+
+/* Mobile drawer: single scroll container on GPU layer to prevent icon shake on scroll */
+.filters-drawer-panel {
+  -webkit-overflow-scrolling: touch;
+}
+.filters-drawer-scroll {
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Full width + padding on mobile; 3/4 centered from sm up (desktop unchanged) */
 .filterbar-container {
-  @apply w-[75%] sm:w-3/4 mx-auto;
+  @apply w-full px-4 sm:w-3/4 sm:mx-auto;
 }
 /* Pagination bottom-right: inactive = small semi-transparent circles, active = elongated pill (match reference) */
 .hero-swiper :deep(.swiper-pagination) {
@@ -479,6 +596,26 @@ onMounted(() => {
   height: 0.5rem;
   border-radius: 9999px;
 }
+
+/* Mobile: smoother pill animation and consistent bullet appearance (no clipping) */
+@media (max-width: 639px) {
+  .hero-swiper :deep(.swiper-pagination) {
+    overflow: visible;
+    min-width: 0;
+  }
+  .hero-swiper :deep(.swiper-pagination-bullet) {
+    flex-shrink: 0;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    transition: width 0.3s ease-out, height 0.3s ease-out, opacity 0.3s ease-out, border-radius 0.3s ease-out;
+  }
+  .hero-swiper :deep(.swiper-pagination-bullet-active) {
+    width: 1.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+  }
+}
+
 /* Ken Burns: slow zoom on slide images */
 .ken-burns {
   animation: ken-burns 12s ease-out both;

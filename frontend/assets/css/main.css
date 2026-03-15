@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Light theme (THE BOTANIST / image 2 reference) */
+/* Light theme */
 :root {
   --theme-bg: #f5f5f4;
   --theme-surface: #ffffff;
@@ -97,7 +97,7 @@ body {
   color: var(--theme-text-primary);
 }
 
-/* Light card variant (THE BOTANIST style): white card, dark text, light inputs */
+/* Light card variant: white card, dark text, light inputs */
 .filter-bar--light {
   background-color: #ffffff !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
@@ -105,6 +105,15 @@ body {
     0 1px 3px 0 rgb(0 0 0 / 0.05),
     0 6px 16px -2px rgb(0 0 0 / 0.08),
     0 12px 28px -4px rgb(0 0 0 / 0.06);
+}
+
+/* Embedded (e.g. mobile drawer): no card, keep filter control styling from --light */
+.filter-bar--embedded {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  padding: 0 !important;
 }
 .filter-bar--light label,
 .filter-bar--light .filter-bar-label {
@@ -225,7 +234,7 @@ body {
   animation: logo-mask 1.2s cubic-bezier(0.7, 0, 0.2, 1) forwards;
 }
 
-/* Price slider (Botanist-style structure) */
+/* Price slider structure */
 .price-slider {
   --track-h: 4px;
   --thumb-size: 14px;

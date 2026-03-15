@@ -81,7 +81,7 @@ watch(isLoading, (value) => {
       <img
         :src="logoLight"
         alt="Ignite Studios"
-        class="h-11 w-auto"
+        class="h-7 w-auto sm:h-11"
       />
     </div>
 

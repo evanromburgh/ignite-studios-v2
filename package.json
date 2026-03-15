@@ -8,14 +8,13 @@
   },
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "nuxt dev --host",
     "dev:host": "nuxt dev --host",
     "generate": "nuxt generate",
     "preview": "nuxt preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
-    "gsap": "^3.12.5",
     "lottie-web": "^5.13.0",
     "nuxt": "^3.14.0",
     "swiper": "^11.1.14",

@@ -1,13 +1,6 @@
 export const CONFIG = {
   LOCK_DURATION_MS: 10 * 60 * 1000,
-  HEARTBEAT_INTERVAL_MS: 15_000,
-  PRESENCE_TICK_MS: 10_000,
   PRESENCE_TTL_MS: 12_000,
-  /**
-   * Viewer count poll interval (ms). 1500 = same as ignite-studios-portals.
-   * Set to 0 to disable.
-   */
-  VIEWERS_POLL_MS: 1_500,
   TRANSITION_MID_MS: 600,
   TRANSITION_END_MS: 1200,
   RESERVATION_DEPOSIT: 10_000,

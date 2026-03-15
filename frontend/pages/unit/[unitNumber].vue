@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <div v-else class="pt-16 sm:pt-24 pb-20 bg-theme-bg">
+    <div v-else class="pt-16 sm:pt-24 pb-16 bg-theme-bg">
       <div class="w-full mx-auto px-4 sm:px-6 lg:px-12">
         <div class="h-[5rem] flex items-center">
           <NuxtLink

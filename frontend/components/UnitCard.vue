@@ -52,12 +52,12 @@
       <div class="px-[1.25rem]">
         <div class="flex justify-between items-start gap-4 py-8">
           <div class="min-w-0">
-            <p v-if="unit.floor" class="text-[14px] font-bold text-zinc-900 uppercase tracking-wide leading-tight">{{ (unit.floor || '').toUpperCase() }} FLOOR</p>
+            <p v-if="unit.floor" class="text-[12px] sm:text-[14px] font-bold text-zinc-900 uppercase tracking-wide leading-tight">{{ (unit.floor || '').toUpperCase() }} FLOOR</p>
             <p v-if="unit.direction" class="text-[12px] text-zinc-700 mt-0.5 leading-tight">{{ unit.direction }} Facing</p>
           </div>
           <div class="text-right shrink-0">
             <p v-if="unit.originalPrice" class="text-[11px] text-zinc-400 line-through leading-tight">R {{ formattedOriginalPrice }}</p>
-            <span class="text-[26px] font-bold leading-none block text-zinc-900">R {{ formattedPrice }}</span>
+            <span class="text-[20px] sm:text-[26px] font-bold leading-none block text-zinc-900">R {{ formattedPrice }}</span>
           </div>
         </div>
 

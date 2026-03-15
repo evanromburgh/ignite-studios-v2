@@ -33,7 +33,6 @@ export const developmentDocuments: DocumentEntry[] = [
     description:
       'Comprehensive technical layouts for all standard and premium configuration variants.',
     filePath: `${STORAGE_BASE}floorplan-pack.pdf`,
-    category: 'Development',
     fileType: 'PDF',
     fileSize: '1.03 MB',
   },

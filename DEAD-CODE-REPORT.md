@@ -1,55 +1,32 @@
 # Dead code & cleanup report
 
-Generated from a full codebase scan. Only items that are **not referenced anywhere** are listed.
+Generated from a full codebase scan. This report was updated after the latest cleanup.
 
 ---
 
-## 1. Unused files & folders (safe to remove)
+## Summary of removals (latest cleanup)
 
-| Path | Reason |
-|------|--------|
-| **frontend/reusable-kits/** (entire folder) | Never imported. App uses `frontend/components/`, `frontend/composables/`, `frontend/data/`. No `~/reusable-kits/` imports anywhere. |
-| **frontend/composables/useViewersPoll.legacy.ts** | Legacy stub; never imported. Comment says "Restore by renaming back to useViewersPoll.ts". |
-| **frontend/composables/useColorMode.ts** | Never called. Theme is applied via `plugins/theme.client.ts` + `runtimeConfig.public.theme` only. |
-| **frontend/composables/useFormatFloor.ts** | Never imported or called (no `useFormatFloor` or `formatFloorLabel` references). |
-| **frontend/composables/useViewersPoll.ts** | No callers. Layout uses `useGlobalPresence()` for "browsing now". This file is a stub; can remove or keep as placeholder. |
-| **public/test.txt** | Not referenced in codebase. |
-| **public/animations/eye.json** | Not referenced. Lottie uses `~/assets/eye.json` only. |
+- **Dead composables:** `useViewersPoll.ts`, `useWishlistCount.ts`, `useReservationsCount.ts` (never imported; layout uses `useGlobalPresence()` only).
+- **Dead plugin:** `gsap.client.ts` and `gsap` dependency (no component used `$gsap` / `$ScrollTrigger`).
+- **Dead API routes (frontend):** `server/api/units/viewers.post.ts`, `viewer-heartbeat.post.ts`, `remove-viewer.post.ts`, `prune-viewers.post.ts` (replaced by Supabase Realtime + cron GET `/api/cron/prune-viewers`).
+- **Dead config/types:** `ViewMode.ELEVATION`, `ViewMode.FLOOR`; `CONFIG.HEARTBEAT_INTERVAL_MS`, `PRESENCE_TICK_MS`, `VIEWERS_POLL_MS`; `runtimeConfig.public.viewersPollMs`.
+- **Unnecessary assets:** `frontend/assets/eye.json`, `frontend/public/animations/eye.json` (only `dark_eye.json` is used by IconEyeLottie).
+- **Unnecessary public docs:** `public/documents/*.pdf` and `.gitkeep` (documents page uses Supabase Storage URLs only).
+- **Unnecessary content:** `category: 'Development'` in `documents.ts` (not on `DocumentEntry` type).
 
 ---
 
-## 2. Unused exports (in used files)
+## Previously removed (no longer in repo)
 
-| File | Export | Action |
-|------|--------|--------|
-| **frontend/data/phoneCountries.ts** | `phoneCountriesSortedForDetect` | Remove export (or delete if no other code needs it). |
-
----
-
-## 3. Config to update after removing reusable-kits
-
-- **tailwind.config.js**  
-  Remove `'./frontend/reusable-kits/**/*.vue'` from the `content` array so Tailwind doesn’t reference a deleted directory.
+- `frontend/reusable-kits/` (entire folder)
+- `useViewersPoll.legacy.ts`, `useColorMode.ts`, `useFormatFloor.ts`
+- `public/test.txt`, `public/animations/eye.json` (root public; also had duplicate under frontend)
 
 ---
 
-## 4. Not dead (verified in use)
+## Still in use (verified)
 
 - **frontend/config.ts** – used by `useUnits`, `AuthPortal`, reserve + unit pages.
-- **frontend/pages/reserve.vue** – parent route for `/reserve`, redirects `/reserve` to home and renders `NuxtPage` for `/reserve/[unitNumber]`.
-- **useReservationsCount**, **useWishlistCount** – used in `layouts/default.vue`.
+- **frontend/pages/reserve.vue** – parent route for `/reserve`, renders `NuxtPage` for `/reserve/[unitNumber]`.
 - **nuxt-app-manifest-stub.mjs**, **nuxt-internal-paths-stub.mjs** – referenced in `package.json`; keep.
-
----
-
-## 5. Path note (Windows)
-
-`frontend\components\UnitCard.vue`, `frontend\layouts\default.vue`, `frontend\assets\css\main.css` (backslash) are the same files as the slash versions; no duplicate files to delete.
-
----
-
-## Summary
-
-- **Removed:** `frontend/reusable-kits/` (entire folder), `useViewersPoll.legacy.ts`, `useColorMode.ts`, `useFormatFloor.ts`, `public/test.txt`, `public/animations/eye.json`.
-- **Updated:** `tailwind.config.js` (removed reusable-kits from content), `frontend/data/phoneCountries.ts` (removed unused `phoneCountriesSortedForDetect` export).
-- **Left as placeholder:** `frontend/composables/useViewersPoll.ts` (no callers; safe to delete later if desired).
+- **frontend/server/api/cron/prune-viewers.get.ts** – used by cron; keep.

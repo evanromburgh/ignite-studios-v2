@@ -1,11 +1,11 @@
 <template>
   <div>
-    <div class="filter-bar filter-bar--light rounded-lg p-5 sm:p-6 md:p-8">
+    <div :class="['filter-bar', 'filter-bar--light', embedded ? 'filter-bar--embedded' : 'rounded-lg p-5 sm:p-6 md:p-8']">
       <div class="space-y-6">
-        <!-- 5×3 grid at lg: each control in its own cell; Price Range spans 2 cols; Clear All in row 3 col 5 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-          <!-- Row 1 -->
-          <div class="lg:col-span-1">
+        <!-- Mobile: 2 cols with Search/Price full width; lg: 5×3 grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+          <!-- Search: full width on mobile -->
+          <div class="col-span-2 lg:col-span-1">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
               <svg class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                 <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -49,8 +49,8 @@
               {{ (filters.orderDir ?? 'asc') === 'asc' ? 'ASC ↑' : 'DESC ↓' }}
             </button>
           </div>
-          <!-- Price Range spans 2 cols -->
-          <div class="lg:col-span-2 flex flex-col justify-end min-h-[4.125rem] overflow-visible">
+          <!-- Price Range: full width on mobile, 2 cols on lg -->
+          <div class="col-span-2 lg:col-span-2 flex flex-col justify-end min-h-[4.125rem] overflow-visible">
             <label for="price-slider" class="flex items-center justify-center text-xs font-medium text-zinc-500 mt-1 mb-2 text-center shrink-0">
               Price Range
             </label>
@@ -201,7 +201,7 @@
             </select>
           </div>
 
-          <!-- Row 3: Wishlist | empty (span 3) | Clear All -->
+          <!-- Wishlist (mobile: 50%) | Clear All full width on mobile -->
           <div class="lg:col-span-1">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
               <IconHeart class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" />
@@ -216,8 +216,8 @@
               <option value="yes" class="bg-theme-input-bg text-theme-text-primary">In wishlist</option>
             </select>
           </div>
-          <div class="hidden lg:block lg:col-span-3" aria-hidden="true" />
-          <div class="lg:col-span-1 flex justify-end items-end">
+          <div v-if="!hideClear" class="hidden lg:block lg:col-span-3" aria-hidden="true" />
+          <div v-if="!hideClear" class="col-span-2 lg:col-span-1 flex justify-end items-end">
             <button
               type="button"
               class="filter-bar-clear inline-flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-zinc-300 capitalize transition-colors underline underline-offset-2"
@@ -241,13 +241,20 @@ import IconLayout from '~/components/icons/IconLayout.vue'
 import IconCar from '~/components/icons/IconCar.vue'
 import type { SearchFilters, ViewMode } from '~/types'
 
-const props = defineProps<{
-  filters: SearchFilters
-  viewMode: ViewMode
-  unitTypes?: string[]
-  floorOptions?: string[]
-  directionOptions?: string[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    filters: SearchFilters
+    viewMode: ViewMode
+    unitTypes?: string[]
+    floorOptions?: string[]
+    directionOptions?: string[]
+    /** When true, no inner card (background/shadow); use parent as content width (e.g. mobile drawer). */
+    embedded?: boolean
+    /** When true, hide the Clear All Filters button (e.g. when drawer provides its own row). */
+    hideClear?: boolean
+  }>(),
+  { embedded: false, hideClear: false },
+)
 
 const emit = defineEmits<{
   'update:filters': [SearchFilters]

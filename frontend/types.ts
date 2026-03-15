@@ -36,8 +36,6 @@ export interface Unit {
 export enum ViewMode {
   GRID = 'GRID',
   LIST = 'LIST',
-  ELEVATION = 'ELEVATION',
-  FLOOR = 'FLOOR',
 }
 
 export interface SearchFilters {
