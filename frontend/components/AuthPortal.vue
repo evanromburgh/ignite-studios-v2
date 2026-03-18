@@ -4,7 +4,7 @@
       <!-- Above the box: heading + subtext (screenshot 2 structure) -->
       <div v-if="(mode === 'main' && !forgotSuccess) || mode === 'forgot'" class="text-center">
         <template v-if="mode === 'forgot'">
-          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Reset password</h2>
+          <h2 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight">Reset password</h2>
           <p class="mt-2 text-zinc-500 text-sm">Enter your email and we’ll send you a link to reset your password.</p>
         </template>
         <template v-else-if="step === 1">
@@ -14,12 +14,15 @@
         <template v-else-if="step === 2 && accountExists === false">
           <h2 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight">Create your account</h2>
         </template>
+        <template v-else-if="step === 3 && accountExists === false">
+          <h2 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight">Finalize your account</h2>
+        </template>
         <template v-else-if="step === 2 && accountExists === true">
           <h2 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight">Welcome Back</h2>
           <p class="mt-2 text-zinc-500 text-sm">Choose a login method below.</p>
         </template>
         <template v-else-if="step === 3 && signInMethod === 'password'">
-          <h2 class="text-2xl sm:text-3xl font-black text-theme-text-primary tracking-tight">Enter your password</h2>
+          <h2 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight">Enter your password</h2>
         </template>
         <template v-else-if="step === 3 && signInMethod === 'email_code'">
           <h2 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight">Check your email</h2>
@@ -28,7 +31,7 @@
       </div>
 
       <!-- Card: same as portal (moving border + bg #0b0b0b liquid-glass) -->
-      <div class="border-beam-container rounded-2xl shadow-2xl overflow-hidden group">
+      <div class="border-beam-container rounded-2xl shadow-lg overflow-hidden group">
         <div class="border-beam-inner bg-theme-surface-elevated border-none rounded-[calc(1rem-1px)] p-6 sm:p-10 relative z-10 w-full">
 
           <!-- Forgot password success -->
@@ -51,16 +54,16 @@
                 v-model="email"
                 required
                 type="email"
-                class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
               />
             </div>
             <div v-if="error" class="text-[10px] font-bold text-red-400 text-center py-2">{{ error }}</div>
             <button
               type="submit"
               :disabled="loading"
-              class="w-full h-12 bg-white text-black font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-zinc-100 transition-all flex items-center justify-center disabled:opacity-50"
+              class="w-full h-12 bg-[#18181B] text-white font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all flex items-center justify-center disabled:opacity-50"
             >
-              <span v-if="loading" class="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+              <span v-if="loading" class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
               <span v-else>Send reset link</span>
             </button>
             <button type="button" class="block w-full text-sm text-zinc-500 hover:text-theme-text-primary transition-colors" @click="mode = 'main'; error = null; resetToStep1()">
@@ -82,7 +85,7 @@
                     v-model="email"
                     required
                     type="email"
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div class="space-y-2">
@@ -91,7 +94,7 @@
                     v-model="confirmEmail"
                     required
                     type="email"
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
@@ -125,7 +128,7 @@
                       v-model="firstName"
                       required
                       type="text"
-                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
                     />
                   </div>
                   <div class="space-y-2">
@@ -134,7 +137,7 @@
                       v-model="lastName"
                       required
                       type="text"
-                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -162,7 +165,7 @@
                       required
                       type="tel"
                       maxlength="15"
-                      class="flex-1 h-full py-0 pl-2 pr-6 bg-transparent text-[#18181B] focus:outline-none text-base sm:text-[0.875rem] leading-[46px] min-w-0"
+                      class="flex-1 h-full py-0 pl-4 pr-4 bg-transparent text-[#18181B] focus:outline-none text-base leading-[44px] min-w-0"
                       @input="onPhoneInput"
                       @focus="phoneCountryDropdownOpen = false"
                     />
@@ -195,7 +198,7 @@
                       autocomplete="new-password"
                       :type="showPassword ? 'text' : 'password'"
                       :minlength="passwordMinLength"
-                      class="w-full h-full pl-6 pr-12 bg-transparent py-0 leading-[46px] text-[#18181B] focus:outline-none text-base sm:text-[0.875rem] rounded-lg"
+                      class="auth-password-input w-full h-full pl-4 pr-10 bg-transparent py-0 leading-[44px] text-[#18181B] focus:outline-none text-base rounded-lg"
                     />
                     <button type="button" class="absolute right-3 text-zinc-500 hover:text-zinc-300 text-xs" @click="showPassword = !showPassword">
                       {{ showPassword ? 'Hide' : 'Show' }}
@@ -240,23 +243,35 @@
                     v-model="idPassport"
                     required
                     type="text"
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] py-0 leading-[46px] text-[#18181B] text-base sm:text-[0.875rem] focus:border-zinc-500 focus:outline-none transition-all"
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
                   />
                 </div>
 
                 <div class="space-y-2">
                   <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
-                    Reason for Buying
+                    I am interested in
                   </label>
-                  <select
-                    v-model="reasonForBuying"
-                    required
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-6 h-[46px] pt-[13px] pb-[13px] leading-[1.25] focus:border-zinc-500 focus:outline-none text-[#18181B] text-base sm:text-[0.875rem] transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Select reason</option>
-                    <option value="Primary Residence">Primary Residence</option>
-                    <option value="Investment Property">Investment Property</option>
-                  </select>
+                  <div class="relative">
+                    <select
+                      v-model="reasonForBuying"
+                      required
+                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg pl-4 pr-10 h-11 pt-[11px] pb-[11px] leading-[1.25] focus:border-zinc-500 focus:outline-none text-[#18181B] text-base transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>Select a reason</option>
+                      <option value="Purchasing to Live">Purchasing to Live</option>
+                      <option value="Purchasing as an investment">Purchasing as an investment</option>
+                      <option value="Not looking to buy, just browsing">Not looking to buy, just browsing</option>
+                    </select>
+                    <svg
+                      class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
 
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
@@ -312,6 +327,16 @@
                 </div>
               </div>
               <form class="space-y-5" @submit.prevent="handleSignInWithPassword">
+                <!-- Hidden username/email field for accessibility & password managers -->
+                <input
+                  type="email"
+                  name="email"
+                  autocomplete="username"
+                  class="hidden"
+                  :value="email"
+                  aria-hidden="true"
+                  tabindex="-1"
+                />
                 <div class="space-y-2">
                   <label class="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">PASSWORD</label>
                   <div class="relative flex items-center bg-theme-input-bg border border-theme-border rounded-lg h-[46px] focus-within:border-zinc-500 transition-all">
@@ -320,7 +345,7 @@
                       required
                       autocomplete="current-password"
                       :type="showPassword ? 'text' : 'password'"
-                      class="w-full h-full pl-6 pr-12 bg-transparent py-0 leading-[46px] text-[#18181B] focus:outline-none text-base sm:text-[0.875rem] rounded-lg"
+                      class="auth-password-input w-full h-full pl-4 pr-10 bg-transparent py-0 leading-[44px] text-[#18181B] focus:outline-none text-base rounded-lg"
                     />
                     <button type="button" class="absolute right-3 text-zinc-500 hover:text-zinc-300 text-xs" @click="showPassword = !showPassword">
                       {{ showPassword ? 'Hide' : 'Show' }}
@@ -389,10 +414,15 @@
         </div>
       </div>
 
-      <!-- Below the box: Forgot Password? and Back to home (stacked underneath one another) -->
+      <!-- Below the box: Forgot Password link only -->
       <div v-if="mode === 'main' && step >= 1" class="flex flex-col items-center gap-1">
-        <button type="button" class="text-sm font-medium text-zinc-500 hover:text-theme-text-primary transition-colors" @click="mode = 'forgot'; resetToStep1()">Forgot Password?</button>
-        <NuxtLink to="/" class="text-xs text-zinc-500 hover:text-theme-text-primary transition-colors">Back to home</NuxtLink>
+        <button
+          type="button"
+          class="text-sm font-medium text-zinc-500 hover:text-theme-text-primary transition-colors"
+          @click="mode = 'forgot'; resetToStep1()"
+        >
+          Forgot Password?
+        </button>
       </div>
     </div>
   </div>

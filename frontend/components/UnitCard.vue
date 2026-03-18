@@ -1,10 +1,10 @@
 <template>
   <div
-    class="group relative flex flex-col h-full overflow-hidden select-none cursor-default bg-white border border-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 rounded-[0.5rem]"
+    class="group relative grid grid-rows-[1fr_1fr] h-full overflow-hidden select-none cursor-default bg-white border border-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 rounded-[0.5rem]"
     :class="(isAvailable || isAdmin) ? 'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]' : ''"
   >
     <!-- Image: unit number and wishlist overlaid on image -->
-      <div class="relative overflow-hidden aspect-[3/2] bg-[#fbfcfd] w-full">
+      <div class="relative overflow-hidden bg-[#fbfcfd] w-full h-full">
         <img
           :src="cardImageUrl"
           :alt="`Unit ${unit.unitNumber}`"
@@ -12,11 +12,11 @@
           class="object-cover w-full h-full transition-all duration-500 ease-out scale-[0.85] origin-center"
           :class="[
             (isAvailable || isAdmin || hideReservedOverlay) ? 'group-hover:scale-95' : 'opacity-70',
-            showOverlay ? 'blur-sm' : ''
+            ''
           ]"
         />
       <!-- Unit number and wishlist over the image -->
-      <div class="absolute inset-0 flex items-start justify-between p-5 pointer-events-none">
+      <div class="absolute inset-0 flex items-start justify-between p-4 sm:p-5 pointer-events-none">
         <span class="pointer-events-auto text-lg font-bold text-zinc-900 tracking-tight leading-none drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]">{{ unit.unitNumber }}</span>
         <span
           v-if="isMyUnitsCard"
@@ -36,20 +36,27 @@
           Wishlist
         </button>
       </div>
-      <!-- RESERVED/Sold overlay when applicable -->
-      <div
-        v-if="showOverlay"
-        class="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
-      >
-        <span class="px-9 py-3 rounded-full bg-zinc-900 text-white text-[12px] font-black uppercase tracking-[0.2em]">
-          {{ overlayLabel }}
-        </span>
-      </div>
+    </div>
+
+    <!-- Dark overlay across the whole card when not available -->
+    <div
+      v-if="showOverlay"
+      class="absolute inset-0 bg-black/25 backdrop-blur-[2px] pointer-events-none z-[4]"
+      aria-hidden="true"
+    />
+    <!-- RESERVED/Sold/Locked badge centered on full-card overlay -->
+    <div
+      v-if="showOverlay"
+      class="absolute inset-0 flex items-center justify-center pointer-events-none z-[5]"
+    >
+      <span class="px-9 py-3 rounded-full bg-zinc-900 text-white text-[12px] font-black uppercase tracking-[0.2em]">
+        {{ overlayLabel }}
+      </span>
     </div>
 
     <!-- Details: left = floor, facing, unit type (dark gray); right = price -->
-    <div class="flex flex-col">
-      <div class="px-[1.25rem]">
+    <div class="flex flex-col min-h-0">
+      <div class="px-4 sm:px-[1.25rem]">
         <div class="flex justify-between items-start gap-4 py-8">
           <div class="min-w-0">
             <p v-if="unit.floor" class="text-[12px] sm:text-[14px] font-bold text-zinc-900 uppercase tracking-wide leading-tight">{{ (unit.floor || '').toUpperCase() }} FLOOR</p>
@@ -107,7 +114,24 @@
       </div>
 
       <!-- Bottom section: single full-width View Details on My Units, else two buttons -->
-      <div :class="isMyUnitsCard ? '' : 'grid grid-cols-2 border-zinc-200/80'">
+      <div
+        v-if="!isMyUnitsCard && isSoldReservedDeveloperState"
+        class="grid grid-cols-1 border-zinc-200/80"
+      >
+        <button
+          type="button"
+          :disabled="(!isAvailable && !isAdmin) || isReserving"
+          class="-mt-px pt-[calc(1.25rem+1px)] pb-5 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 hover:bg-[#18181B] hover:text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center w-full"
+          @click.stop="onReserve(unit)"
+        >
+          {{ reserveButtonLabel }}
+        </button>
+      </div>
+
+      <div
+        v-else
+        :class="isMyUnitsCard ? '' : 'grid grid-cols-2 border-zinc-200/80'"
+      >
         <button
           type="button"
           :disabled="!isMyUnitsCard && !isAvailable && !isAdmin"
@@ -198,6 +222,11 @@ function formatTime(seconds: number) {
 const overlayLabel = computed(() => {
   if (isLocked.value) return 'Reservation In Progress'
   return props.unit.status
+})
+
+const isSoldReservedDeveloperState = computed(() => {
+  // Reservation in progress is handled separately by `isLocked` (status stays 'Available').
+  return ['Sold', 'Reserved', 'Held by Developer'].includes(props.unit.status)
 })
 
 function onSelect(unit: Unit) {

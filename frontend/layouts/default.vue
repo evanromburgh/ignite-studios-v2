@@ -215,7 +215,7 @@
         <div class="browsing-sep" />
         <div class="browsing-label">
           <span class="browsing-label-main">{{ onlineCount }}</span>
-          <span class="browsing-label-secondary">Currently Viewing</span>
+          <span class="browsing-label-secondary">Users online</span>
         </div>
       </div>
     </div>
@@ -225,7 +225,7 @@
       <ChatWidget v-if="showChatWidget" />
     </Transition>
 
-    <footer class="footer-main relative bg-black text-white pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 pt-[4.5rem] sm:pt-16 pb-[4.25rem]">
+    <footer class="footer-main relative bg-black text-white pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 pt-16 sm:pt-20 pb-[4.25rem]">
       <!-- Main footer: Logo + Contact + Quick Links + Terms & Conditions -->
       <div class="footer-content flex flex-col gap-14 lg:grid lg:grid-cols-2 lg:items-start lg:gap-20 pb-[4.5rem] sm:pb-16">
         <!-- Logo -->
@@ -622,12 +622,12 @@ function scrollToTop() {
 }
 
 .browsing-panel {
-  border: 1px solid var(--browsing-widget-border);
+  border: none;
   background-color: var(--browsing-widget-bg);
   backdrop-filter: blur(10px);
   height: 30px;
   color: var(--browsing-widget-fg);
-  box-shadow: 2px 2px 8px var(--browsing-widget-shadow);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
   user-select: none;
   border-radius: 100px;
   display: flex;

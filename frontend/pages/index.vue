@@ -122,7 +122,7 @@
           aria-label="Open filters"
           @click="showFiltersDrawer = true"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
           Show Filters
@@ -245,9 +245,9 @@
         </div>
       </div>
 
-      <!-- Unit results section: full width + padding on mobile; 75% centered from sm up -->
-      <section class="nav-section light w-full px-4 sm:w-[75%] sm:mx-auto pb-16">
-        <div v-if="unitsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem] animate-pulse">
+      <!-- Unit results section: mobile padding; 90% centered from sm up -->
+      <section class="nav-section light w-full px-4 sm:px-0 sm:w-[90%] sm:mx-auto pb-16 sm:pb-20">
+        <div v-if="unitsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem] animate-pulse">
           <div
             v-for="i in 8"
             :key="i"
@@ -266,7 +266,7 @@
         <div v-else>
           <div
             v-if="viewMode === 'GRID'"
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem]"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem]"
           >
             <UnitCard
               v-for="unit in displayedUnits"

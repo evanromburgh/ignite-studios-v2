@@ -30,9 +30,8 @@
 
 input,
 select,
-textarea,
-button {
-  font-family: inherit;
+textarea {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 input[type="text"],
@@ -42,6 +41,10 @@ input[type="password"],
 input[type="number"] {
   padding-top: 0;
   padding-bottom: 0;
+}
+/* Auth portal password fields: use Inter so dots feel lighter/smaller without changing size */
+.auth-password-input {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 html,
@@ -212,6 +215,7 @@ body {
   height: 100%;
   background: var(--theme-surface-elevated);
 }
+
 
 /* Curtain / logo animations (entrance) */
 @keyframes curtain-wipe {

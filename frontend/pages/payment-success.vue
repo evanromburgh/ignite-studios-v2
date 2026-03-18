@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-theme-bg flex flex-col items-center justify-center gap-6 px-5 sm:px-8 md:px-16 pt-[11rem] pb-16">
+  <div class="min-h-screen bg-theme-bg flex flex-col items-center justify-center gap-6 px-5 sm:px-8 md:px-16 pt-[11rem] pb-16 sm:pb-20">
     <div class="text-center w-full max-w-5xl">
       <h1 class="text-2xl sm:text-4xl font-black text-theme-text-primary tracking-tight leading-tight mb-4">
         Your Reservation Confirmed
