@@ -20,7 +20,7 @@ export interface Unit {
   price: number
   /** If set, shown as strikethrough "was" price above current price on cards */
   originalPrice?: number | null
-  status: 'Available' | 'Reserved' | 'Sold'
+  status: 'Available' | 'Reserved' | 'Sold' | 'Held by Developer'
   unitType: string
   floor?: string | null
   direction?: string | null
@@ -36,6 +36,7 @@ export interface Unit {
 export enum ViewMode {
   GRID = 'GRID',
   LIST = 'LIST',
+  PLANS = 'PLANS',
 }
 
 export interface SearchFilters {

@@ -1,3 +1,8 @@
+import { fileURLToPath } from 'node:url'
+import { resolve as resolvePath } from 'node:path'
+
+const configDir = fileURLToPath(new URL('.', import.meta.url))
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-02-25',
   devtools: { enabled: true },
@@ -14,6 +19,7 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Ignite Studios property reservation portal' },
       ],
       link: [
+        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap' },
@@ -58,6 +64,14 @@ export default defineNuxtConfig({
         protocol: 'ws',
         host: 'localhost',
         port: 24678,
+      },
+    },
+    resolve: {
+      alias: {
+        // These aliases are needed because Nuxt internal virtual modules
+        // can be unresolved during Vite pre-transform in this setup.
+        '#app-manifest': resolvePath(configDir, 'nuxt-app-manifest-stub.mjs'),
+        '#internal/nuxt/paths': resolvePath(configDir, 'nuxt-internal-paths-stub.mjs'),
       },
     },
   },

@@ -665,14 +665,14 @@ const indicatorColorClass = computed(() => {
   if (!unit.value) return 'bg-emerald-500'
   if (unit.value.status === 'Sold')
     return 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]'
-  if (unit.value.status === 'Reserved')
+  if (unit.value.status === 'Reserved' || unit.value.status === 'Held by Developer')
     return 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
   return 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-pulse'
 })
 
 const statusDisplay = computed(() => {
   if (!unit.value) return ''
-  if (unit.value.status === 'Sold' || unit.value.status === 'Reserved') {
+  if (unit.value.status === 'Sold' || unit.value.status === 'Reserved' || unit.value.status === 'Held by Developer') {
     return unit.value.status
   }
   // For available units we only show the indicator dot, no text label

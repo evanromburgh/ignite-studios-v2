@@ -135,6 +135,7 @@
               <option value="Available" class="bg-theme-input-bg text-theme-text-primary">Available</option>
               <option value="Reserved" class="bg-theme-input-bg text-theme-text-primary">Reserved</option>
               <option value="Sold" class="bg-theme-input-bg text-theme-text-primary">Sold</option>
+              <option value="Held by Developer" class="bg-theme-input-bg text-theme-text-primary">Held by Developer</option>
             </select>
           </div>
           <div class="lg:col-span-1">

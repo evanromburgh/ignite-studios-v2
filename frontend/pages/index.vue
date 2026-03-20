@@ -190,19 +190,19 @@
               Choose your view
             </p>
             <p class="mt-1 text-[13px]" style="color: rgb(0, 0, 0);">
-              Switch how you browse units: <span class="font-semibold">Grid</span> or <span class="font-semibold">List</span>.
+              Switch how you browse units: <span class="font-semibold">Grid</span>, <span class="font-semibold">List</span>, or <span class="font-semibold">Plans</span>.
             </p>
           </div>
           <div class="w-full flex justify-center">
             <div
               ref="viewSwitcherContainerRef"
-              class="relative inline-flex w-full max-w-[85%] sm:max-w-none items-center rounded-full p-1 bg-white"
+              class="relative inline-flex w-full max-w-[95%] sm:max-w-xl items-center rounded-full p-1 bg-white"
               role="tablist"
               aria-label="View switcher"
             >
               <!-- Sliding pill: animates to active button -->
               <div
-                class="view-switcher-pill absolute z-0 rounded-full transition-all duration-300 ease-out"
+                class="view-switcher-pill absolute z-0 rounded-full transition-[left,width,height] duration-300 ease-out will-change-[left,width,height]"
                 :style="viewSwitcherPillStyle"
               />
               <button
@@ -214,8 +214,8 @@
                 aria-pressed="viewMode === 'GRID'"
                 @click="viewMode = 'GRID'"
               >
-                <span class="shrink-0 w-[14px] h-[14px] flex items-center justify-center" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-full h-full shrink-0" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                <span class="icon-switcher-svg flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="block h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 16 16" shape-rendering="geometricPrecision" aria-hidden="true">
                     <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zm6.5.5A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5z"/>
                   </svg>
                 </span>
@@ -231,15 +231,32 @@
                 aria-pressed="viewMode === 'LIST'"
                 @click="viewMode = 'LIST'"
               >
-                <span class="shrink-0 w-[14px] h-[14px] flex items-center justify-center" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-full h-full shrink-0" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                <span class="icon-switcher-svg flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="block h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 16 16" shape-rendering="geometricPrecision" aria-hidden="true">
                     <path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m-3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2m0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2m0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
                   </svg>
                 </span>
                 <span class="text-[11px] sm:text-xs font-medium leading-none">List</span>
                 <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #000000; --tw-ring-offset-color: #FFFFFF;" />
               </button>
-              <!-- Elevation and Floor view modes temporarily removed -->
+              <button
+                type="button"
+                data-view-mode="PLANS"
+                class="relative z-10 flex group flex-1 min-h-10 sm:min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-2 sm:py-1.5"
+                :class="viewMode === 'PLANS' ? 'text-white' : 'text-black'"
+                :style="{ background: 'transparent' }"
+                :aria-pressed="viewMode === 'PLANS'"
+                @click="viewMode = 'PLANS'"
+              >
+                <span class="icon-switcher-svg flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="block h-3.5 w-3.5 shrink-0" fill="currentColor" viewBox="0 0 16 16" shape-rendering="geometricPrecision" aria-hidden="true">
+                    <path d="M14.763.075A.5.5 0 0 1 15 .5v15a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5V14h-1v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V10a.5.5 0 0 1 .342-.474L6 7.64V4.5a.5.5 0 0 1 .276-.447l8-4a.5.5 0 0 1 .487.022M6 8.694 1 10.36V15h5zM7 15h2v-1.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5V15h2V1.309l-7 3.5z" />
+                    <path d="M2 11h1v1H2zm2 0h1v1H4zm-2 2h1v1H2zm2 0h1v1H4zm4-4h1v1H8zm2 0h1v1h-1zm-2 2h1v1H8zm2 0h1v1h-1zm2-2h1v1h-1zm0 2h1v1h-1zM8 7h1v1H8zm2 0h1v1h-1zm2 0h1v1h-1zM8 5h1v1H8zm2 0h1v1h-1zm2 0h1v1h-1zm0-2h1v1h-1z" />
+                  </svg>
+                </span>
+                <span class="text-[11px] sm:text-xs font-medium leading-none">Plans</span>
+                <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #000000; --tw-ring-offset-color: #FFFFFF;" />
+              </button>
             </div>
           </div>
         </div>
@@ -247,57 +264,65 @@
 
       <!-- Unit results section: mobile padding; 90% centered from sm up -->
       <section class="nav-section light w-full px-4 sm:px-0 sm:w-[90%] sm:mx-auto pb-16 sm:pb-20">
-        <div v-if="unitsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem] animate-pulse">
-          <div
-            v-for="i in 8"
-            :key="i"
-            class="aspect-[3/4] bg-zinc-200 rounded-xl"
-          />
-        </div>
+        <SiteMapPlansView
+          v-if="viewMode === 'PLANS'"
+          :units="units"
+        />
 
-        <div v-else-if="unitsError" class="text-red-600 text-sm">
-          {{ unitsError }}
-        </div>
-
-        <div v-else-if="displayedUnits.length === 0" class="text-center py-48 bg-white rounded-xl border border-theme-border shadow-sm">
-          <h3 class="text-2xl md:text-3xl font-black text-zinc-600 uppercase tracking-[0.5em]">No Matches</h3>
-        </div>
-
-        <div v-else>
-          <div
-            v-if="viewMode === 'GRID'"
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem]"
-          >
-            <UnitCard
-              v-for="unit in displayedUnits"
-              :key="unit.id"
-              :unit="unit"
-              :is-wishlisted="wishlistIds.includes(unit.id)"
-              :server-clock-offset-ms="serverClockOffsetMs"
-              :current-user-id="user?.id ?? null"
-              :reserving-unit-id="reservingUnitId"
-              @select="onSelectUnit"
-              @reserve="onReserveUnit"
-              @toggle-wishlist="onToggleWishlist"
+        <template v-else>
+          <div v-if="unitsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem] animate-pulse">
+            <div
+              v-for="i in 8"
+              :key="i"
+              class="aspect-[3/4] bg-zinc-200 rounded-xl"
             />
           </div>
 
-          <div v-else-if="viewMode === 'LIST'" class="space-y-3">
-            <UnitListRow
-              v-for="unit in displayedUnits"
-              :key="unit.id"
-              :unit="unit"
-              :is-wishlisted="wishlistIds.includes(unit.id)"
-              :server-clock-offset-ms="serverClockOffsetMs"
-              :current-user-id="user?.id ?? null"
-              :reserving-unit-id="reservingUnitId"
-              @select="onSelectUnit"
-              @reserve="onReserveUnit"
-              @toggle-wishlist="onToggleWishlist"
-            />
+          <div v-else-if="unitsError" class="text-red-600 text-sm">
+            {{ unitsError }}
           </div>
-        </div>
+
+          <div v-else-if="displayedUnits.length === 0" class="text-center py-48 bg-white rounded-xl border border-theme-border shadow-sm">
+            <h3 class="text-2xl md:text-3xl font-black text-zinc-600 uppercase tracking-[0.5em]">No Matches</h3>
+          </div>
+
+          <div v-else>
+            <div
+              v-if="viewMode === 'GRID'"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem]"
+            >
+              <UnitCard
+                v-for="unit in displayedUnits"
+                :key="unit.id"
+                :unit="unit"
+                :is-wishlisted="wishlistIds.includes(unit.id)"
+                :server-clock-offset-ms="serverClockOffsetMs"
+                :current-user-id="user?.id ?? null"
+                :reserving-unit-id="reservingUnitId"
+                @select="onSelectUnit"
+                @reserve="onReserveUnit"
+                @toggle-wishlist="onToggleWishlist"
+              />
+            </div>
+
+            <div v-else-if="viewMode === 'LIST'" class="space-y-3">
+              <UnitListRow
+                v-for="unit in displayedUnits"
+                :key="unit.id"
+                :unit="unit"
+                :is-wishlisted="wishlistIds.includes(unit.id)"
+                :server-clock-offset-ms="serverClockOffsetMs"
+                :current-user-id="user?.id ?? null"
+                :reserving-unit-id="reservingUnitId"
+                @select="onSelectUnit"
+                @reserve="onReserveUnit"
+                @toggle-wishlist="onToggleWishlist"
+              />
+            </div>
+          </div>
+        </template>
       </section>
+
     </div>
   </div>
 </template>
@@ -311,6 +336,7 @@ import AuthPortal from '~/components/AuthPortal.vue'
 import UnitCard from '~/components/UnitCard.vue'
 import UnitListRow from '~/components/UnitListRow.vue'
 import FilterBar from '~/components/FilterBar.vue'
+import SiteMapPlansView from '~/components/SiteMapPlansView.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useUnits } from '~/composables/useUnits'
 import { useUnitFilters } from '~/composables/useUnitFilters'
@@ -346,12 +372,12 @@ function updateViewSwitcherPill() {
     // Size and position pill so external white space (gap to container) is equal top, left, and bottom.
     // Container has p-1 (4px). Pill uses pad for top/height; for left, use pad when Grid (first tab) so left gap matches.
     const pad = 4
-    const pillLeft = viewMode.value === 'GRID' ? pad : bRect.left - cRect.left - border
+    const pillLeftRaw = viewMode.value === 'GRID' ? pad : bRect.left - cRect.left - border
     pillStyle.value = {
-      left: pillLeft,
+      left: Math.round(pillLeftRaw),
       top: pad,
-      width: bRect.width,
-      height: cRect.height - pad * 2,
+      width: Math.round(bRect.width),
+      height: Math.max(0, Math.round(cRect.height - pad * 2)),
       background: 'rgb(24, 24, 27)',
     }
   })
@@ -515,10 +541,13 @@ function onToggleWishlist(unitId: string) {
   toggleWishlist(unitId)
 }
 
-watch(showFiltersDrawer, (open) => {
+function syncBrowseBodyScrollLock() {
   if (typeof document === 'undefined') return
-  document.body.style.overflow = open ? 'hidden' : ''
-})
+  const locked = showFiltersDrawer.value
+  document.body.style.overflow = locked ? 'hidden' : ''
+}
+
+watch(showFiltersDrawer, syncBrowseBodyScrollLock)
 
 onMounted(() => {
   if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('show_payment_cancelled_toast')) {
@@ -528,7 +557,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (showFiltersDrawer.value && typeof document !== 'undefined') {
+  if (typeof document !== 'undefined') {
     document.body.style.overflow = ''
   }
 })
@@ -628,4 +657,5 @@ onBeforeUnmount(() => {
     transform: scale(1.08);
   }
 }
+
 </style>
