@@ -1,5 +1,67 @@
 <template>
   <div class="bg-theme-bg">
+    <Teleport to="body">
+      <Transition name="reserve-expiry">
+        <div
+          v-if="showExpiryModal"
+          class="fixed inset-0 z-[3200] flex items-center justify-center p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reserve-expiry-modal-title"
+          aria-describedby="reserve-expiry-modal-desc"
+        >
+          <div
+            class="absolute inset-0 bg-black/75 backdrop-blur-sm"
+            aria-hidden="true"
+            @click="dismissExpiryModalToHome"
+          />
+          <div
+            ref="expiryModalPanelRef"
+            class="reserve-expiry-panel relative z-10 w-full max-w-md rounded-2xl border border-zinc-200 bg-[#ffffff] px-8 py-10 shadow-2xl text-center text-[#18181B]"
+            @click.stop
+          >
+            <p class="sr-only" role="alert" aria-live="assertive">
+              Reservation expired. Your hold on this unit has ended.
+            </p>
+            <h2
+              id="reserve-expiry-modal-title"
+              class="text-xl sm:text-2xl font-semibold text-[#18181B] tracking-tight leading-tight mb-3"
+            >
+              Reservation Expired
+            </h2>
+            <p
+              id="reserve-expiry-modal-desc"
+              class="text-[13px] text-[#18181B] leading-relaxed mb-8"
+            >
+              Your hold on this unit has ended and someone else may reserve it. Browse other units, or you can try to reserve this unit again if it is still available.
+            </p>
+            <button
+              type="button"
+              class="w-full h-12 flex items-center justify-center bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-zinc-800 transition-colors"
+              @click="dismissExpiryModalToHome"
+            >
+              Browse units
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+      <Transition name="reserve-urgency">
+        <div
+          v-if="showUrgencyBanner"
+          class="reserve-urgency-banner fixed left-1/2 z-[210] w-[min(32rem,calc(100vw-2.5rem))] rounded-xl bg-[#922724] px-4 py-3 text-center text-white shadow-lg"
+          role="status"
+          aria-live="polite"
+        >
+          <p class="text-[11px] font-semibold leading-snug">
+            Time is running out! Complete payment soon to keep this unit reserved.
+          </p>
+        </div>
+      </Transition>
+    </Teleport>
+
     <div v-if="!user || !unitNumberDisplay" class="flex items-center justify-center min-h-[60svh]">
       <p class="text-zinc-500">Redirecting…</p>
     </div>
@@ -248,6 +310,16 @@ const isLockedByOther = computed(() => {
 const timeLeft = ref(0)
 const expiryHandled = ref(false)
 
+const URGENCY_THRESHOLD_SEC = 120
+const showExpiryModal = ref(false)
+const expiryModalPanelRef = ref<HTMLElement | null>(null)
+
+const showUrgencyBanner = computed(() => {
+  if (timeLeft.value <= 0 || timeLeft.value > URGENCY_THRESHOLD_SEC) return false
+  if (!lockExpiresAtMs.value || acquireError.value || isLockedByOther.value) return false
+  return true
+})
+
 function formatPrice(price: number) {
   return new Intl.NumberFormat('en-US').format(price).replace(/,/g, ' ')
 }
@@ -303,6 +375,74 @@ async function releaseLockAndClearAsync(): Promise<void> {
   }
 }
 
+let expiryModalKeydownCleanup: (() => void) | null = null
+let expiryModalBodyOverflowUndo: (() => void) | null = null
+
+function getExpiryModalFocusables(container: HTMLElement | null): HTMLElement[] {
+  if (!container) return []
+  return Array.from(
+    container.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]'),
+  )
+}
+
+function dismissExpiryModalToHome() {
+  showExpiryModal.value = false
+  navigateTo('/', { replace: true })
+}
+
+watch(showExpiryModal, (open) => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+
+  expiryModalKeydownCleanup?.()
+  expiryModalKeydownCleanup = null
+
+  if (!open) {
+    expiryModalBodyOverflowUndo?.()
+    expiryModalBodyOverflowUndo = null
+    return
+  }
+
+  const prevOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
+  expiryModalBodyOverflowUndo = () => {
+    document.body.style.overflow = prevOverflow
+  }
+
+  void nextTick(() => {
+    const panel = expiryModalPanelRef.value
+    const list = getExpiryModalFocusables(panel)
+    list[0]?.focus()
+
+    const onKeydown = (e: KeyboardEvent) => {
+      if (!showExpiryModal.value) return
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        dismissExpiryModalToHome()
+        return
+      }
+      if (e.key !== 'Tab') return
+      const p = expiryModalPanelRef.value
+      const focusables = getExpiryModalFocusables(p)
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      const active = document.activeElement as HTMLElement | null
+      if (e.shiftKey) {
+        if (active === first || (p && active && !p.contains(active))) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else if (active === last || (p && active && !p.contains(active))) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKeydown, true)
+    expiryModalKeydownCleanup = () => document.removeEventListener('keydown', onKeydown, true)
+  })
+})
+
 // Timer countdown (use server time so timer shows 10:00 on all devices, not 13:28 from mobile clock skew)
 watch(lockExpiresAtMs, (ms) => {
   if (ms == null) {
@@ -316,11 +456,8 @@ watch(lockExpiresAtMs, (ms) => {
     if (remaining <= 0) {
       if (!expiryHandled.value) {
         expiryHandled.value = true
-        clearReserveSession()
-        if (typeof window !== 'undefined') {
-          window.alert('Reservation expired')
-        }
-        navigateTo('/', { replace: true })
+        releaseLockAndClear()
+        showExpiryModal.value = true
       }
       return
     }
@@ -568,6 +705,10 @@ watch(phoneCountryDropdownOpen, (open) => {
 
 // Release lock when leaving the page (navigate to another page, refresh will have cleared via beforeunload)
 onBeforeUnmount(() => {
+  expiryModalKeydownCleanup?.()
+  expiryModalKeydownCleanup = null
+  expiryModalBodyOverflowUndo?.()
+  expiryModalBodyOverflowUndo = null
   if (beforeUnloadHandler) {
     window.removeEventListener('beforeunload', beforeUnloadHandler)
     beforeUnloadHandler = null
@@ -829,3 +970,43 @@ async function onSubmit() {
   }
 }
 </script>
+
+<style scoped>
+.reserve-expiry-enter-active,
+.reserve-expiry-leave-active {
+  transition: opacity 0.22s ease;
+}
+.reserve-expiry-enter-from,
+.reserve-expiry-leave-to {
+  opacity: 0;
+}
+.reserve-expiry-enter-active .reserve-expiry-panel,
+.reserve-expiry-leave-active .reserve-expiry-panel {
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+.reserve-expiry-enter-from .reserve-expiry-panel,
+.reserve-expiry-leave-to .reserve-expiry-panel {
+  opacity: 0;
+  transform: scale(0.97) translateY(8px);
+}
+
+/* Bottom inset matches .browsing-anchor and .chat-widget (1.25rem) */
+.reserve-urgency-banner {
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+}
+
+.reserve-urgency-enter-active.reserve-urgency-banner,
+.reserve-urgency-leave-active.reserve-urgency-banner {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.reserve-urgency-enter-from.reserve-urgency-banner,
+.reserve-urgency-leave-to.reserve-urgency-banner {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+.reserve-urgency-enter-to.reserve-urgency-banner,
+.reserve-urgency-leave-from.reserve-urgency-banner {
+  transform: translateX(-50%) translateY(0);
+}
+</style>

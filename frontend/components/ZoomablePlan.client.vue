@@ -1,7 +1,7 @@
 <template>
   <!-- Mobile: rotate 90° so landscape raster plans read “tall” on portrait viewports; desktop unchanged. -->
   <div
-    class="relative mx-auto box-border w-full max-w-6xl overflow-x-hidden overflow-y-visible rounded-xl bg-white max-sm:px-1 sm:w-[min(92%,42rem)] sm:overflow-hidden md:w-[min(85%,48rem)] lg:w-[min(72%,56rem)] xl:w-[min(60%,64rem)]"
+    class="relative mx-auto box-border w-[60%] max-w-full overflow-x-hidden overflow-y-visible rounded-xl bg-white max-sm:px-1 sm:overflow-hidden"
   >
     <div
       class="flex w-full items-center justify-center max-sm:min-h-0 max-sm:items-stretch max-sm:py-3 sm:min-h-0 sm:block sm:py-0"

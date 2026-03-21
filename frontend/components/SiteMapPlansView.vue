@@ -56,7 +56,7 @@
           :key="b.id"
           :d="b.pathD"
           fill="transparent"
-          class="cursor-pointer outline-none stroke-white/75 stroke-[0.008] transition-[stroke] duration-200 [vector-effect:non-scaling-stroke] hover:stroke-white focus-visible:stroke-white"
+          class="master-building-hit cursor-pointer outline-none stroke-white stroke-[3px] transition-[stroke-width] duration-200 [stroke-dasharray:7px_5px] [stroke-linecap:butt] [stroke-linejoin:miter] [vector-effect:non-scaling-stroke] [paint-order:stroke_fill] hover:stroke-0 focus-visible:stroke-0"
           tabindex="0"
           :aria-label="`${b.label}: go to floor plans`"
           @click="onBuildingActivate"
@@ -93,7 +93,7 @@
               >
               <span
                 class="mt-1 text-center text-[clamp(0.52rem,2.1vmin,0.8rem)] font-semibold uppercase leading-tight tracking-widest text-[#18181B] sm:text-[0.8rem]"
-              >Block G</span>
+              >{{ blockGBuilding.label }}</span>
             </div>
             <div
               class="site-map-master-pin-pointer -mt-px h-0 w-0 border-x-[clamp(0.55rem,2.4vw,0.7rem)] border-t-[clamp(0.7rem,3vmin,0.9rem)] border-x-transparent border-t-white sm:border-x-[0.7rem] sm:border-t-[0.9rem]"
@@ -114,23 +114,49 @@
         v-for="floor in SITE_MAP_FLOORS"
         :key="floor.id"
         :id="floorSectionId(floor.id)"
-        class="scroll-mt-24 sm:scroll-mt-28 rounded-2xl bg-white py-8 sm:py-12 lg:py-16"
-        :aria-labelledby="`floor-heading-${floor.id}`"
+        class="scroll-mt-24 flex min-h-[28rem] flex-col rounded-2xl bg-white p-16 sm:min-h-[32rem] md:min-h-[36rem]"
+        :aria-labelledby="`plan-frame-heading-${floor.id}`"
       >
-        <h3
-          :id="`floor-heading-${floor.id}`"
-          class="mb-4 px-2 text-center text-base font-black text-theme-text-primary sm:mb-8 sm:px-0"
-        >
-          {{ floor.label }}
-        </h3>
-
         <ClientOnly>
-          <ZoomablePlan
-            :image-src="floor.imageSrc"
-            :image-alt="`${floor.label} plan`"
-            :view-box="floor.viewBox"
-          >
-            <template #default>
+          <div class="plan-frame relative grid min-h-0 w-full flex-1 grid-rows-[auto_minmax(0,1fr)_auto]">
+            <!-- Block G out of flow so row height is only the top facing line (better vertical centering of plan). -->
+            <header
+              class="plan-frame-header pointer-events-auto absolute left-0 top-0 z-10 max-w-[min(100%,20rem)] text-left sm:max-w-[min(100%,24rem)]"
+            >
+              <div :id="`plan-frame-heading-${floor.id}`">
+                <p class="font-sans text-2xl font-semibold uppercase leading-tight tracking-wide text-zinc-900 sm:text-3xl">
+                  {{ SITE_MAP_PLAN_FRAME.buildingTitle }}
+                </p>
+                <p class="font-sans text-sm font-medium capitalize leading-snug text-zinc-700 sm:text-base">
+                  {{ floor.label }}
+                </p>
+              </div>
+            </header>
+            <div class="flex shrink-0 justify-center">
+              <p
+                class="text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 sm:text-xs md:text-sm"
+              >
+                {{ SITE_MAP_PLAN_FRAME.facing.top }}
+              </p>
+            </div>
+
+            <div class="flex min-h-0 min-w-0 items-center justify-center py-12">
+              <div
+                class="plan-frame-grid grid w-full max-w-full grid-cols-[auto_minmax(0,10fr)_auto] items-center gap-x-1 gap-y-2 sm:gap-x-2"
+              >
+              <p
+                class="col-start-1 row-start-1 min-w-0 max-w-full justify-self-start self-center text-start text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 [overflow-wrap:anywhere] [writing-mode:vertical-rl] sm:text-xs md:text-sm rotate-180"
+              >
+                {{ SITE_MAP_PLAN_FRAME.facing.left }}
+              </p>
+
+              <div class="col-start-2 row-start-1 min-h-0 min-w-0">
+                <ZoomablePlan
+                  :image-src="floor.imageSrc"
+                  :image-alt="`${SITE_MAP_PLAN_FRAME.buildingTitle} ${floor.label} plan`"
+                  :view-box="floor.viewBox"
+                >
+                  <template #default>
               <g v-if="floor.units.length">
                 <template v-for="u in floor.units" :key="u.unitNumber">
                   <a
@@ -147,15 +173,14 @@
                   >
                     <path
                       :d="u.pathD"
-                      fill="rgba(0,0,0,0.002)"
                       stroke="none"
-                      class="pointer-events-auto"
+                      class="pointer-events-auto plan-unit-hit-fill"
                     />
                   </a>
                   <path
                     v-else
                     :d="u.pathD"
-                    fill="rgba(0,0,0,0.002)"
+                    :fill="planUnitStaticFill(resolvePlanUnit(u.unitNumber))"
                     stroke="none"
                     class="pointer-events-none"
                     role="presentation"
@@ -184,6 +209,14 @@
                     class="mt-px max-w-[95%] truncate text-[clamp(0.32rem,1.35vmin,0.52rem)] font-semibold leading-none text-white/95 sm:mt-0.5 sm:text-[clamp(0.5rem,2.3vmin,0.625rem)]"
                   >{{ formatPlanBadgePrice(resolvePlanUnit(u.unitNumber)?.price ?? 0) }}</span>
                 </template>
+                <template v-else-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'locked'">
+                  <span
+                    class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none tracking-tight text-white sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]"
+                  >{{ u.unitNumber }}</span>
+                  <span
+                    class="mt-px max-w-[95%] text-center text-[clamp(0.3rem,1.25vmin,0.5rem)] font-semibold leading-[1.05] text-white/95 sm:mt-0.5 sm:text-[clamp(0.42rem,2vmin,0.625rem)]"
+                  >{{ planBadgeStatusLine(resolvePlanUnit(u.unitNumber)) }}</span>
+                </template>
                 <template v-else-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'heldByDeveloper'">
                   <span
                     class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none text-zinc-900 sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]"
@@ -211,9 +244,46 @@
                 </div>
               </div>
             </template>
-          </ZoomablePlan>
+                </ZoomablePlan>
+              </div>
+
+              <p
+                class="col-start-3 row-start-1 min-w-0 max-w-full justify-self-end self-center text-end text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 [overflow-wrap:anywhere] [writing-mode:vertical-rl] sm:text-xs md:text-sm"
+              >
+                {{ SITE_MAP_PLAN_FRAME.facing.right }}
+              </p>
+              </div>
+            </div>
+
+            <div class="shrink-0">
+              <p
+                class="min-w-0 text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 sm:text-xs md:text-sm"
+              >
+                {{ SITE_MAP_PLAN_FRAME.facing.bottom }}
+              </p>
+            </div>
+
+            <!-- North: out of flow (same box as Block G) so it doesn’t add height to the footer row. -->
+            <div
+              class="pointer-events-none absolute bottom-0 left-0 z-[1] flex min-w-0 items-end justify-start pb-0.5 sm:pb-1"
+              role="img"
+              aria-label="North orientation"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 380.701 338.056"
+                class="h-8 w-auto max-w-[min(4rem,18vw)] shrink-0 text-zinc-900 select-none sm:h-10 md:h-12"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <polygon fill="currentColor" points="117.991 185.588 154.855 253.166 0 206.302 129.465 109.42 117.991 185.588" />
+                <path fill="currentColor" d="M44.654,142.958l19.425-14.536c4.598-16.667,12.07-32.6,22.284-47.18,23.449-33.472,58.528-55.808,98.777-62.895s80.848,1.923,114.319,25.372c33.472,23.449,55.808,58.528,62.896,98.777,7.087,40.249-1.923,80.848-25.372,114.319-23.449,33.472-58.528,55.808-98.777,62.896-40.249,7.087-80.848-1.923-114.319-25.372-14.591-10.222-27.064-22.655-37.082-36.761l-23.216-7.026c33.901,61.593,104.291,97.789,177.392,84.917,91.922-16.186,153.318-103.826,137.131-195.747C361.926,47.798,274.287-13.597,182.365,2.589,109.275,15.459,55.49,73.505,44.654,142.958Z" />
+                <path fill="currentColor" d="M273.73,113.547l15.227,86.475-13.218,2.328-57.996-50.159,10.311,58.556-15.936,2.806-15.227-86.475,13.218-2.328,57.996,50.159-10.311-58.556,15.936-2.806Z" />
+              </svg>
+            </div>
+          </div>
           <template #fallback>
-            <div class="h-64 animate-pulse rounded-xl bg-white" />
+            <div class="h-64 w-full animate-pulse rounded-xl bg-zinc-100" />
           </template>
         </ClientOnly>
       </section>
@@ -223,7 +293,7 @@
 
 <script setup lang="ts">
 import type { Unit } from '~/types'
-import { SITE_MAP_FLOORS, SITE_MAP_MASTER } from '~/data/siteMap'
+import { SITE_MAP_FLOORS, SITE_MAP_MASTER, SITE_MAP_PLAN_FRAME } from '~/data/siteMap'
 import ZoomablePlan from '~/components/ZoomablePlan.client.vue'
 import { approximatePathAnchor, approximatePathPinAbove } from '~/utils/siteMapGeometry'
 
@@ -258,6 +328,8 @@ const props = defineProps<{
 }>()
 
 const planBadgeActiveKey = ref<string | null>(null)
+const nowMs = ref(Date.now())
+let nowTicker: ReturnType<typeof setInterval> | null = null
 
 function floorSectionId(floorId: string) {
   return `site-map-floor-${floorId}`
@@ -305,6 +377,9 @@ function planHtmlBadgeFaceStyle(hovered: boolean, unit: Unit | undefined): Recor
   if (k === 'available') {
     style.backgroundColor = hovered ? '#047857' : '#18181B'
     style.boxShadow = '0 1px 2px rgba(0,0,0,0.08)'
+  } else if (k === 'locked') {
+    style.backgroundColor = '#a16207'
+    style.boxShadow = '0 1px 2px rgba(0,0,0,0.08)'
   } else if (k === 'sold') {
     style.backgroundColor = '#8f2424'
     style.boxShadow = '0 1px 2px rgba(0,0,0,0.08)'
@@ -319,16 +394,23 @@ function planHtmlBadgeFaceStyle(hovered: boolean, unit: Unit | undefined): Recor
   return style
 }
 
-type PlanBadgeKind = 'available' | 'heldByDeveloper' | 'sold' | 'unknown'
+type PlanBadgeKind = 'available' | 'locked' | 'heldByDeveloper' | 'sold' | 'unknown'
+
+function isUnitLockActive(unit: Unit | undefined): boolean {
+  if (!unit?.lockExpiresAt || !unit?.lockedBy) return false
+  return unit.lockExpiresAt > nowMs.value
+}
 
 /** Only available units navigate / open the details popup; other statuses are display-only on the plan. */
 function isPlanUnitClickable(unit: Unit | undefined): boolean {
   if (!unit) return true
+  if (isUnitLockActive(unit)) return false
   return unit.status === 'Available'
 }
 
 function planBadgeKind(unit: Unit | undefined): PlanBadgeKind {
   if (!unit) return 'unknown'
+  if (isUnitLockActive(unit)) return 'locked'
   if (unit.status === 'Available') return 'available'
   if (unit.status === 'Held by Developer') return 'heldByDeveloper'
   // Reserved uses same red “SOLD” treatment as Sold on the plan map.
@@ -339,6 +421,7 @@ function planBadgeKind(unit: Unit | undefined): PlanBadgeKind {
 /** Second line on plan badge: status instead of price (sold / held-by-developer copy). */
 function planBadgeStatusLine(unit: Unit | undefined): string {
   if (!unit) return '—'
+  if (isUnitLockActive(unit)) return 'LOCK'
   if (unit.status === 'Held by Developer') return 'HELD'
   if (unit.status === 'Reserved' || unit.status === 'Sold') return 'SOLD'
   return unit.status.toUpperCase()
@@ -372,6 +455,26 @@ function onUnitHotspotClick(ev: MouseEvent, unitNumber: string) {
   navigateTo(`/unit/${encodeURIComponent(unitNumber)}`)
 }
 
+function planUnitStaticFill(unit: Unit | undefined): string {
+  if (!unit) return 'rgba(113, 113, 122, 0.05)'
+  const k = planBadgeKind(unit)
+  if (k === 'locked') return 'rgba(161, 98, 7, 0.12)' // #a16207
+  if (k === 'sold') return 'rgba(143, 36, 36, 0.12)' // #8f2424
+  if (k === 'heldByDeveloper') return 'rgba(113, 113, 122, 0.05)' // match available base polygon
+  return 'rgba(113, 113, 122, 0.05)'
+}
+
+onMounted(() => {
+  nowTicker = setInterval(() => {
+    nowMs.value = Date.now()
+  }, 1000)
+})
+
+onBeforeUnmount(() => {
+  if (nowTicker) clearInterval(nowTicker)
+  nowTicker = null
+})
+
 if (import.meta.dev) {
   watch(
     () => props.units,
@@ -391,6 +494,16 @@ if (import.meta.dev) {
 </script>
 
 <style scoped>
+/* White dashes read on pale roofs; thin viewBox stroke + tiny dasharray was nearly invisible. */
+.master-building-hit {
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.9)) drop-shadow(0 0 6px rgb(0 0 0 / 0.35));
+}
+
+.master-building-hit:hover,
+.master-building-hit:focus-visible {
+  filter: none;
+}
+
 @keyframes site-map-master-pin-bob {
   0%,
   100% {
@@ -406,9 +519,23 @@ if (import.meta.dev) {
   will-change: transform;
 }
 
+.plan-unit-hit .plan-unit-hit-fill {
+  fill: rgba(113, 113, 122, 0.05);
+  transition: fill 0.15s ease-out;
+}
+
+.plan-unit-hit:hover .plan-unit-hit-fill,
+.plan-unit-hit:focus-visible .plan-unit-hit-fill {
+  fill: rgba(4, 120, 87, 0.1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .plan-html-badge-face {
     transition: none !important;
+  }
+
+  .plan-unit-hit .plan-unit-hit-fill {
+    transition: none;
   }
 
   .site-map-master-pin-bob {

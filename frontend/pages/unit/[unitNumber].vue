@@ -376,11 +376,11 @@
                 <div class="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-6">
                   <button
                     type="button"
-                    :disabled="!isAvailable"
+                    :disabled="!canReserve"
                     class="w-full sm:w-auto sm:flex-[0.65] sm:min-w-[130px] h-12 flex items-center justify-center bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    @click="isAvailable && onReserveClick()"
+                    @click="canReserve && onReserveClick()"
                   >
-                    Reserve unit
+                    {{ isLockedByOther ? 'Reservation in Progress' : 'Reserve unit' }}
                   </button>
                   <button
                     type="button"
@@ -462,6 +462,7 @@ import 'swiper/css'
 import { CONFIG } from '~/config'
 import { useUnits } from '~/composables/useUnits'
 import { useWishlist } from '~/composables/useWishlist'
+import { useAuth } from '~/composables/useAuth'
 import IconBed from '~/components/icons/IconBed.vue'
 import IconBath from '~/components/icons/IconBath.vue'
 import IconCar from '~/components/icons/IconCar.vue'
@@ -473,6 +474,7 @@ import type { Unit } from '~/types'
 const route = useRoute()
 const { units, loading: unitsLoading } = useUnits()
 const { wishlistIds, toggle: toggleWishlist } = useWishlist()
+const { user } = useAuth()
 
 const reserving = ref(false)
 const returningToList = ref(false)
@@ -625,6 +627,13 @@ const floorplanIndex = computed(() => {
 })
 
 const isAvailable = computed(() => unit.value?.status === 'Available')
+const isLockedByOther = computed(() => {
+  const u = unit.value
+  if (!u?.lockedBy || !u.lockExpiresAt) return false
+  if (user.value?.id && u.lockedBy === user.value.id) return false
+  return u.lockExpiresAt > Date.now()
+})
+const canReserve = computed(() => isAvailable.value && !isLockedByOther.value)
 
 const formattedPrice = computed(() =>
   unit.value ? formatAmount(unit.value.price) : '',
@@ -762,7 +771,7 @@ function lightboxNext() {
 }
 
 async function onReserveClick() {
-  if (!unit.value || !isAvailable.value || reserving.value) return
+  if (!unit.value || !canReserve.value || reserving.value) return
 
   reserving.value = true
   try {

@@ -31,27 +31,41 @@ export default defineEventHandler(async (event) => {
   })
 
   const lockExpiresAt = new Date(Date.now() + LOCK_DURATION_MS).toISOString()
+  const nowIso = new Date().toISOString()
 
-  // Run auth and unit fetch in parallel to reduce latency (one fewer round-trip)
-  const [{ data: { user }, error: authError }, { data: unit, error: fetchError }] = await Promise.all([
-    supabase.auth.getUser(token),
-    supabase.from('units').select('id, lock_expires_at, locked_by').eq('id', unitId).single(),
-  ])
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
 
   if (authError || !user) {
     throw createError({ statusCode: 401, message: 'Invalid or expired session' })
   }
-  if (fetchError || !unit) {
+
+  // Snapshot + guarded update:
+  // read current lock state, then update only if row still matches snapshot.
+  // This avoids brittle timestamp OR filters while remaining race-safe.
+  const { data: existingUnit, error: existsError } = await supabase
+    .from('units')
+    .select('id, locked_by, lock_expires_at')
+    .eq('id', unitId)
+    .maybeSingle()
+
+  if (existsError) {
+    console.error('[acquire-lock:exists]', existsError)
+    throw createError({ statusCode: 500, message: 'Failed to reserve unit' })
+  }
+  if (!existingUnit) {
     throw createError({ statusCode: 404, message: 'Unit not found' })
   }
 
-  const now = new Date().toISOString()
-  const isLockedByOther = unit.locked_by != null && unit.locked_by !== user.id && unit.lock_expires_at != null && unit.lock_expires_at > now
-  if (isLockedByOther) {
+  const lockedBy = (existingUnit as any).locked_by as string | null
+  const lockExpiresRaw = (existingUnit as any).lock_expires_at as string | null
+  const lockActive = Boolean(lockExpiresRaw && lockExpiresRaw > nowIso)
+  const canAcquire = !lockActive || !lockedBy || lockedBy === user.id
+
+  if (!canAcquire) {
     throw createError({ statusCode: 409, message: 'Unit is currently reserved by someone else. Try again shortly.' })
   }
 
-  const { error: setError } = await supabase
+  let guardedUpdate = supabase
     .from('units')
     .update({
       lock_expires_at: lockExpiresAt,
@@ -59,9 +73,21 @@ export default defineEventHandler(async (event) => {
     })
     .eq('id', unitId)
 
+  if (lockedBy == null) guardedUpdate = guardedUpdate.is('locked_by', null)
+  else guardedUpdate = guardedUpdate.eq('locked_by', lockedBy)
+
+  if (lockExpiresRaw == null) guardedUpdate = guardedUpdate.is('lock_expires_at', null)
+  else guardedUpdate = guardedUpdate.eq('lock_expires_at', lockExpiresRaw)
+
+  const { data: updatedRows, error: setError } = await guardedUpdate.select('id')
+
   if (setError) {
-    console.error('[acquire-lock]', setError)
+    console.error('[acquire-lock:update]', setError)
     throw createError({ statusCode: 500, message: 'Failed to reserve unit' })
+  }
+  if (!updatedRows?.length) {
+    // Snapshot mismatch means another request updated the row first.
+    throw createError({ statusCode: 409, message: 'Unit is currently reserved by someone else. Try again shortly.' })
   }
 
   return { ok: true, lockExpiresAt }

@@ -22,13 +22,24 @@ export interface SiteMapFloor {
   units: SiteMapUnitHotspot[]
 }
 
+/** Framed plan chrome: titles + cardinal-facing labels (shown around each floor raster). */
+export const SITE_MAP_PLAN_FRAME = {
+  buildingTitle: 'BLOCK G',
+  facing: {
+    top: 'Stellenbosch Mountain Skyline',
+    bottom: 'Tygerberg Hills outlook',
+    left: 'Durbanville Hills outlook',
+    right: 'Table Mountain views',
+  },
+} as const
+
 export const SITE_MAP_MASTER = {
   imageSrc: '/images/location-background.webp',
   viewBox: '0 0 1 1',
   buildings: [
     {
       id: 'block-g',
-      label: 'Block G',
+      label: 'BLOCK G',
       /** Polygon (% of W/H ÷100); main building — user coords 37.66,47.87 … 37.86,55.09 */
       pathD:
         'M 0.3766 0.4787 L 0.3906 0.4620 L 0.4099 0.4667 L 0.4307 0.4417 L 0.5724 0.4852 L 0.5714 0.5676 L 0.5193 0.6148 L 0.5057 0.6157 L 0.5057 0.6102 L 0.3786 0.5509 Z',
