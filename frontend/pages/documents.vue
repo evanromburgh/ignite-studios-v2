@@ -1,11 +1,11 @@
 <template>
   <Transition name="page-fade">
-  <div class="nav-section light px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pt-[11rem] pb-16 sm:pb-20">
-    <header class="mb-10 sm:mb-16">
+  <div class="nav-section light w-full px-4 sm:px-0 sm:w-[90%] sm:mx-auto pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
+    <header class="mb-10 sm:mb-16 text-center">
       <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-theme-text-primary tracking-tight mb-2">
         Downloads
       </h1>
-      <p class="text-base sm:text-lg text-zinc-500 font-normal max-w-3xl">
+      <p class="text-base sm:text-lg text-zinc-500 font-normal max-w-3xl mx-auto">
         Comprehensive access to all legal frameworks and site development blueprints.
       </p>
     </header>
@@ -19,7 +19,7 @@
       </p>
     </div>
 
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem]">
       <div
         v-for="doc in developmentDocuments"
         :key="doc.id"

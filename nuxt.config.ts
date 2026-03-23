@@ -3,6 +3,16 @@ import { resolve as resolvePath } from 'node:path'
 
 const configDir = fileURLToPath(new URL('.', import.meta.url))
 
+/** Default branding URLs (Supabase Storage, `assets` bucket / `branding/`). Override via NUXT_PUBLIC_BRANDING_* at deploy time. */
+const defaultPublicBranding = {
+  faviconUrl:
+    'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/branding/favicon.png',
+  logoLightUrl:
+    'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/branding/logo_light.svg',
+  logoDarkUrl:
+    'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/branding/logo_dark.svg',
+} as const
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-02-25',
   devtools: { enabled: true },
@@ -19,7 +29,6 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Ignite Studios property reservation portal' },
       ],
       link: [
-        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap' },
@@ -41,6 +50,7 @@ export default defineNuxtConfig({
       theme: {},
       /** Paystack public key for inline checkout popup (pk_test_... or pk_live_...). */
       paystackPublicKey: process.env.NUXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+      branding: { ...defaultPublicBranding },
     },
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     cronSecret: process.env.CRON_SECRET || '',

@@ -57,17 +57,28 @@ export function useAuth() {
         currentUser.value = null
         return
       }
-      const profile = await fetchRole($supabase, user.id)
+      // Set identity immediately so authLoading can end without waiting on profiles (faster first paint).
       currentUser.value = {
         ...user,
-        role: profile.role,
-        idPassportNumber: profile.idPassportNumber ?? null,
-        reasonForBuying: profile.reasonForBuying ?? null,
+        role: 'user',
+        idPassportNumber: null,
+        reasonForBuying: null,
       }
+      void fetchRole($supabase, user.id).then((profile) => {
+        if (!currentUser.value || currentUser.value.id !== user.id) return
+        currentUser.value = {
+          ...currentUser.value,
+          role: profile.role,
+          idPassportNumber: profile.idPassportNumber ?? null,
+          reasonForBuying: profile.reasonForBuying ?? null,
+        }
+      })
     }
 
+    // Child components mount before their parent; the first useAuth() starts getSession().
+    // Later callers must not set authLoading to false — that would flash the login UI before
+    // the initial session resolves.
     if (initialAuthFetchDone) {
-      authLoading.value = false
       return
     }
     initialAuthFetchDone = true

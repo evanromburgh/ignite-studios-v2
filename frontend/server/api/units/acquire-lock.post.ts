@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
   // This avoids brittle timestamp OR filters while remaining race-safe.
   const { data: existingUnit, error: existsError } = await supabase
     .from('units')
-    .select('id, locked_by, lock_expires_at')
+    .select('id, locked_by, lock_expires_at, status')
     .eq('id', unitId)
     .maybeSingle()
 
@@ -56,13 +56,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Unit not found' })
   }
 
+  const unitStatus = String((existingUnit as any).status ?? '').trim()
+  if (unitStatus !== 'Available') {
+    throw createError({ statusCode: 409, message: 'This unit is no longer available for reservation.' })
+  }
+
   const lockedBy = (existingUnit as any).locked_by as string | null
   const lockExpiresRaw = (existingUnit as any).lock_expires_at as string | null
   const lockActive = Boolean(lockExpiresRaw && lockExpiresRaw > nowIso)
   const canAcquire = !lockActive || !lockedBy || lockedBy === user.id
 
   if (!canAcquire) {
-    throw createError({ statusCode: 409, message: 'Unit is currently reserved by someone else. Try again shortly.' })
+    throw createError({ statusCode: 409, message: 'This unit is currently being reserved. Try again shortly.' })
   }
 
   let guardedUpdate = supabase
@@ -72,6 +77,7 @@ export default defineEventHandler(async (event) => {
       locked_by: user.id,
     })
     .eq('id', unitId)
+    .eq('status', 'Available')
 
   if (lockedBy == null) guardedUpdate = guardedUpdate.is('locked_by', null)
   else guardedUpdate = guardedUpdate.eq('locked_by', lockedBy)
@@ -87,7 +93,7 @@ export default defineEventHandler(async (event) => {
   }
   if (!updatedRows?.length) {
     // Snapshot mismatch means another request updated the row first.
-    throw createError({ statusCode: 409, message: 'Unit is currently reserved by someone else. Try again shortly.' })
+    throw createError({ statusCode: 409, message: 'This unit is currently being reserved. Try again shortly.' })
   }
 
   return { ok: true, lockExpiresAt }

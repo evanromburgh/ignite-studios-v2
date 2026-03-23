@@ -18,6 +18,8 @@ export interface SiteMapFloor {
   id: string
   label: string
   imageSrc: string
+  mobileImageSrc?: string
+  rotateHotspotsClockwiseOnMobile?: boolean
   viewBox: string
   units: SiteMapUnitHotspot[]
 }
@@ -33,8 +35,12 @@ export const SITE_MAP_PLAN_FRAME = {
   },
 } as const
 
+/** Supabase public URLs for the interactive site map raster plans. */
+const SUPABASE_ASSETS_SITEMAP_BASE_URL =
+  'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/sitemap'
+
 export const SITE_MAP_MASTER = {
-  imageSrc: '/images/location-background.webp',
+  imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/location-background.webp`,
   viewBox: '0 0 1 1',
   buildings: [
     {
@@ -52,7 +58,9 @@ export const SITE_MAP_FLOORS: SiteMapFloor[] = [
   {
     id: 'ground',
     label: 'Ground floor',
-    imageSrc: '/images/ground-floor.webp',
+    imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/ground-floor.webp`,
+    mobileImageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/ground-floor-mobile.webp`,
+    rotateHotspotsClockwiseOnMobile: true,
     viewBox: '0 0 1 1',
     units: [
       {
@@ -112,7 +120,7 @@ export const SITE_MAP_FLOORS: SiteMapFloor[] = [
       },
     ],
   },
-  { id: 'first', label: 'First floor', imageSrc: '/images/first-floor.webp', viewBox: '0 0 1 1', units: [] },
-  { id: 'second', label: 'Second floor', imageSrc: '/images/second-floor.webp', viewBox: '0 0 1 1', units: [] },
-  { id: 'third', label: 'Third floor', imageSrc: '/images/third-floor.webp', viewBox: '0 0 1 1', units: [] },
+  { id: 'first', label: 'First floor', imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/first-floor.webp`, viewBox: '0 0 1 1', units: [] },
+  { id: 'second', label: 'Second floor', imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/second-floor.webp`, viewBox: '0 0 1 1', units: [] },
+  { id: 'third', label: 'Third floor', imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/third-floor.webp`, viewBox: '0 0 1 1', units: [] },
 ]

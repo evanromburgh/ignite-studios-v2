@@ -199,7 +199,7 @@
       </div>
     </nav>
 
-    <main class="w-full pt-0">
+    <main class="w-full pt-0 pb-[4rem] sm:pb-0">
       <slot />
     </main>
 
@@ -220,18 +220,20 @@
       </div>
     </div>
 
-    <!-- Chat / Contact Agent widget (on index, only after scrolling past hero) -->
+    <!-- Chat / Contact Agent widget: Properties (index) only, after scrolling past hero -->
     <Transition name="chat-widget-appear">
       <ChatWidget v-if="showChatWidget" />
     </Transition>
 
+    <BottomUrgencyStrip />
+
     <footer class="footer-main relative bg-black text-white pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 pt-16 sm:pt-20 pb-[4.25rem]">
       <!-- Main footer: Logo + Contact + Quick Links + Terms & Conditions -->
-      <div class="footer-content flex flex-col gap-14 lg:grid lg:grid-cols-2 lg:items-start lg:gap-20 pb-[4.5rem] sm:pb-16">
+      <div class="footer-content flex flex-col gap-14 lg:grid lg:grid-cols-2 lg:items-start lg:gap-20 pb-[4rem] sm:pb-16">
         <!-- Logo -->
         <div class="flex flex-col items-start text-left">
           <img
-            :src="logoLight"
+            :src="logoLightUrl"
             alt="Ignite Studios"
             class="h-6 w-auto"
           />
@@ -317,10 +319,9 @@
 <script setup lang="ts">
 import { nextTick } from 'vue'
 import IconEyeLottie from '~/components/icons/IconEyeLottie.client.vue'
-import logoLight from '~/assets/branding/logo_light.svg'
-import logoDark from '~/assets/branding/logo_dark.svg'
 
 const route = useRoute()
+const { logoLightUrl, logoDarkUrl } = useBranding()
 const { user, logout } = useAuth()
 const { onlineCount } = useGlobalPresence()
 
@@ -341,8 +342,8 @@ const panelSlideDone = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
 const isLoggingOut = ref(false)
 const scrolled = ref(false)
-/** Chat widget visible on all pages except index; on index, only after scrolling past the hero */
-const showChatWidget = ref(!isPropertiesPage.value)
+/** Chat widget only on Properties (index); there, only after scrolling past the hero (hidden when footer is in view) */
+const showChatWidget = ref(false)
 const currentNavTheme = ref<'dark' | 'light'>(isPropertiesPage.value ? 'dark' : 'light')
 
 const isDarkNavTheme = computed(() => currentNavTheme.value === 'dark')
@@ -372,7 +373,9 @@ const mobileIconBarClass = computed(() =>
   effectiveIsDarkNavTheme.value ? 'bg-white' : 'bg-[#18181B]',
 )
 
-const logoSrc = computed(() => (effectiveIsDarkNavTheme.value ? logoLight : logoDark))
+const logoSrc = computed(() =>
+  effectiveIsDarkNavTheme.value ? logoLightUrl : logoDarkUrl,
+)
 
 const profileButtonClass = computed(() => {
   if (!user.value) return ''
@@ -422,7 +425,7 @@ function updateScrolledAndTheme() {
     return
   }
 
-  showChatWidget.value = !isProfilePage.value
+  showChatWidget.value = false
 
   const sections = Array.from(
     document.querySelectorAll<HTMLElement>('.nav-section'),
@@ -459,15 +462,6 @@ function updateScrolledAndTheme() {
     const firstTheme: 'dark' | 'light' =
       sections[0].classList.contains('dark') ? 'dark' : 'light'
     currentNavTheme.value = firstTheme
-  }
-
-  // Hide chat widget when footer has entered the viewport
-  const footer = document.querySelector<HTMLElement>('.footer-main')
-  if (footer) {
-    const footerRect = footer.getBoundingClientRect()
-    if (footerRect.top < window.innerHeight) {
-      showChatWidget.value = false
-    }
   }
 }
 

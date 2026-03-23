@@ -51,7 +51,7 @@
       <Transition name="reserve-urgency">
         <div
           v-if="showUrgencyBanner"
-          class="reserve-urgency-banner fixed left-1/2 z-[210] w-[min(32rem,calc(100vw-2.5rem))] rounded-xl bg-[#922724] px-4 py-3 text-center text-white shadow-lg"
+          class="reserve-urgency-banner fixed left-1/2 z-[210] w-max max-w-[calc(100vw-2.5rem)] rounded-xl bg-[#922724] px-4 py-3 text-center text-white shadow-lg"
           role="status"
           aria-live="polite"
         >
@@ -66,18 +66,32 @@
       <p class="text-zinc-500">Redirecting…</p>
     </div>
 
-    <div v-else class="pt-[11rem] pb-16 sm:pb-20 bg-theme-bg">
-      <div class="w-full mx-auto px-4 sm:px-6 lg:px-12">
-        <div v-if="acquireError" class="mb-8 p-6 rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-200">
-          <p class="text-sm font-bold uppercase tracking-wide">{{ acquireError }}</p>
-          <NuxtLink to="/" class="inline-block mt-4 text-[11px] font-black uppercase text-theme-text-primary hover:underline">Browse units</NuxtLink>
-        </div>
-        <div v-else-if="isLockedByOther" class="mb-8 p-6 rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-200">
-          <p class="text-sm font-bold uppercase tracking-wide">This unit is currently being reserved</p>
-          <p class="mt-2 text-[13px] text-zinc-400">Someone else has this unit in their reservation. It will be available again when their session expires.</p>
-          <NuxtLink to="/" class="inline-block mt-4 text-[11px] font-black uppercase text-theme-text-primary hover:underline">Browse units</NuxtLink>
-        </div>
+    <div v-else-if="!reserveFlowReady" class="flex items-center justify-center min-h-[60svh]">
+      <p class="text-zinc-500">Loading…</p>
+    </div>
 
+    <div
+      v-else-if="showBlockedMinimal"
+      class="pt-[7.5rem] sm:pt-[11rem] sm:pb-20 bg-theme-bg min-h-[60svh] flex flex-col items-center justify-center px-4 sm:px-6"
+    >
+      <div class="w-full max-w-md text-center">
+        <h1 class="text-2xl sm:text-3xl font-semibold text-theme-text-primary tracking-tight leading-tight">
+          {{ blockedTitle }}
+        </h1>
+        <p v-if="blockedDescription" class="mt-4 text-[13px] sm:text-sm text-zinc-500 leading-relaxed">
+          {{ blockedDescription }}
+        </p>
+        <NuxtLink
+          to="/"
+          class="mt-10 inline-flex h-12 min-w-[12rem] items-center justify-center rounded-lg bg-[#18181B] px-8 text-[11px] font-black uppercase tracking-wider text-white hover:bg-zinc-800 transition-colors"
+        >
+          Browse units
+        </NuxtLink>
+      </div>
+    </div>
+
+    <div v-else class="pt-[7.5rem] sm:pt-[11rem] sm:pb-20 bg-theme-bg">
+      <div class="w-full mx-auto px-4 sm:px-6 lg:px-12">
         <div class="md:flex md:gap-12 md:items-center">
           <!-- Left: unit image (matches Unit page proportions) -->
           <div class="md:w-[60%]">
@@ -108,14 +122,14 @@
           <!-- Right: reservation content (same width as Unit details panel) -->
           <div class="mt-10 md:mt-0 md:w-[40%] md:flex md:items-center">
             <div class="flex flex-col items-stretch w-full">
-              <div class="rounded-3xl px-20 text-center">
+              <div class="rounded-3xl px-0 md:px-20 text-center">
                 <h1 class="text-4xl sm:text-5xl font-semibold text-theme-text-primary tracking-tight leading-none mb-6">
                   Reserve Unit {{ unitNumberDisplay }}
                 </h1>
                 <p class="text-[12px] sm:text-[13px] text-zinc-500 max-w-[30rem] mx-auto mb-4">
                   Please pay the
                   <span class="font-semibold text-theme-text-primary">
-                    non-refundable reservation fee of R10 000
+                    non-refundable reservation fee of <span class="whitespace-nowrap">R10 000</span>
                   </span>
                   to secure your unit before the time runs out.
                 </p>
@@ -278,7 +292,7 @@ const RESERVE_TOKEN = 'ignite_reserve_token'
 const route = useRoute()
 const { user, authLoading, sessionRef } = useAuth()
 const { $supabase } = useNuxtApp()
-const { units } = useUnits()
+const { units, loading: unitsLoading } = useUnits()
 const { effectiveNow, sync } = useServerClock()
 
 const unitNumberDisplay = computed(() => (route.params.unitNumber as string) ?? '')
@@ -286,6 +300,8 @@ const unitId = ref('')
 const lockExpiresAtMs = ref<number | null>(null)
 const acquiringLock = ref(false)
 const acquireError = ref<string | null>(null)
+/** False until session/lock bootstrap in onMounted finishes (avoids false "unit not found" before units load). */
+const reserveFlowReady = ref(false)
 /** Stored for beforeunload release when tab is closed. */
 const accessTokenRef = ref<string | null>(null)
 let beforeUnloadHandler: (() => void) | null = null
@@ -305,6 +321,60 @@ const isLockedByOther = computed(() => {
   if (u.lockedBy === user.value.id) return false
   if (u.lockExpiresAt == null) return false
   return u.lockExpiresAt > effectiveNow()
+})
+
+/** Current user holds an active lock for this page (session refresh or successful acquire). */
+const ownLockActive = computed(() => {
+  if (!unitId.value || lockExpiresAtMs.value == null) return false
+  return lockExpiresAtMs.value > effectiveNow()
+})
+
+/** Unit is sold / reserved / held — not a temporary lock by another browser. */
+const isUnitNoLongerAvailableCopy = computed(() => {
+  const err = acquireError.value?.trim() ?? ''
+  if (err.includes('no longer available')) return true
+  const u = unit.value
+  if (!u || ownLockActive.value) return false
+  return u.status !== 'Available'
+})
+
+/** Same copy for realtime lock + 409 from acquire-lock (no separate “API error” headline). */
+const isSomeoneElseReservingCopy = computed(() => {
+  if (isUnitNoLongerAvailableCopy.value) return false
+  if (isLockedByOther.value) return true
+  const err = acquireError.value?.trim() ?? ''
+  return err.includes('currently being reserved')
+})
+
+/** Minimal text + CTA when user cannot use checkout (not when they have an active hold). */
+const showBlockedMinimal = computed(() => {
+  if (!reserveFlowReady.value) return false
+  if (acquiringLock.value) return false
+  if (ownLockActive.value) return false
+  if (isUnitNoLongerAvailableCopy.value) return true
+  if (isLockedByOther.value) return true
+  if (acquireError.value) return true
+  return false
+})
+
+const blockedTitle = computed(() => {
+  if (isUnitNoLongerAvailableCopy.value) {
+    return 'This unit is no longer available'
+  }
+  if (isSomeoneElseReservingCopy.value) {
+    return 'This unit is currently being reserved'
+  }
+  return acquireError.value ?? 'Unable to reserve this unit'
+})
+
+const blockedDescription = computed(() => {
+  if (isUnitNoLongerAvailableCopy.value) {
+    return 'This unit has already been reserved or is not available for sale.'
+  }
+  if (isSomeoneElseReservingCopy.value) {
+    return 'Someone else is currently reserving this unit. It may become available again when their session expires, or sooner if they cancel or their payment does not complete.'
+  }
+  return ''
 })
 
 const timeLeft = ref(0)
@@ -604,10 +674,33 @@ onMounted(async () => {
   }
 
   if (typeof sessionStorage !== 'undefined') {
+    await new Promise<void>((resolve) => {
+      if (!unitsLoading.value) {
+        resolve()
+        return
+      }
+      const stop = watch(
+        () => unitsLoading.value,
+        (v) => {
+          if (!v) {
+            stop()
+            resolve()
+          }
+        },
+      )
+    })
+
     const id = sessionStorage.getItem(RESERVE_UNIT_ID) ?? ''
     const expires = sessionStorage.getItem(RESERVE_LOCK_EXPIRES_AT) ?? ''
 
     if (id.trim() && expires) {
+      const storedUnit = units.value.find((u) => u.id === id.trim())
+      if (storedUnit && storedUnit.status !== 'Available') {
+        acquireError.value = 'This unit is no longer available for reservation.'
+        clearReserveSession()
+        reserveFlowReady.value = true
+        return
+      }
       // Returning (refresh) or just navigated from list: show timer immediately like the unit overlay for others
       unitId.value = id.trim()
       const parsed = new Date(expires).getTime()
@@ -615,6 +708,7 @@ onMounted(async () => {
       lockExpiresAtMs.value = ms
       setupBeforeUnload()
       if (ms != null) sync().catch(() => {}) // correct clock in background; timer already visible
+      reserveFlowReady.value = true
     } else {
       // Just clicked Reserve Now: acquire lock on this page
       const num = unitNumberDisplay.value
@@ -625,6 +719,12 @@ onMounted(async () => {
       const matchedUnit = units.value.find((u) => u.unitNumber === num)
       if (!matchedUnit) {
         acquireError.value = 'Unit not found. Please go back and try again.'
+        reserveFlowReady.value = true
+        return
+      }
+      if (matchedUnit.status !== 'Available') {
+        acquireError.value = 'This unit is no longer available for reservation.'
+        reserveFlowReady.value = true
         return
       }
       acquiringLock.value = true
@@ -633,7 +733,6 @@ onMounted(async () => {
         const { data: { session } } = await $supabase.auth.getSession()
         if (!session) {
           acquireError.value = 'Session expired. Please sign in again.'
-          acquiringLock.value = false
           return
         }
         // Acquire lock only; server clock offset is shared and usually already set from the list page
@@ -659,8 +758,11 @@ onMounted(async () => {
         acquireError.value = msg
       } finally {
         acquiringLock.value = false
+        reserveFlowReady.value = true
       }
     }
+  } else {
+    reserveFlowReady.value = true
   }
 
   if (user.value) {

@@ -13,9 +13,23 @@ export function useUnits() {
   const config = useRuntimeConfig()
   const storageBucket = 'units'
 
+  /** Path inside the `units` bucket. Strips stray newlines (e.g. pasted keys) and leading slashes only — do not strip `units/`; that can be a real folder inside the bucket. */
+  function normalizeUnitsBucketObjectKey(path: string | null | undefined): string | null {
+    if (path == null) return null
+    let p = String(path).trim()
+    if (!p) return null
+    p = p.replace(/\r\n?/g, '').replace(/\n/g, '').trim()
+    if (!p) return null
+    if (/^https?:\/\//i.test(p)) return p
+    p = p.replace(/^\/+/, '')
+    return p || null
+  }
+
   function getPublicUrl(path: string | null | undefined): string | null {
-    if (!path) return null
-    const { data } = $supabase.storage.from(storageBucket).getPublicUrl(path)
+    const key = normalizeUnitsBucketObjectKey(path)
+    if (!key) return null
+    if (/^https?:\/\//i.test(key)) return key
+    const { data } = $supabase.storage.from(storageBucket).getPublicUrl(key)
     return data.publicUrl ?? null
   }
 

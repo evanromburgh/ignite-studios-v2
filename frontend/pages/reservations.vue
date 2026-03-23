@@ -1,19 +1,17 @@
 <template>
-  <div>
-    <AuthPortal v-if="!user" />
-
-    <div v-else class="nav-section light min-h-screen pt-[11rem] pb-16 sm:pb-20">
-      <header class="mb-10 sm:mb-16 px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56">
+  <div class="nav-section light pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
+    <div class="w-full px-4 sm:px-0 sm:w-[90%] sm:mx-auto">
+      <header class="mb-10 sm:mb-16 text-center">
         <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-theme-text-primary tracking-tight mb-2">
           My Units
         </h1>
-        <p class="text-base sm:text-lg text-zinc-500 font-normal max-w-3xl">
+        <p class="text-base sm:text-lg text-zinc-500 font-normal max-w-3xl mx-auto">
           Units you have reserved. View details or manage your reservation.
         </p>
       </header>
 
-      <section class="px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pb-0">
-        <div v-if="(reservedIdsLoading || unitsLoading) && reservedUnits.length === 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem] animate-pulse">
+      <section class="pb-0">
+        <div v-if="(reservedIdsLoading || unitsLoading) && reservedUnits.length === 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem] animate-pulse">
           <div
             v-for="i in 6"
             :key="i"
@@ -40,7 +38,7 @@
           </NuxtLink>
         </div>
 
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.25rem]">
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem]">
           <UnitCard
             v-for="unit in reservedUnits"
             :key="unit.id"
@@ -61,7 +59,6 @@
 </template>
 
 <script setup lang="ts">
-import AuthPortal from '~/components/AuthPortal.vue'
 import UnitCard from '~/components/UnitCard.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useUnits } from '~/composables/useUnits'
@@ -77,6 +74,7 @@ const { serverClockOffsetMs } = useServerClock()
 const reservingUnitId = ref<string | null>(null)
 const { $supabase } = useNuxtApp()
 const sessionCache = ref<{ access_token: string } | null>(null)
+const { show: showBottomUrgencyStrip } = useBottomUrgencyStrip()
 
 const reservedUnits = computed(() => {
   const ids = reservedUnitIds.value
@@ -133,7 +131,7 @@ async function doAcquireLock(unit: Unit, token: string) {
   } catch (e: any) {
     const msg = e?.data?.message || e?.message || 'Could not open reservation.'
     console.error(msg)
-    alert(msg)
+    showBottomUrgencyStrip(msg)
   } finally {
     reservingUnitId.value = null
   }

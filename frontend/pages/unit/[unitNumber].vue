@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <div v-else class="pt-16 sm:pt-24 pb-16 sm:pb-20 bg-theme-bg">
+    <div v-else class="pt-16 sm:pt-24 sm:pb-20 bg-theme-bg">
       <div class="w-full mx-auto px-4 sm:px-6 lg:px-12">
         <div class="h-[5rem] flex items-center">
           <NuxtLink
@@ -57,7 +57,16 @@
                     class="h-full w-full overflow-hidden flex items-center justify-center"
                     :class="index === floorplanIndex ? 'bg-zinc-900' : 'bg-theme-bg'"
                   >
+                    <div
+                      v-if="galleryImageFailed[index]"
+                      class="flex h-full w-full flex-col items-center justify-center gap-2 px-6 text-center text-zinc-500"
+                    >
+                      <p class="text-sm">
+                        Image unavailable
+                      </p>
+                    </div>
                     <img
+                      v-else
                       :src="img"
                       :alt="`Unit ${unit.unitNumber} image ${index + 1}`"
                       loading="lazy"
@@ -68,6 +77,7 @@
                           : 'w-full h-full object-cover object-center',
                       ]"
                       @click="openLightbox(index)"
+                      @error="onGalleryImageError(index)"
                     >
                   </div>
                 </SwiperSlide>
@@ -136,7 +146,14 @@
                 ]"
                 @click="goToImage(index)"
               >
+                <div
+                  v-if="galleryImageFailed[index]"
+                  class="flex h-full w-full items-center justify-center rounded-lg bg-zinc-100 text-[10px] text-zinc-400"
+                >
+                  —
+                </div>
                 <img
+                  v-else
                   :src="img"
                   :alt="`Thumbnail ${index + 1}`"
                   loading="lazy"
@@ -144,6 +161,7 @@
                     'rounded-lg',
                     index === floorplanIndex ? 'max-w-full max-h-full object-contain' : 'w-full h-full object-cover',
                   ]"
+                  @error="onGalleryImageError(index)"
                 />
               </button>
             </div>
@@ -443,10 +461,18 @@
         </svg>
       </button>
       <div class="flex-1 flex items-center justify-center px-4 py-8">
+        <p
+          v-if="galleryImageFailed[lightboxIndex]"
+          class="text-zinc-300 text-sm"
+        >
+          Image unavailable
+        </p>
         <img
+          v-else
           :src="galleryImages[lightboxIndex]"
           :alt="`Unit ${unit?.unitNumber} image ${lightboxIndex + 1}`"
           class="max-h-full max-w-full object-contain rounded-2xl shadow-2xl"
+          @error="onGalleryImageError(lightboxIndex)"
         />
       </div>
     </div>
@@ -454,7 +480,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Autoplay } from 'swiper/modules'
@@ -477,6 +503,7 @@ const { wishlistIds, toggle: toggleWishlist } = useWishlist()
 const { user } = useAuth()
 
 const reserving = ref(false)
+const { show: showBottomUrgencyStrip } = useBottomUrgencyStrip()
 const returningToList = ref(false)
 const activeIndex = ref(0)
 const heroAutoplayId = ref<number | null>(null)
@@ -485,6 +512,13 @@ const gallerySwiper = ref<{ slidePrev: () => void; slideNext: () => void; slideT
 // Lightbox state
 const lightboxOpen = ref(false)
 const lightboxIndex = ref(0)
+
+/** Slides that failed to load (404 / invalid object key after URL build) */
+const galleryImageFailed = ref<Record<number, boolean>>({})
+
+function onGalleryImageError(index: number) {
+  galleryImageFailed.value = { ...galleryImageFailed.value, [index]: true }
+}
 
 // Right panel sticky behavior (measured, fixed alignment)
 const layoutRow = ref<HTMLElement | null>(null)
@@ -520,7 +554,16 @@ function measureRightPanel() {
   }
 }
 
+/** Sticky/fixed right panel only from `md` up — on mobile the column is full-width in normal flow. */
+const MD_MIN_PX = 768
+
 function updateRightPanelPosition() {
+  if (typeof window !== 'undefined' && window.innerWidth < MD_MIN_PX) {
+    isRightPanelFixed.value = false
+    rightPanelStyle.value = {}
+    return
+  }
+
   if (
     panelInitialTop.value == null ||
     panelInitialLeft.value == null ||
@@ -607,6 +650,13 @@ const unit = computed<Unit | null>(() => {
   if (!target) return null
   return units.value.find((u) => u.unitNumber.toLowerCase() === target) ?? null
 })
+
+watch(
+  () => unit.value?.id,
+  () => {
+    galleryImageFailed.value = {}
+  },
+)
 
 const galleryImages = computed(() => {
   if (!unit.value) return []
@@ -802,7 +852,7 @@ async function onReserveClick() {
   } catch (e: any) {
     const msg = e?.data?.message || e?.message || 'Could not reserve unit.'
     console.error(msg)
-    alert(msg)
+    showBottomUrgencyStrip(msg)
   } finally {
     reserving.value = false
   }

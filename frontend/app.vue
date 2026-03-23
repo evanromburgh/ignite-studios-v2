@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import AuthPortal from '~/components/AuthPortal.vue'
-import logoLight from '~/assets/branding/logo_light.svg'
 
 const { user, authLoading } = useAuth()
+const { faviconUrl, logoLightUrl } = useBranding()
+
+useHead({
+  link: [{ rel: 'icon', type: 'image/png', href: faviconUrl }],
+})
 
 // Track route navigation so we can show the same loading splash
 // whenever the user switches pages.
@@ -79,7 +83,7 @@ watch(isLoading, (value) => {
       class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#18181B] text-white"
     >
       <img
-        :src="logoLight"
+        :src="logoLightUrl"
         alt="Ignite Studios"
         class="h-7 w-auto sm:h-11"
       />
@@ -87,7 +91,8 @@ watch(isLoading, (value) => {
 
     <!-- App content always rendered underneath; loader simply covers it when active -->
     <div class="min-h-screen bg-theme-bg">
-      <template v-if="!user">
+      <!-- Logged out (session resolved): portal only. While loading or signed in: main shell (pages no longer embed AuthPortal). -->
+      <template v-if="!user && !authLoading">
         <AuthPortal />
       </template>
       <template v-else>

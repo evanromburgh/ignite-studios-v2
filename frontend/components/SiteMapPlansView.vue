@@ -2,8 +2,9 @@
   <div class="space-y-10">
     <!-- Master: aerial + building hotspot (Block G) -->
     <div class="relative w-full overflow-hidden rounded-xl">
+      <div class="relative max-sm:left-1/2 max-sm:w-[160%] max-sm:-translate-x-1/2">
       <img
-        :src="SITE_MAP_MASTER.imageSrc"
+        :src="masterImageSrcResolved"
         alt=""
         class="w-full h-auto pointer-events-none block select-none"
         loading="lazy"
@@ -56,7 +57,7 @@
           :key="b.id"
           :d="b.pathD"
           fill="transparent"
-          class="master-building-hit cursor-pointer outline-none stroke-white stroke-[3px] transition-[stroke-width] duration-200 [stroke-dasharray:7px_5px] [stroke-linecap:butt] [stroke-linejoin:miter] [vector-effect:non-scaling-stroke] [paint-order:stroke_fill] hover:stroke-0 focus-visible:stroke-0"
+          class="master-building-hit cursor-pointer outline-none stroke-white stroke-[2px] sm:stroke-[3px] transition-[stroke-width] duration-200 [stroke-dasharray:4px_3px] sm:[stroke-dasharray:7px_5px] [stroke-linecap:butt] [stroke-linejoin:miter] [vector-effect:non-scaling-stroke] [paint-order:stroke_fill] hover:stroke-0 focus-visible:stroke-0"
           tabindex="0"
           :aria-label="`${b.label}: go to floor plans`"
           @click="onBuildingActivate"
@@ -83,7 +84,7 @@
               class="site-map-master-pin-bubble flex w-[clamp(4rem,17vw,5.5rem)] flex-col items-center rounded-[999px] rounded-b-md bg-white px-2 pb-2 pt-2 font-sans shadow-[0_6px_18px_rgba(0,0,0,0.2)] sm:w-[5.5rem] sm:px-2.5 sm:pb-2.5 sm:pt-2.5"
             >
               <img
-                src="/favicon.png"
+                :src="faviconUrl"
                 alt=""
                 class="h-[clamp(1.45rem,6.5vmin,2rem)] w-auto max-w-[78%] shrink-0 object-contain object-center select-none"
                 width="48"
@@ -102,6 +103,7 @@
           </div>
         </div>
       </div>
+      </div>
     </div>
 
     <!-- Floor plans: stacked sections (one per level); scroll target for master map -->
@@ -114,14 +116,14 @@
         v-for="floor in SITE_MAP_FLOORS"
         :key="floor.id"
         :id="floorSectionId(floor.id)"
-        class="scroll-mt-24 flex min-h-[28rem] flex-col rounded-2xl bg-white p-16 sm:min-h-[32rem] md:min-h-[36rem]"
+        class="scroll-mt-24 rounded-2xl bg-white p-6 sm:p-16"
         :aria-labelledby="`plan-frame-heading-${floor.id}`"
       >
         <ClientOnly>
-          <div class="plan-frame relative grid min-h-0 w-full flex-1 grid-rows-[auto_minmax(0,1fr)_auto]">
+          <div class="plan-frame relative grid w-full grid-rows-[auto_minmax(0,1fr)_auto]">
             <!-- Block G out of flow so row height is only the top facing line (better vertical centering of plan). -->
             <header
-              class="plan-frame-header pointer-events-auto absolute left-0 top-0 z-10 max-w-[min(100%,20rem)] text-left sm:max-w-[min(100%,24rem)]"
+              class="plan-frame-header pointer-events-auto relative z-10 mb-6 max-w-[min(100%,20rem)] text-left sm:absolute sm:left-0 sm:top-0 sm:mb-0 sm:max-w-[min(100%,24rem)]"
             >
               <div :id="`plan-frame-heading-${floor.id}`">
                 <p class="font-sans text-2xl font-semibold uppercase leading-tight tracking-wide text-zinc-900 sm:text-3xl">
@@ -132,29 +134,30 @@
                 </p>
               </div>
             </header>
-            <div class="flex shrink-0 justify-center">
+            <div class="mb-0 flex shrink-0 justify-center sm:absolute sm:left-1/2 sm:top-0 sm:z-10 sm:w-max sm:-translate-x-1/2">
               <p
                 class="text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 sm:text-xs md:text-sm"
               >
-                {{ SITE_MAP_PLAN_FRAME.facing.top }}
+                {{ facingLabel('top') }}
               </p>
             </div>
 
-            <div class="flex min-h-0 min-w-0 items-center justify-center py-12">
+            <div class="flex w-full min-h-0 min-w-0 max-w-full items-center justify-center self-center justify-self-center py-0 max-sm:w-fit sm:py-16">
               <div
-                class="plan-frame-grid grid w-full max-w-full grid-cols-[auto_minmax(0,10fr)_auto] items-center gap-x-1 gap-y-2 sm:gap-x-2"
+                class="plan-frame-grid relative grid w-full max-w-full grid-cols-[auto_minmax(0,10fr)_auto] items-center gap-x-4 gap-y-3 sm:gap-x-2 sm:gap-y-2"
               >
               <p
-                class="col-start-1 row-start-1 min-w-0 max-w-full justify-self-start self-center text-start text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 [overflow-wrap:anywhere] [writing-mode:vertical-rl] sm:text-xs md:text-sm rotate-180"
+                class="absolute left-0 top-1/2 z-10 min-w-0 max-w-full -translate-y-1/2 whitespace-nowrap text-start text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 [writing-mode:vertical-rl] rotate-180 sm:text-xs md:text-sm"
               >
-                {{ SITE_MAP_PLAN_FRAME.facing.left }}
+                {{ facingLabel('left') }}
               </p>
 
               <div class="col-start-2 row-start-1 min-h-0 min-w-0">
                 <ZoomablePlan
-                  :image-src="floor.imageSrc"
+                  :image-src="floorPlanImageSrc(floor)"
                   :image-alt="`${SITE_MAP_PLAN_FRAME.buildingTitle} ${floor.label} plan`"
                   :view-box="floor.viewBox"
+                  :rotate-hotspots-clockwise="shouldRotateFloorHotspotsClockwise(floor)"
                 >
                   <template #default>
               <g v-if="floor.units.length">
@@ -194,11 +197,11 @@
                 v-for="u in floor.units"
                 :key="`ovl-${floor.id}-${u.unitNumber}`"
                 class="plan-html-badge pointer-events-none absolute box-border"
-                :style="planHtmlBadgePositionStyle(u.pathD)"
+                :style="planHtmlBadgePositionStyle(floor.id, u.pathD)"
               >
                 <!-- Inner face counter-rotates on mobile so labels stay upright while ZoomablePlan uses rotate-90. -->
                 <div
-                  class="plan-html-badge-face flex aspect-square h-auto w-[clamp(1.2rem,4.8vmin,2.2rem)] min-h-0 min-w-0 shrink-0 origin-center flex-col items-center justify-center rounded-full px-0.5 py-px text-center font-sans transition-[background-color] duration-150 ease-out max-sm:-rotate-90 max-sm:motion-reduce:rotate-0 motion-reduce:transition-none sm:w-[clamp(2.125rem,11vmin,3.75rem)] sm:px-2 sm:py-0.5"
+                  class="plan-html-badge-face flex aspect-square h-auto w-[clamp(1.6rem,6.2vmin,2.8rem)] min-h-0 min-w-0 shrink-0 origin-center flex-col items-center justify-center rounded-full px-0.5 py-px text-center font-sans transition-[background-color] duration-150 ease-out motion-reduce:transition-none sm:w-[clamp(2.125rem,11vmin,3.75rem)] sm:px-2 sm:py-0.5"
                   :style="planHtmlBadgeFaceStyle(isPlanBadgeActive(floor.id, u.unitNumber), resolvePlanUnit(u.unitNumber))"
                 >
                 <template v-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'available'">
@@ -248,37 +251,37 @@
               </div>
 
               <p
-                class="col-start-3 row-start-1 min-w-0 max-w-full justify-self-end self-center text-end text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 [overflow-wrap:anywhere] [writing-mode:vertical-rl] sm:text-xs md:text-sm"
+                class="absolute right-0 top-1/2 z-10 min-w-0 max-w-full -translate-y-1/2 whitespace-nowrap text-end text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 [writing-mode:vertical-rl] sm:text-xs md:text-sm"
               >
-                {{ SITE_MAP_PLAN_FRAME.facing.right }}
+                {{ facingLabel('right') }}
               </p>
               </div>
             </div>
 
-            <div class="shrink-0">
+            <div class="shrink-0 sm:absolute sm:bottom-0 sm:left-1/2 sm:mt-0 sm:z-10 sm:w-max sm:-translate-x-1/2">
               <p
                 class="min-w-0 text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 sm:text-xs md:text-sm"
               >
-                {{ SITE_MAP_PLAN_FRAME.facing.bottom }}
+                {{ facingLabel('bottom') }}
               </p>
             </div>
 
-            <!-- North: out of flow (same box as Block G) so it doesn’t add height to the footer row. -->
+            <!-- North: out of flow; positioned top-right. -->
             <div
-              class="pointer-events-none absolute bottom-0 left-0 z-[1] flex min-w-0 items-end justify-start pb-0.5 sm:pb-1"
+              class="pointer-events-none absolute right-0 z-[1] flex min-w-0 justify-end max-sm:top-0 max-sm:items-start max-sm:pt-0.5 sm:bottom-0 sm:items-end sm:pb-1"
               role="img"
               aria-label="North orientation"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 380.701 338.056"
-                class="h-8 w-auto max-w-[min(4rem,18vw)] shrink-0 text-zinc-900 select-none sm:h-10 md:h-12"
+                class="h-8 w-auto max-w-[min(4rem,18vw)] shrink-0 rotate-90 text-zinc-900 select-none sm:h-10 sm:rotate-0 md:h-12"
                 aria-hidden="true"
                 focusable="false"
               >
                 <polygon fill="currentColor" points="117.991 185.588 154.855 253.166 0 206.302 129.465 109.42 117.991 185.588" />
                 <path fill="currentColor" d="M44.654,142.958l19.425-14.536c4.598-16.667,12.07-32.6,22.284-47.18,23.449-33.472,58.528-55.808,98.777-62.895s80.848,1.923,114.319,25.372c33.472,23.449,55.808,58.528,62.896,98.777,7.087,40.249-1.923,80.848-25.372,114.319-23.449,33.472-58.528,55.808-98.777,62.896-40.249,7.087-80.848-1.923-114.319-25.372-14.591-10.222-27.064-22.655-37.082-36.761l-23.216-7.026c33.901,61.593,104.291,97.789,177.392,84.917,91.922-16.186,153.318-103.826,137.131-195.747C361.926,47.798,274.287-13.597,182.365,2.589,109.275,15.459,55.49,73.505,44.654,142.958Z" />
-                <path fill="currentColor" d="M273.73,113.547l15.227,86.475-13.218,2.328-57.996-50.159,10.311,58.556-15.936,2.806-15.227-86.475,13.218-2.328,57.996,50.159-10.311-58.556,15.936-2.806Z" />
+                <path class="north-arrow-letter" fill="currentColor" d="M273.73,113.547l15.227,86.475-13.218,2.328-57.996-50.159,10.311,58.556-15.936,2.806-15.227-86.475,13.218-2.328,57.996,50.159-10.311-58.556,15.936-2.806Z" />
               </svg>
             </div>
           </div>
@@ -296,6 +299,18 @@ import type { Unit } from '~/types'
 import { SITE_MAP_FLOORS, SITE_MAP_MASTER, SITE_MAP_PLAN_FRAME } from '~/data/siteMap'
 import ZoomablePlan from '~/components/ZoomablePlan.client.vue'
 import { approximatePathAnchor, approximatePathPinAbove } from '~/utils/siteMapGeometry'
+
+const { faviconUrl } = useBranding()
+
+const runtimeConfig = useRuntimeConfig()
+
+const masterImageSrcResolved = computed(() => {
+  const src = SITE_MAP_MASTER.imageSrc
+  const bust = runtimeConfig.public.imageCacheBust
+  if (!src || bust === undefined || bust === null || String(bust).length === 0) return src
+  const sep = src.includes('?') ? '&' : '?'
+  return `${src}${sep}v=${encodeURIComponent(String(bust))}`
+})
 
 const blockGBuilding = SITE_MAP_MASTER.buildings.find((b) => b.id === 'block-g')
 
@@ -326,6 +341,10 @@ const masterBlockGPinPositionStyle = computed(() => {
 const props = defineProps<{
   units: Unit[]
 }>()
+
+const isMobileViewport = ref(false)
+let mobileViewportMql: MediaQueryList | null = null
+let onMobileViewportChange: ((ev: MediaQueryListEvent) => void) | null = null
 
 const planBadgeActiveKey = ref<string | null>(null)
 const nowMs = ref(Date.now())
@@ -359,8 +378,16 @@ function isPlanBadgeActive(floorId: string, unitNumber: string) {
 /**
  * Badge anchor in overlay (translate only) — kept separate so the face can apply its own transform (e.g. counter-rotate on mobile).
  */
-function planHtmlBadgePositionStyle(pathD: string): Record<string, string> {
-  const { x, y } = approximatePathAnchor(pathD)
+function planHtmlBadgePositionStyle(floorId: string, pathD: string): Record<string, string> {
+  const { x: rawX, y: rawY } = approximatePathAnchor(pathD)
+  let x = rawX
+  let y = rawY
+  const floor = SITE_MAP_FLOORS.find((f) => f.id === floorId)
+  if (floor && shouldRotateFloorHotspotsClockwise(floor)) {
+    // Rotate normalized point 90deg clockwise around center for portrait mobile asset.
+    x = 1 - rawY
+    y = rawX
+  }
   return {
     left: `${x * 100}%`,
     top: `${y * 100}%`,
@@ -464,13 +491,46 @@ function planUnitStaticFill(unit: Unit | undefined): string {
   return 'rgba(113, 113, 122, 0.05)'
 }
 
+function floorPlanImageSrc(floor: (typeof SITE_MAP_FLOORS)[number]): string {
+  if (isMobileViewport.value && floor.mobileImageSrc) return floor.mobileImageSrc
+  return floor.imageSrc
+}
+
+function shouldRotateFloorHotspotsClockwise(floor: (typeof SITE_MAP_FLOORS)[number]): boolean {
+  return Boolean(isMobileViewport.value && floor.mobileImageSrc && floor.rotateHotspotsClockwiseOnMobile)
+}
+
+function facingLabel(position: 'top' | 'right' | 'bottom' | 'left'): string {
+  if (!isMobileViewport.value) return SITE_MAP_PLAN_FRAME.facing[position]
+  const rotatedFacingByPosition = {
+    top: SITE_MAP_PLAN_FRAME.facing.left,
+    right: SITE_MAP_PLAN_FRAME.facing.top,
+    bottom: SITE_MAP_PLAN_FRAME.facing.right,
+    left: SITE_MAP_PLAN_FRAME.facing.bottom,
+  } as const
+  return rotatedFacingByPosition[position]
+}
+
 onMounted(() => {
+  mobileViewportMql = window.matchMedia('(max-width: 639px)')
+  isMobileViewport.value = mobileViewportMql.matches
+  onMobileViewportChange = (ev: MediaQueryListEvent) => {
+    isMobileViewport.value = ev.matches
+  }
+  mobileViewportMql.addEventListener('change', onMobileViewportChange)
+
   nowTicker = setInterval(() => {
     nowMs.value = Date.now()
   }, 1000)
 })
 
 onBeforeUnmount(() => {
+  if (mobileViewportMql && onMobileViewportChange) {
+    mobileViewportMql.removeEventListener('change', onMobileViewportChange)
+  }
+  mobileViewportMql = null
+  onMobileViewportChange = null
+
   if (nowTicker) clearInterval(nowTicker)
   nowTicker = null
 })
@@ -541,6 +601,14 @@ if (import.meta.dev) {
   .site-map-master-pin-bob {
     animation: none !important;
     will-change: auto;
+  }
+}
+
+@media (max-width: 639px) {
+  .north-arrow-letter {
+    transform: rotate(-90deg);
+    transform-box: fill-box;
+    transform-origin: center;
   }
 }
 </style>

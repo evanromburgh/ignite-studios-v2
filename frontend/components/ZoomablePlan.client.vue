@@ -1,15 +1,15 @@
 <template>
-  <!-- Mobile: rotate 90° so landscape raster plans read “tall” on portrait viewports; desktop unchanged. -->
+  <!-- Mobile uses full-width plan and lets content define height. -->
   <div
-    class="relative mx-auto box-border w-[60%] max-w-full overflow-x-hidden overflow-y-visible rounded-xl bg-white max-sm:px-1 sm:overflow-hidden"
+    class="relative mx-auto box-border w-full max-w-full overflow-x-hidden overflow-y-visible rounded-xl bg-transparent max-sm:px-3 max-sm:overflow-hidden sm:w-[60%] sm:overflow-hidden"
   >
     <div
-      class="flex w-full items-center justify-center max-sm:min-h-0 max-sm:items-stretch max-sm:py-3 sm:min-h-0 sm:block sm:py-0"
+      class="flex w-full items-center justify-center max-sm:min-h-0 max-sm:items-center max-sm:py-0 sm:min-h-0 sm:block sm:py-0"
     >
       <div
-        class="relative w-full max-w-none origin-center max-sm:w-full max-sm:shrink-0 max-sm:rotate-90 max-sm:motion-reduce:rotate-0 sm:w-full sm:rotate-0"
+        class="relative w-full max-w-none origin-center max-sm:w-full max-sm:shrink-0 sm:w-full sm:rotate-0"
       >
-        <div class="relative w-full">
+        <div class="relative w-full max-sm:my-4">
           <img
             :src="imageSrcResolved"
             :alt="imageAlt"
@@ -23,7 +23,9 @@
             preserveAspectRatio="none"
             aria-hidden="false"
           >
-            <slot />
+            <g :transform="overlayTransform">
+              <slot />
+            </g>
           </svg>
           <!-- HTML layer: reliable two-line typography (SVG text breaks under non-uniform scale). -->
           <div class="pointer-events-none absolute inset-0 z-10">
@@ -41,8 +43,12 @@ const props = withDefaults(
     imageSrc: string
     imageAlt: string
     viewBox?: string
+    rotateHotspotsClockwise?: boolean
   }>(),
-  { viewBox: '0 0 1 1' },
+  {
+    viewBox: '0 0 1 1',
+    rotateHotspotsClockwise: false,
+  },
 )
 
 const runtimeConfig = useRuntimeConfig()
@@ -54,4 +60,6 @@ const imageSrcResolved = computed(() => {
   const sep = src.includes('?') ? '&' : '?'
   return `${src}${sep}v=${encodeURIComponent(String(bust))}`
 })
+
+const overlayTransform = computed(() => (props.rotateHotspotsClockwise ? 'translate(1 0) rotate(90)' : undefined))
 </script>

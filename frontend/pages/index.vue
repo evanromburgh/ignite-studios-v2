@@ -1,8 +1,5 @@
 <template>
-  <div>
-    <AuthPortal v-if="!user" />
-
-    <div v-else class="min-h-screen">
+  <div class="min-h-screen">
       <!-- One-time toast after returning from payment cancel (bottom-right, compact) -->
       <!-- One-time toast after returning from payment cancel (bottom-right, compact) -->
       <div
@@ -263,7 +260,7 @@
       </div>
 
       <!-- Unit results section: mobile padding; 90% centered from sm up -->
-      <section class="nav-section light w-full px-4 sm:px-0 sm:w-[90%] sm:mx-auto pb-16 sm:pb-20">
+      <section class="nav-section light w-full px-4 sm:px-0 sm:w-[90%] sm:mx-auto sm:pb-20">
         <SiteMapPlansView
           v-if="viewMode === 'PLANS'"
           :units="units"
@@ -323,7 +320,6 @@
         </template>
       </section>
 
-    </div>
   </div>
 </template>
 
@@ -332,7 +328,6 @@ import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Pagination, Autoplay } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
-import AuthPortal from '~/components/AuthPortal.vue'
 import UnitCard from '~/components/UnitCard.vue'
 import UnitListRow from '~/components/UnitListRow.vue'
 import FilterBar from '~/components/FilterBar.vue'
@@ -343,7 +338,7 @@ import { useUnitFilters } from '~/composables/useUnitFilters'
 import { useWishlist } from '~/composables/useWishlist'
 import type { Unit, SearchFilters, ViewMode } from '~/types'
 
-const { user, authLoading, sessionRef } = useAuth()
+const { user, sessionRef } = useAuth()
 const { units, loading: unitsLoading, error: unitsError } = useUnits()
 const { wishlistIds, toggle: toggleWishlist } = useWishlist()
 const { filters, viewMode, resetFilters } = useUnitFilters()
@@ -419,6 +414,7 @@ const heroSwiperModules = [Pagination, Autoplay]
 const { $supabase } = useNuxtApp()
 // Use session from useAuth when ready; also cache from our own getSession() so we have it as soon as possible
 const sessionCache = ref<{ access_token: string } | null>(null)
+const { show: showBottomUrgencyStrip } = useBottomUrgencyStrip()
 
 watch(user, (u) => {
   if (!u) return
@@ -531,7 +527,7 @@ async function doAcquireLock(unit: Unit, token: string) {
   } catch (e: any) {
     const msg = e?.data?.message || e?.message || 'Could not reserve unit.'
     console.error(msg)
-    alert(msg)
+    showBottomUrgencyStrip(msg)
   } finally {
     reservingUnitId.value = null
   }

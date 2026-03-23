@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-theme-bg flex flex-col items-center justify-center gap-6 px-5 sm:px-8 md:px-16 pt-[11rem] pb-16 sm:pb-20">
+  <div class="min-h-screen bg-theme-bg flex flex-col items-center justify-center gap-6 px-5 sm:px-8 md:px-16 pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
     <div class="text-center w-full max-w-5xl">
       <h1 class="text-2xl sm:text-4xl font-black text-theme-text-primary tracking-tight leading-tight mb-4">
         Your Reservation Confirmed
@@ -9,23 +9,7 @@
       </p>
 
       <div
-        v-if="loading"
-        class="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl p-4 border border-theme-border bg-theme-surface w-full max-w-4xl mx-auto animate-pulse"
-      >
-        <div class="sm:col-span-2 aspect-[3/2] rounded-lg bg-theme-border" />
-        <div class="flex flex-col gap-4">
-          <div class="rounded-lg bg-theme-input-bg border border-theme-border p-6">
-            <div class="h-4 bg-theme-border rounded w-1/3 mb-2" />
-            <div class="h-6 bg-theme-border rounded w-1/4 mb-6" />
-            <div class="pt-6 border-t border-theme-border flex flex-col gap-2">
-              <div v-for="i in 5" :key="i" class="h-5 bg-theme-border rounded w-full" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        v-else-if="unit"
+        v-if="unit"
         class="group relative grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl p-4 border border-theme-border bg-theme-surface overflow-hidden w-full max-w-4xl mx-auto text-left"
       >
         <div class="absolute inset-0 bg-gradient-to-br from-theme-input-bg to-transparent pointer-events-none" />
@@ -73,7 +57,7 @@
         </div>
       </div>
 
-      <div v-else-if="!loading" class="max-w-md mx-auto text-zinc-500 text-sm">
+      <div v-else class="max-w-md mx-auto text-zinc-500 text-sm">
         <p>Thank you for your payment. You can view your reservations below.</p>
       </div>
     </div>
@@ -93,7 +77,6 @@ import type { Unit } from '~/types'
 const route = useRoute()
 const { $supabase } = useNuxtApp()
 const unit = ref<Unit | null>(null)
-const loading = ref(true)
 const storageBucket = 'units'
 
 function formatPrice(price: number) {
@@ -146,14 +129,12 @@ onMounted(async () => {
     }
   }
   if (!paymentRef) {
-    loading.value = false
     return
   }
   // Reference format: unitId|zohoContactId|timestamp (same as submit-reservation / payment-webhook)
   const parts = paymentRef.split('|')
   const unitId = parts[0]?.trim()
   if (!unitId) {
-    loading.value = false
     return
   }
   try {
@@ -167,8 +148,6 @@ onMounted(async () => {
     }
   } catch (e) {
     console.warn('Could not fetch unit for success page:', e)
-  } finally {
-    loading.value = false
   }
 })
 </script>
