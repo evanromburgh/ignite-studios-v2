@@ -9,15 +9,22 @@
       <div
         class="relative w-full max-w-none origin-center max-sm:w-full max-sm:shrink-0 sm:w-full sm:rotate-0"
       >
-        <div class="relative w-full max-sm:my-4">
+        <div
+          class="relative w-full max-sm:my-4"
+          :class="imageReady ? '' : 'min-h-[16rem] max-sm:min-h-[18rem]'"
+        >
           <img
             :src="imageSrcResolved"
             :alt="imageAlt"
             class="pointer-events-none block h-auto w-full select-none"
+            :class="imageReady ? 'opacity-100' : 'opacity-0'"
             draggable="false"
             loading="lazy"
+            @load="onImageReady"
+            @error="onImageReady"
           >
           <svg
+            v-show="imageReady"
             class="absolute inset-0 z-[1] h-full w-full pointer-events-auto"
             :viewBox="viewBox"
             preserveAspectRatio="none"
@@ -28,9 +35,17 @@
             </g>
           </svg>
           <!-- HTML layer: reliable two-line typography (SVG text breaks under non-uniform scale). -->
-          <div class="pointer-events-none absolute inset-0 z-10">
+          <div
+            v-show="imageReady"
+            class="pointer-events-none absolute inset-0 z-10"
+          >
             <slot name="overlay" />
           </div>
+          <div
+            v-if="!imageReady"
+            class="absolute inset-0 rounded-md bg-zinc-100 animate-pulse"
+            aria-hidden="true"
+          />
         </div>
       </div>
     </div>
@@ -60,6 +75,16 @@ const imageSrcResolved = computed(() => {
   const sep = src.includes('?') ? '&' : '?'
   return `${src}${sep}v=${encodeURIComponent(String(bust))}`
 })
+
+const imageReady = ref(false)
+
+function onImageReady() {
+  imageReady.value = true
+}
+
+watch(imageSrcResolved, () => {
+  imageReady.value = false
+}, { immediate: true })
 
 const overlayTransform = computed(() => (props.rotateHotspotsClockwise ? 'translate(1 0) rotate(90)' : undefined))
 </script>

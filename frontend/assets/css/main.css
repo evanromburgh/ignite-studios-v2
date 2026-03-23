@@ -64,6 +64,16 @@ body {
   color: var(--theme-text-primary);
 }
 
+/* iOS data detectors: keep auto-detected values visually non-link-like. */
+a[x-apple-data-detectors],
+a[x-apple-data-detectors-type],
+a[href^="x-apple-data-detectors://"] {
+  color: inherit !important;
+  text-decoration: inherit !important;
+  font: inherit !important;
+  cursor: inherit !important;
+}
+
 /* Remove letter spacing from entire app (overrides Tailwind tracking-* utilities) */
 *,
 *::before,

@@ -27,6 +27,9 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'description', content: 'Ignite Studios property reservation portal' },
+        // Prevent iOS WebKit (Safari/Chrome) from auto-linking numbers/dates/addresses.
+        { name: 'format-detection', content: 'telephone=no, date=no, address=no, email=no' },
+        { name: 'x-apple-disable-message-reformatting', content: 'yes' },
       ],
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
