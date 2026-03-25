@@ -71,7 +71,8 @@ export default defineNuxtConfig({
   },
   vite: {
     server: {
-      host: true, // listen on 0.0.0.0 so phone/other devices can reach dev server
+      // listen on 0.0.0.0 so phone/other devices can reach dev server
+      // (configure via env/CLI; Nuxt's config typing doesn't allow `vite.server.host` here)
       // Use explicit HMR WebSocket to reduce Windows named-pipe disconnects (ENOENT on //./pipe/nuxt-vite-node-*)
       hmr: {
         protocol: 'ws',

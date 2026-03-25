@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-10">
+  <div class="space-y-4 sm:space-y-8">
     <!-- Master: aerial + building hotspot (Block G) -->
     <div class="relative w-full overflow-hidden rounded-xl">
       <div class="relative max-sm:left-1/2 max-sm:w-[160%] max-sm:-translate-x-1/2">
@@ -7,7 +7,9 @@
         :src="masterImageSrcResolved"
         alt=""
         class="w-full h-auto pointer-events-none block select-none"
-        loading="lazy"
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
         draggable="false"
       >
       <svg
@@ -106,18 +108,71 @@
       </div>
     </div>
 
-    <!-- Floor plans: stacked sections (one per level); scroll target for master map -->
+    <!-- Plans viewer helper (sits below the master aerial map) -->
+    <div
+      id="site-map-floor-plans-top"
+      class="scroll-mt-0 sm:scroll-mt-0 p-8 bg-[#18181B] rounded-xl"
+    >
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div class="text-left max-sm:text-center">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.25em] text-zinc-50">INTERACTIVE PLANS BY FLOOR</p>
+          <p class="mt-1 text-[12px] leading-snug text-zinc-300 whitespace-normal sm:whitespace-nowrap">
+            Hover a unit to highlight it, click to view details. Switch floors using the arrows or number buttons.
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-1 max-sm:justify-center max-sm:mt-0">
+          <button
+            type="button"
+            class="w-8 h-8 rounded-full bg-transparent text-zinc-50 hover:bg-transparent transition-colors disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center"
+            aria-label="Previous floor"
+            :disabled="selectedFloorIndex <= 0"
+            @click="selectFloor(Math.max(0, selectedFloorIndex - 1))"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+
+          <div class="flex items-center gap-1 p-1">
+            <button
+              v-for="(f, idx) in SITE_MAP_FLOORS"
+              :key="f.id"
+              type="button"
+              class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-colors disabled:opacity-40 disabled:pointer-events-none"
+              :class="idx === selectedFloorIndex ? 'bg-[#ffffff] text-[#18181B]' : 'bg-zinc-700 text-zinc-50 hover:bg-zinc-600'"
+              :aria-pressed="idx === selectedFloorIndex"
+              @click="selectFloor(idx)"
+            >
+              {{ idx + 1 }}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="w-8 h-8 rounded-full bg-transparent text-zinc-50 hover:bg-transparent transition-colors disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center"
+            aria-label="Next floor"
+            :disabled="selectedFloorIndex >= SITE_MAP_FLOORS.length - 1"
+            @click="selectFloor(Math.min(SITE_MAP_FLOORS.length - 1, selectedFloorIndex + 1))"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floor plans: single viewer (one active floor at a time) -->
     <div
       id="site-map-floor-plans"
-      class="scroll-mt-24 space-y-10 sm:scroll-mt-28 outline-none"
+      class="scroll-mt-24 space-y-6 sm:scroll-mt-28 outline-none"
       tabindex="-1"
     >
       <section
-        v-for="floor in SITE_MAP_FLOORS"
-        :key="floor.id"
-        :id="floorSectionId(floor.id)"
-        class="scroll-mt-24 rounded-2xl bg-white p-6 sm:p-16"
-        :aria-labelledby="`plan-frame-heading-${floor.id}`"
+        :id="floorSectionId(activeFloor.id)"
+        class="scroll-mt-24 rounded-2xl bg-white p-6 sm:p-12"
+        :aria-labelledby="`plan-frame-heading-${activeFloor.id}`"
       >
         <ClientOnly>
           <div class="plan-frame relative grid w-full grid-rows-[auto_minmax(0,1fr)_auto]">
@@ -125,157 +180,143 @@
             <header
               class="plan-frame-header pointer-events-auto relative z-10 mb-6 max-w-[min(100%,20rem)] text-left sm:absolute sm:left-0 sm:top-0 sm:mb-0 sm:max-w-[min(100%,24rem)]"
             >
-              <div :id="`plan-frame-heading-${floor.id}`">
+              <div :id="`plan-frame-heading-${activeFloor.id}`">
                 <p class="font-sans text-2xl font-semibold uppercase leading-tight tracking-wide text-zinc-900 sm:text-3xl">
                   {{ SITE_MAP_PLAN_FRAME.buildingTitle }}
                 </p>
                 <p class="font-sans text-sm font-medium capitalize leading-snug text-zinc-700 sm:text-base">
-                  {{ floor.label }}
+                  {{ activeFloor.label }}
                 </p>
               </div>
             </header>
+
             <div class="mb-0 flex shrink-0 justify-center sm:absolute sm:left-1/2 sm:top-0 sm:z-10 sm:w-max sm:-translate-x-1/2">
-              <p
-                class="text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 sm:text-xs md:text-sm"
-              >
-                {{ facingLabel('top') }}
+              <p class="text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 sm:text-xs md:text-sm">
+                {{ facingLabel(activeFloor, 'top') }}
               </p>
             </div>
 
             <div class="flex w-full min-h-0 min-w-0 max-w-full items-center justify-center self-center justify-self-center py-0 max-sm:w-fit sm:py-16">
-              <div
-                class="plan-frame-grid relative grid w-full max-w-full grid-cols-[auto_minmax(0,10fr)_auto] items-center gap-x-4 gap-y-3 sm:gap-x-2 sm:gap-y-2"
-              >
-              <p
-                class="absolute left-0 top-1/2 z-10 min-w-0 max-w-full -translate-y-1/2 whitespace-nowrap text-start text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 [writing-mode:vertical-rl] rotate-180 sm:text-xs md:text-sm"
-              >
-                {{ facingLabel('left') }}
-              </p>
+              <div class="plan-frame-grid relative grid w-full max-w-full grid-cols-[auto_minmax(0,10fr)_auto] items-center gap-x-4 gap-y-3 sm:gap-x-2 sm:gap-y-2">
+                <p class="absolute left-0 top-1/2 z-10 min-w-0 max-w-full -translate-y-1/2 whitespace-nowrap text-start text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 [writing-mode:vertical-rl] rotate-180 sm:text-xs md:text-sm">
+                  <!-- Left label should show Table Mountain views on desktop. -->
+                  {{ facingLabel(activeFloor, 'right') }}
+                </p>
 
-              <div class="col-start-2 row-start-1 min-h-0 min-w-0">
-                <ZoomablePlan
-                  :image-src="floorPlanImageSrc(floor)"
-                  :image-alt="`${SITE_MAP_PLAN_FRAME.buildingTitle} ${floor.label} plan`"
-                  :view-box="floor.viewBox"
-                  :rotate-hotspots-clockwise="shouldRotateFloorHotspotsClockwise(floor)"
-                >
-                  <template #default>
-              <g v-if="floor.units.length">
-                <template v-for="u in floor.units" :key="u.unitNumber">
-                  <a
-                    v-if="isPlanUnitClickable(resolvePlanUnit(u.unitNumber))"
-                    :href="`/unit/${encodeURIComponent(u.unitNumber)}`"
-                    class="plan-unit-hit cursor-pointer outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600/70"
-                    tabindex="0"
-                    :aria-label="`Unit ${u.unitNumber}, open details`"
-                    @click="onUnitHotspotClick($event, u.unitNumber)"
-                    @mouseenter="onPlanBadgePointerEnter(floor.id, u.unitNumber)"
-                    @mouseleave="onPlanBadgePointerLeave(floor.id, u.unitNumber)"
-                    @focus="onPlanBadgePointerEnter(floor.id, u.unitNumber)"
-                    @blur="onPlanBadgePointerLeave(floor.id, u.unitNumber)"
+                <div class="col-start-2 row-start-1 min-h-0 min-w-0">
+                  <ZoomablePlan
+                    :image-src="floorPlanImageSrc(activeFloor)"
+                    :image-alt="`${SITE_MAP_PLAN_FRAME.buildingTitle} ${activeFloor.label} plan`"
+                    :view-box="activeFloor.viewBox"
+                    :rotate-hotspots-clockwise="shouldRotateFloorHotspotsClockwise(activeFloor)"
+                    :high-priority="selectedFloorIndex === 0"
                   >
-                    <path
-                      :d="u.pathD"
-                      stroke="none"
-                      class="pointer-events-auto plan-unit-hit-fill"
-                    />
-                  </a>
-                  <path
-                    v-else
-                    :d="u.pathD"
-                    :fill="planUnitStaticFill(resolvePlanUnit(u.unitNumber))"
-                    stroke="none"
-                    class="pointer-events-none"
-                    role="presentation"
-                    aria-hidden="true"
-                  />
-                </template>
-              </g>
-            </template>
-            <template #overlay>
-              <div
-                v-for="u in floor.units"
-                :key="`ovl-${floor.id}-${u.unitNumber}`"
-                class="plan-html-badge pointer-events-none absolute box-border"
-                :style="planHtmlBadgePositionStyle(floor.id, u.pathD)"
-              >
-                <!-- Inner face counter-rotates on mobile so labels stay upright while ZoomablePlan uses rotate-90. -->
-                <div
-                  class="plan-html-badge-face flex aspect-square h-auto w-[clamp(1.6rem,6.2vmin,2.8rem)] min-h-0 min-w-0 shrink-0 origin-center flex-col items-center justify-center rounded-full px-0.5 py-px text-center font-sans transition-[background-color] duration-150 ease-out motion-reduce:transition-none sm:w-[clamp(2.125rem,11vmin,3.75rem)] sm:px-2 sm:py-0.5"
-                  :style="planHtmlBadgeFaceStyle(isPlanBadgeActive(floor.id, u.unitNumber), resolvePlanUnit(u.unitNumber))"
-                >
-                <template v-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'available'">
-                  <span
-                    class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none tracking-tight text-white sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]"
-                  >{{ u.unitNumber }}</span>
-                  <span
-                    class="mt-px max-w-[95%] truncate text-[clamp(0.32rem,1.35vmin,0.52rem)] font-semibold leading-none text-white/95 sm:mt-0.5 sm:text-[clamp(0.5rem,2.3vmin,0.625rem)]"
-                  >{{ formatPlanBadgePrice(resolvePlanUnit(u.unitNumber)?.price ?? 0) }}</span>
-                </template>
-                <template v-else-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'locked'">
-                  <span
-                    class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none tracking-tight text-white sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]"
-                  >{{ u.unitNumber }}</span>
-                  <span
-                    class="mt-px max-w-[95%] text-center text-[clamp(0.3rem,1.25vmin,0.5rem)] font-semibold leading-[1.05] text-white/95 sm:mt-0.5 sm:text-[clamp(0.42rem,2vmin,0.625rem)]"
-                  >{{ planBadgeStatusLine(resolvePlanUnit(u.unitNumber)) }}</span>
-                </template>
-                <template v-else-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'heldByDeveloper'">
-                  <span
-                    class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none text-zinc-900 sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]"
-                  >{{ u.unitNumber }}</span>
-                  <span
-                    class="mt-px max-w-[95%] text-center text-[clamp(0.3rem,1.25vmin,0.5rem)] font-semibold leading-[1.05] text-zinc-500 [overflow-wrap:anywhere] sm:mt-0.5 sm:text-[clamp(0.42rem,2vmin,0.625rem)]"
-                  >{{ planBadgeStatusLine(resolvePlanUnit(u.unitNumber)) }}</span>
-                </template>
-                <template v-else-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'sold'">
-                  <span
-                    class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none tracking-tight text-white sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]"
-                  >{{ u.unitNumber }}</span>
-                  <span
-                    class="mt-px max-w-[95%] text-center text-[clamp(0.3rem,1.25vmin,0.5rem)] font-semibold leading-[1.05] text-white/95 [overflow-wrap:anywhere] sm:mt-0.5 sm:text-[clamp(0.42rem,2vmin,0.625rem)]"
-                  >{{ planBadgeStatusLine(resolvePlanUnit(u.unitNumber)) }}</span>
-                </template>
-                <template v-else>
-                  <span
-                    class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none text-zinc-900 sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]"
-                  >{{ u.unitNumber }}</span>
-                  <span
-                    class="mt-px text-[clamp(0.32rem,1.35vmin,0.52rem)] font-medium leading-none text-zinc-400 sm:mt-0.5 sm:text-[clamp(0.5rem,2.3vmin,0.625rem)]"
-                  >—</span>
-                </template>
-                </div>
-              </div>
-            </template>
-                </ZoomablePlan>
-              </div>
+                    <template #default>
+                      <g v-if="activeFloor.units.length">
+                        <template v-for="u in activeFloor.units" :key="u.unitNumber">
+                          <a
+                            v-if="isPlanUnitClickable(resolvePlanUnit(u.unitNumber))"
+                            :href="`/unit/${encodeURIComponent(u.unitNumber)}`"
+                            class="plan-unit-hit cursor-pointer outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600/70"
+                            tabindex="0"
+                            :aria-label="`Unit ${u.unitNumber}, open details`"
+                            @click="onUnitHotspotClick($event, u.unitNumber)"
+                            @mouseenter="onPlanBadgePointerEnter(activeFloor.id, u.unitNumber)"
+                            @mouseleave="onPlanBadgePointerLeave(activeFloor.id, u.unitNumber)"
+                            @focus="onPlanBadgePointerEnter(activeFloor.id, u.unitNumber)"
+                            @blur="onPlanBadgePointerLeave(activeFloor.id, u.unitNumber)"
+                          >
+                            <path :d="u.pathD" stroke="none" class="pointer-events-auto plan-unit-hit-fill" />
+                          </a>
+                          <path
+                            v-else
+                            :d="u.pathD"
+                            :fill="planUnitStaticFill(resolvePlanUnit(u.unitNumber))"
+                            stroke="none"
+                            class="pointer-events-none"
+                            role="presentation"
+                            aria-hidden="true"
+                          />
+                        </template>
+                      </g>
+                    </template>
 
-              <p
-                class="absolute right-0 top-1/2 z-10 min-w-0 max-w-full -translate-y-1/2 whitespace-nowrap text-end text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 [writing-mode:vertical-rl] sm:text-xs md:text-sm"
-              >
-                {{ facingLabel('right') }}
-              </p>
+                    <template #overlay>
+                      <div
+                        v-for="u in activeFloor.units"
+                        :key="`ovl-${activeFloor.id}-${u.unitNumber}`"
+                        class="plan-html-badge pointer-events-none absolute box-border"
+                        :style="planHtmlBadgePositionStyle(activeFloor.id, u.pathD)"
+                      >
+                        <div
+                          class="plan-html-badge-face flex aspect-square h-auto w-[clamp(1.6rem,6.2vmin,2.8rem)] min-h-0 min-w-0 shrink-0 origin-center flex-col items-center justify-center rounded-full px-0.5 py-px text-center font-sans transition-[background-color] duration-150 ease-out motion-reduce:transition-none sm:w-[clamp(2.125rem,11vmin,3.75rem)] sm:px-2 sm:py-0.5"
+                          :style="planHtmlBadgeFaceStyle(isPlanBadgeActive(activeFloor.id, u.unitNumber), resolvePlanUnit(u.unitNumber))"
+                        >
+                          <template v-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'available'">
+                            <span class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none tracking-tight text-white sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]">
+                              {{ u.unitNumber }}
+                            </span>
+                            <span class="mt-px max-w-[95%] truncate text-[clamp(0.32rem,1.35vmin,0.52rem)] font-semibold leading-none text-white/95 sm:mt-0.5 sm:text-[clamp(0.5rem,2.3vmin,0.625rem)]">
+                              {{ formatPlanBadgePrice(resolvePlanUnit(u.unitNumber)?.price ?? 0) }}
+                            </span>
+                          </template>
+                          <template v-else-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'locked'">
+                            <span class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none tracking-tight text-white sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]">
+                              {{ u.unitNumber }}
+                            </span>
+                            <span class="mt-px max-w-[95%] text-center text-[clamp(0.3rem,1.25vmin,0.5rem)] font-semibold leading-[1.05] text-white/95 sm:mt-0.5 sm:text-[clamp(0.42rem,2vmin,0.625rem)]">
+                              {{ planBadgeStatusLine(resolvePlanUnit(u.unitNumber)) }}
+                            </span>
+                          </template>
+                          <template v-else-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'heldByDeveloper'">
+                            <span class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none text-zinc-900 sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]">
+                              {{ u.unitNumber }}
+                            </span>
+                            <span class="mt-px max-w-[95%] text-center text-[clamp(0.3rem,1.25vmin,0.5rem)] font-semibold leading-[1.05] text-zinc-500 [overflow-wrap:anywhere] sm:mt-0.5 sm:text-[clamp(0.42rem,2vmin,0.625rem)]">
+                              {{ planBadgeStatusLine(resolvePlanUnit(u.unitNumber)) }}
+                            </span>
+                          </template>
+                          <template v-else-if="planBadgeKind(resolvePlanUnit(u.unitNumber)) === 'sold'">
+                            <span class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none tracking-tight text-white sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]">
+                              {{ u.unitNumber }}
+                            </span>
+                            <span class="mt-px max-w-[95%] text-center text-[clamp(0.3rem,1.25vmin,0.5rem)] font-semibold leading-[1.05] text-white/95 [overflow-wrap:anywhere] sm:mt-0.5 sm:text-[clamp(0.42rem,2vmin,0.625rem)]">
+                              {{ planBadgeStatusLine(resolvePlanUnit(u.unitNumber)) }}
+                            </span>
+                          </template>
+                          <template v-else>
+                            <span class="max-w-[95%] truncate text-[clamp(0.4rem,1.75vmin,0.65rem)] font-bold leading-none text-zinc-900 sm:text-[clamp(0.65rem,3.4vmin,0.9375rem)]">
+                              {{ u.unitNumber }}
+                            </span>
+                            <span class="mt-px text-[clamp(0.32rem,1.35vmin,0.52rem)] font-medium leading-none text-zinc-400 sm:mt-0.5 sm:text-[clamp(0.5rem,2.3vmin,0.625rem)]">
+                              —
+                            </span>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+                  </ZoomablePlan>
+                </div>
+
+                <p class="absolute right-0 top-1/2 z-10 min-w-0 max-w-full -translate-y-1/2 whitespace-nowrap text-end text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 [writing-mode:vertical-rl] sm:text-xs md:text-sm">
+                  <!-- Right label should show Durbanville Hills outlook on desktop. -->
+                  {{ facingLabel(activeFloor, 'left') }}
+                </p>
               </div>
             </div>
 
             <div class="shrink-0 sm:absolute sm:bottom-0 sm:left-1/2 sm:mt-0 sm:z-10 sm:w-max sm:-translate-x-1/2">
-              <p
-                class="min-w-0 text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 sm:text-xs md:text-sm"
-              >
-                {{ facingLabel('bottom') }}
+              <p class="min-w-0 text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-zinc-800 sm:text-xs md:text-sm">
+                {{ facingLabel(activeFloor, 'bottom') }}
               </p>
             </div>
 
-            <!-- North: out of flow; positioned top-right. -->
-            <div
-              class="pointer-events-none absolute right-0 z-[1] flex min-w-0 justify-end max-sm:top-0 max-sm:items-start max-sm:pt-0.5 sm:bottom-0 sm:items-end sm:pb-1"
-              role="img"
-              aria-label="North orientation"
-            >
+            <!-- North: out of flow; positioned top-right -->
+            <div class="pointer-events-none absolute right-0 top-0 z-[1] flex min-w-0 justify-end items-start pt-0.5" role="img" aria-label="North orientation">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 380.701 338.056"
-                class="h-8 w-auto max-w-[min(4rem,18vw)] shrink-0 rotate-90 text-zinc-900 select-none sm:h-10 sm:rotate-0 md:h-12"
+                class="h-8 w-auto max-w-[min(4rem,18vw)] shrink-0 rotate-90 text-zinc-900 select-none sm:h-10 md:h-12"
                 aria-hidden="true"
                 focusable="false"
               >
@@ -285,6 +326,7 @@
               </svg>
             </div>
           </div>
+
           <template #fallback>
             <div class="h-64 w-full animate-pulse rounded-xl bg-zinc-100" />
           </template>
@@ -341,6 +383,14 @@ const masterBlockGPinPositionStyle = computed(() => {
 const props = defineProps<{
   units: Unit[]
 }>()
+
+const selectedFloorIndex = ref(0)
+const activeFloor = computed(() => SITE_MAP_FLOORS[selectedFloorIndex.value] ?? SITE_MAP_FLOORS[0])
+
+function selectFloor(idx: number) {
+  const max = SITE_MAP_FLOORS.length - 1
+  selectedFloorIndex.value = Math.min(Math.max(0, idx), max)
+}
 
 const isMobileViewport = ref(false)
 let mobileViewportMql: MediaQueryList | null = null
@@ -466,11 +516,22 @@ function prefersReducedMotion(): boolean {
 }
 
 function scrollToFloorPlans() {
-  const el = document.getElementById('site-map-floor-plans')
-  el?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
+  const el = document.getElementById('site-map-floor-plans-top')
+  if (!el) return
+
+  const behavior = prefersReducedMotion() ? 'auto' : 'smooth'
+  // Account for the fixed top nav so the card lands *below* the nav (not behind it).
+  const navEl = document.querySelector<HTMLElement>('nav.fixed') ?? document.querySelector<HTMLElement>('nav')
+  const navHeight = navEl?.getBoundingClientRect().height ?? 0
+
+  const top = window.scrollY + el.getBoundingClientRect().top - navHeight
+  const cs = window.getComputedStyle(el)
+  const marginTop = Number.parseFloat(cs.marginTop || '0') || 0
+  window.scrollTo({ top: top - marginTop, behavior })
 }
 
 function onBuildingActivate() {
+  selectedFloorIndex.value = 0
   scrollToFloorPlans()
 }
 
@@ -500,14 +561,21 @@ function shouldRotateFloorHotspotsClockwise(floor: (typeof SITE_MAP_FLOORS)[numb
   return Boolean(isMobileViewport.value && floor.mobileImageSrc && floor.rotateHotspotsClockwiseOnMobile)
 }
 
-function facingLabel(position: 'top' | 'right' | 'bottom' | 'left'): string {
-  if (!isMobileViewport.value) return SITE_MAP_PLAN_FRAME.facing[position]
+function facingLabel(
+  floor: (typeof SITE_MAP_FLOORS)[number],
+  position: 'top' | 'right' | 'bottom' | 'left',
+): string {
+  const usingPortraitAsset = Boolean(isMobileViewport.value && floor.mobileImageSrc)
+  if (!usingPortraitAsset) return SITE_MAP_PLAN_FRAME.facing[position]
+
+  // Portrait asset is effectively rotated relative to our normalized coordinates.
   const rotatedFacingByPosition = {
     top: SITE_MAP_PLAN_FRAME.facing.left,
     right: SITE_MAP_PLAN_FRAME.facing.top,
     bottom: SITE_MAP_PLAN_FRAME.facing.right,
     left: SITE_MAP_PLAN_FRAME.facing.bottom,
   } as const
+
   return rotatedFacingByPosition[position]
 }
 
@@ -604,11 +672,10 @@ if (import.meta.dev) {
   }
 }
 
-@media (max-width: 639px) {
-  .north-arrow-letter {
-    transform: rotate(-90deg);
-    transform-box: fill-box;
-    transform-origin: center;
-  }
+.north-arrow-letter {
+  /* Keep just the N glyph readable while the whole arrow is rotated. */
+  transform: rotate(-90deg);
+  transform-box: fill-box;
+  transform-origin: center;
 }
 </style>

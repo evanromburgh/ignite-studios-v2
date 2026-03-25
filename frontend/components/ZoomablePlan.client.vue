@@ -19,7 +19,9 @@
             class="pointer-events-none block h-auto w-full select-none"
             :class="imageReady ? 'opacity-100' : 'opacity-0'"
             draggable="false"
-            loading="lazy"
+            :loading="highPriority ? 'eager' : 'lazy'"
+            :fetchpriority="highPriority ? 'high' : undefined"
+            decoding="async"
             @load="onImageReady"
             @error="onImageReady"
           >
@@ -59,10 +61,12 @@ const props = withDefaults(
     imageAlt: string
     viewBox?: string
     rotateHotspotsClockwise?: boolean
+    highPriority?: boolean
   }>(),
   {
     viewBox: '0 0 1 1',
     rotateHotspotsClockwise: false,
+    highPriority: false,
   },
 )
 

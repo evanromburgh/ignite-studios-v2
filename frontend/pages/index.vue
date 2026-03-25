@@ -206,10 +206,10 @@
                 type="button"
                 data-view-mode="GRID"
                 class="relative z-10 flex group flex-1 min-h-10 sm:min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-2 sm:py-1.5"
-                :class="viewMode === 'GRID' ? 'text-white' : 'text-black'"
+                :class="effectiveViewMode === 'GRID' ? 'text-white' : 'text-black'"
                 :style="{ background: 'transparent' }"
-                aria-pressed="viewMode === 'GRID'"
-                @click="viewMode = 'GRID'"
+                :aria-pressed="effectiveViewMode === 'GRID'"
+                @click="setViewModeSmooth('GRID')"
               >
                 <span class="icon-switcher-svg flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
                   <svg xmlns="http://www.w3.org/2000/svg" class="block h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 16 16" shape-rendering="geometricPrecision" aria-hidden="true">
@@ -223,10 +223,10 @@
                 type="button"
                 data-view-mode="LIST"
                 class="relative z-10 flex group flex-1 min-h-10 sm:min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-2 sm:py-1.5"
-                :class="viewMode === 'LIST' ? 'text-white' : 'text-black'"
+                :class="effectiveViewMode === 'LIST' ? 'text-white' : 'text-black'"
                 :style="{ background: 'transparent' }"
-                aria-pressed="viewMode === 'LIST'"
-                @click="viewMode = 'LIST'"
+                :aria-pressed="effectiveViewMode === 'LIST'"
+                @click="setViewModeSmooth('LIST')"
               >
                 <span class="icon-switcher-svg flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
                   <svg xmlns="http://www.w3.org/2000/svg" class="block h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 16 16" shape-rendering="geometricPrecision" aria-hidden="true">
@@ -240,10 +240,10 @@
                 type="button"
                 data-view-mode="PLANS"
                 class="relative z-10 flex group flex-1 min-h-10 sm:min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-2 sm:py-1.5"
-                :class="viewMode === 'PLANS' ? 'text-white' : 'text-black'"
+                :class="effectiveViewMode === 'PLANS' ? 'text-white' : 'text-black'"
                 :style="{ background: 'transparent' }"
-                :aria-pressed="viewMode === 'PLANS'"
-                @click="viewMode = 'PLANS'"
+                :aria-pressed="effectiveViewMode === 'PLANS'"
+                @click="switchToPlans"
               >
                 <span class="icon-switcher-svg flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
                   <svg xmlns="http://www.w3.org/2000/svg" class="block h-3.5 w-3.5 shrink-0" fill="currentColor" viewBox="0 0 16 16" shape-rendering="geometricPrecision" aria-hidden="true">
@@ -261,13 +261,19 @@
 
       <!-- Unit results section: mobile padding; 90% centered from sm up -->
       <section class="nav-section light w-full px-4 sm:px-0 sm:w-[90%] sm:mx-auto sm:pb-20">
+        <!-- Plans: mount once, then toggle with v-show to avoid expensive re-mount jank -->
         <SiteMapPlansView
-          v-if="viewMode === 'PLANS'"
+          v-if="plansMounted"
+          v-show="viewMode === 'PLANS'"
           :units="units"
         />
 
-        <template v-else>
-          <div v-if="unitsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem] animate-pulse">
+        <!-- Grid/List: keep DOM mounted, just toggle visibility -->
+        <div v-show="viewMode !== 'PLANS'">
+          <div
+            v-show="unitsLoading"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem] animate-pulse"
+          >
             <div
               v-for="i in 8"
               :key="i"
@@ -275,49 +281,53 @@
             />
           </div>
 
-          <div v-else-if="unitsError" class="text-red-600 text-sm">
+          <div v-show="!unitsLoading && unitsError" class="text-red-600 text-sm">
             {{ unitsError }}
           </div>
 
-          <div v-else-if="displayedUnits.length === 0" class="text-center py-48 bg-white rounded-xl border border-theme-border shadow-sm">
+          <div
+            v-show="!unitsLoading && !unitsError && displayedUnits.length === 0"
+            class="text-center py-48 bg-white rounded-xl border border-theme-border shadow-sm"
+          >
             <h3 class="text-2xl md:text-3xl font-black text-zinc-600 uppercase tracking-[0.5em]">No Matches</h3>
           </div>
 
-          <div v-else>
-            <div
-              v-if="viewMode === 'GRID'"
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem]"
-            >
-              <UnitCard
-                v-for="unit in displayedUnits"
-                :key="unit.id"
-                :unit="unit"
-                :is-wishlisted="wishlistIds.includes(unit.id)"
-                :server-clock-offset-ms="serverClockOffsetMs"
-                :current-user-id="user?.id ?? null"
-                :reserving-unit-id="reservingUnitId"
-                @select="onSelectUnit"
-                @reserve="onReserveUnit"
-                @toggle-wishlist="onToggleWishlist"
-              />
-            </div>
-
-            <div v-else-if="viewMode === 'LIST'" class="space-y-3">
-              <UnitListRow
-                v-for="unit in displayedUnits"
-                :key="unit.id"
-                :unit="unit"
-                :is-wishlisted="wishlistIds.includes(unit.id)"
-                :server-clock-offset-ms="serverClockOffsetMs"
-                :current-user-id="user?.id ?? null"
-                :reserving-unit-id="reservingUnitId"
-                @select="onSelectUnit"
-                @reserve="onReserveUnit"
-                @toggle-wishlist="onToggleWishlist"
-              />
-            </div>
+          <div
+            v-show="!unitsLoading && !unitsError && displayedUnits.length > 0 && viewMode === 'GRID'"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem]"
+          >
+            <UnitCard
+              v-for="unit in displayedUnits"
+              :key="unit.id"
+              :unit="unit"
+              :is-wishlisted="wishlistIds.includes(unit.id)"
+              :server-clock-offset-ms="serverClockOffsetMs"
+              :current-user-id="user?.id ?? null"
+              :reserving-unit-id="reservingUnitId"
+              @select="onSelectUnit"
+              @reserve="onReserveUnit"
+              @toggle-wishlist="onToggleWishlist"
+            />
           </div>
-        </template>
+
+          <div
+            v-show="!unitsLoading && !unitsError && displayedUnits.length > 0 && viewMode === 'LIST'"
+            class="space-y-3"
+          >
+            <UnitListRow
+              v-for="unit in displayedUnits"
+              :key="unit.id"
+              :unit="unit"
+              :is-wishlisted="wishlistIds.includes(unit.id)"
+              :server-clock-offset-ms="serverClockOffsetMs"
+              :current-user-id="user?.id ?? null"
+              :reserving-unit-id="reservingUnitId"
+              @select="onSelectUnit"
+              @reserve="onReserveUnit"
+              @toggle-wishlist="onToggleWishlist"
+            />
+          </div>
+        </div>
       </section>
 
   </div>
@@ -332,6 +342,7 @@ import UnitCard from '~/components/UnitCard.vue'
 import UnitListRow from '~/components/UnitListRow.vue'
 import FilterBar from '~/components/FilterBar.vue'
 import SiteMapPlansView from '~/components/SiteMapPlansView.vue'
+import { SITE_MAP_FLOORS, SITE_MAP_MASTER } from '~/data/siteMap'
 import { useAuth } from '~/composables/useAuth'
 import { useUnits } from '~/composables/useUnits'
 import { useUnitFilters } from '~/composables/useUnitFilters'
@@ -343,9 +354,76 @@ const { units, loading: unitsLoading, error: unitsError } = useUnits()
 const { wishlistIds, toggle: toggleWishlist } = useWishlist()
 const { filters, viewMode, resetFilters } = useUnitFilters()
 const { serverClockOffsetMs } = useServerClock()
+const runtimeConfig = useRuntimeConfig()
 const reservingUnitId = ref<string | null>(null)
 const showPaymentCancelledToast = ref(false)
 const showFiltersDrawer = ref(false)
+
+const plansPreloadStarted = ref(false)
+const plansMounted = ref(false)
+const unitImagesPreloadStarted = ref(false)
+
+const pendingViewMode = ref<ViewMode | null>(null)
+const effectiveViewMode = computed(() => pendingViewMode.value ?? viewMode.value)
+
+function imageSrcWithOptionalCacheBust(src: string): string {
+  const bust = runtimeConfig.public.imageCacheBust
+  if (!src || bust === undefined || bust === null || String(bust).length === 0) return src
+  const sep = src.includes('?') ? '&' : '?'
+  return `${src}${sep}v=${encodeURIComponent(String(bust))}`
+}
+
+function preloadPlansImages() {
+  if (plansPreloadStarted.value) return
+  if (typeof window === 'undefined') return
+  plansPreloadStarted.value = true
+
+  const urls = [
+    imageSrcWithOptionalCacheBust(SITE_MAP_MASTER.imageSrc),
+    ...SITE_MAP_FLOORS.flatMap((f) => [imageSrcWithOptionalCacheBust(f.imageSrc), f.mobileImageSrc ? imageSrcWithOptionalCacheBust(f.mobileImageSrc) : null]).filter(
+      (u): u is string => Boolean(u),
+    ),
+  ]
+
+  for (const url of urls) {
+    const link = document.createElement('link')
+    link.rel = 'preload'
+    link.as = 'image'
+    link.href = url
+    link.setAttribute('fetchpriority', 'high')
+    document.head.appendChild(link)
+    setTimeout(() => link.remove(), 20000)
+  }
+}
+
+function preloadUnitImages() {
+  if (unitImagesPreloadStarted.value) return
+  if (typeof window === 'undefined') return
+  if (unitsLoading.value) return
+
+  unitImagesPreloadStarted.value = true
+
+  // Preload only the first chunk to avoid flooding the network.
+  const unitsForPreload = displayedUnits.value.slice(0, 24)
+  const urls = unitsForPreload
+    .map((u) => u.floorplanUrl || u.imageUrl)
+    .filter((u): u is string => Boolean(u))
+
+  for (const url of urls) {
+    const link = document.createElement('link')
+    link.rel = 'preload'
+    link.as = 'image'
+    link.href = url
+    link.setAttribute('fetchpriority', 'high')
+    document.head.appendChild(link)
+    setTimeout(() => link.remove(), 20000)
+  }
+}
+
+function switchToPlans() {
+  preloadPlansImages()
+  setViewModeSmooth('PLANS')
+}
 
 const stickyFixedBarRef = ref<HTMLElement | null>(null)
 const sticky = useStickyFilterbar(stickyFixedBarRef)
@@ -355,26 +433,75 @@ const pillStyle = ref<{ left: number; top: number; width: number; height: number
   left: 0, top: 0, width: 0, height: 0, background: 'rgb(24, 24, 27)',
 })
 
-function updateViewSwitcherPill() {
-  nextTick(() => {
-    const container = viewSwitcherContainerRef.value
-    if (!container) return
-    const activeBtn = container.querySelector<HTMLElement>(`[data-view-mode="${viewMode.value}"]`)
-    if (!activeBtn) return
-    const cRect = container.getBoundingClientRect()
-    const bRect = activeBtn.getBoundingClientRect()
-    const border = 1
-    // Size and position pill so external white space (gap to container) is equal top, left, and bottom.
-    // Container has p-1 (4px). Pill uses pad for top/height; for left, use pad when Grid (first tab) so left gap matches.
-    const pad = 4
-    const pillLeftRaw = viewMode.value === 'GRID' ? pad : bRect.left - cRect.left - border
-    pillStyle.value = {
-      left: Math.round(pillLeftRaw),
-      top: pad,
-      width: Math.round(bRect.width),
-      height: Math.max(0, Math.round(cRect.height - pad * 2)),
-      background: 'rgb(24, 24, 27)',
-    }
+function updateViewSwitcherPillTo(mode: ViewMode) {
+  const container = viewSwitcherContainerRef.value
+  if (!container) return
+  const activeBtn = container.querySelector<HTMLElement>(`[data-view-mode="${mode}"]`)
+  if (!activeBtn) return
+  const cRect = container.getBoundingClientRect()
+  const bRect = activeBtn.getBoundingClientRect()
+  const border = 1
+  // Size and position pill so external white space (gap to container) is equal top, left, and bottom.
+  // Container has p-1 (4px). Pill uses pad for top/height; for left, use pad when Grid (first tab) so left gap matches.
+  const pad = 4
+  const pillLeftRaw = mode === 'GRID' ? pad : bRect.left - cRect.left - border
+  pillStyle.value = {
+    left: Math.round(pillLeftRaw),
+    top: pad,
+    width: Math.round(bRect.width),
+    height: Math.max(0, Math.round(cRect.height - pad * 2)),
+    background: 'rgb(24, 24, 27)',
+  }
+}
+
+function updateActiveViewSwitcherPill() {
+  // Throttle indicator re-measurements so heavy DOM mounts don't cause jank.
+  updateActiveViewSwitcherPillThrottled()
+}
+
+let setViewModeRafId: number | null = null
+let pillUpdateRafId: number | null = null
+function updateActiveViewSwitcherPillThrottled() {
+  // During a view switch transition we already move the pill to the target.
+  // Let the CSS animation finish without re-measuring (which can cause the last-frame stutter).
+  if (pendingViewMode.value !== null) return
+  if (pillUpdateRafId !== null) return
+  pillUpdateRafId = requestAnimationFrame(() => {
+    pillUpdateRafId = null
+    updateViewSwitcherPillTo(effectiveViewMode.value)
+  })
+}
+
+let pendingClearTimeoutId: ReturnType<typeof setTimeout> | null = null
+let setViewModeDelayTimeoutId: ReturnType<typeof setTimeout> | null = null
+function setViewModeSmooth(next: ViewMode) {
+  // 1) Move pill immediately so the transition starts even if the view content is heavy.
+  // 2) Defer `viewMode` until the next frame to avoid stutter from DOM work.
+  const shouldMountPlans = next === 'PLANS'
+
+  updateViewSwitcherPillTo(next)
+  pendingViewMode.value = next
+
+  if (setViewModeRafId !== null) cancelAnimationFrame(setViewModeRafId)
+  if (setViewModeDelayTimeoutId) clearTimeout(setViewModeDelayTimeoutId)
+  if (pendingClearTimeoutId) clearTimeout(pendingClearTimeoutId)
+
+  // Use two RAFs: let CSS transition start before we mount heavy content.
+  setViewModeRafId = requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      // Extra buffer so the pill animation completes before expensive view work.
+      setViewModeDelayTimeoutId = setTimeout(() => {
+        if (shouldMountPlans) plansMounted.value = true
+        viewMode.value = next
+        setViewModeRafId = null
+        setViewModeDelayTimeoutId = null
+
+        pendingClearTimeoutId = setTimeout(() => {
+          pendingViewMode.value = null
+          pendingClearTimeoutId = null
+        }, 120)
+      }, 330)
+    })
   })
 }
 
@@ -386,21 +513,32 @@ const viewSwitcherPillStyle = computed(() => ({
   background: pillStyle.value.background,
 }))
 
-watch(viewMode, updateViewSwitcherPill)
+watch(viewMode, (m) => {
+  // While a transition is in progress we already moved the pill; avoid re-measuring.
+  if (pendingViewMode.value === null) updateViewSwitcherPillTo(m)
+})
 watch(viewSwitcherContainerRef, (el) => {
-  if (el) updateViewSwitcherPill()
+  if (el) updateActiveViewSwitcherPill()
 }, { flush: 'post' })
 let viewSwitcherResizeCleanup: (() => void) | null = null
 onMounted(() => {
-  updateViewSwitcherPill()
+  updateActiveViewSwitcherPill()
   const container = viewSwitcherContainerRef.value
   if (container && typeof ResizeObserver !== 'undefined') {
-    const ro = new ResizeObserver(updateViewSwitcherPill)
+    const ro = new ResizeObserver(updateActiveViewSwitcherPill)
     ro.observe(container)
     viewSwitcherResizeCleanup = () => ro.disconnect()
   }
 })
 onUnmounted(() => {
+  if (setViewModeRafId !== null) cancelAnimationFrame(setViewModeRafId)
+  setViewModeRafId = null
+  if (setViewModeDelayTimeoutId) clearTimeout(setViewModeDelayTimeoutId)
+  setViewModeDelayTimeoutId = null
+  if (pillUpdateRafId !== null) cancelAnimationFrame(pillUpdateRafId)
+  pillUpdateRafId = null
+  if (pendingClearTimeoutId) clearTimeout(pendingClearTimeoutId)
+  pendingClearTimeoutId = null
   viewSwitcherResizeCleanup?.()
 })
 
@@ -473,6 +611,11 @@ const displayedUnits = computed(() => {
   })
   return list
 })
+
+watch(unitsLoading, (loading) => {
+  if (loading) return
+  preloadUnitImages()
+}, { immediate: true })
 
 const availableCount = computed(
   () => units.value.filter((u) => u.status === 'Available').length,
