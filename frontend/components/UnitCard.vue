@@ -191,9 +191,7 @@ const formattedOriginalPrice = computed(() =>
 
 const reserveButtonLabel = computed(() => {
   if (isReserving.value) return 'Securing...'
-  if (props.unit.status === 'Available' && !isLocked.value) return 'Reserve Now'
-  if (isLocked.value) return 'Locked'
-  return props.unit.status
+  return 'Reserve Now'
 })
 
 function formatTime(seconds: number) {

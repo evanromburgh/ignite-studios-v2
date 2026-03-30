@@ -8,6 +8,11 @@ const CORS_HEADERS = {
   'Access-Control-Max-Age': '0',
 };
 
+const WEBHOOK_DEBUG = Deno.env.get('WEBHOOK_DEBUG') === '1';
+const debugLog = (...args: unknown[]) => {
+  if (WEBHOOK_DEBUG) console.log(...args);
+};
+
 function jsonOk(body: string, init?: ResponseInit) {
   return new Response(body, {
     ...init,
@@ -49,14 +54,14 @@ serve(async (req) => {
     const contentType = req.headers.get('content-type') || '';
     const bodyText = await req.text();
 
-    console.log('Request content-type:', contentType);
-    console.log('Request body (first 500 chars):', bodyText.substring(0, 500));
+    debugLog('Request content-type:', contentType);
+    debugLog('Request body (first 500 chars):', bodyText.substring(0, 500));
 
     let paymentData: Record<string, unknown> = {};
     if (contentType.includes('application/json')) {
       try {
         paymentData = JSON.parse(bodyText) as Record<string, unknown>;
-        console.log('Parsed JSON payment data (event):', (paymentData as any).event);
+        debugLog('Parsed JSON payment data (event):', (paymentData as any).event);
       } catch (e) {
         console.error('Failed to parse JSON:', e);
       }
@@ -65,7 +70,7 @@ serve(async (req) => {
       for (const [key, value] of params.entries()) {
         paymentData[key] = value;
       }
-      console.log('Parsed form-urlencoded payment data:', paymentData);
+      debugLog('Parsed form-urlencoded payment data:', paymentData);
     }
 
     let paymentReference = '';
@@ -99,27 +104,17 @@ serve(async (req) => {
         paymentReference = String(ref ?? '').trim();
       }
       if (!paymentReference || !finalStatus) {
-        console.log('Paystack event ignored:', paystackEvent, status);
+        debugLog('Paystack event ignored:', paystackEvent, status);
         return jsonOk('OK');
       }
-      console.log('Paystack webhook:', paystackEvent, 'reference:', paymentReference, 'finalStatus:', finalStatus);
+      console.log('Paystack webhook:', paystackEvent, 'finalStatus:', finalStatus);
     } else {
-      // PayFast: form body with m_payment_id and payment_status
-      paymentReference = String((paymentData.m_payment_id as string) || '').trim();
-      const paymentStatus = ((paymentData.payment_status as string) || '').toUpperCase();
-      const isComplete = paymentStatus === 'COMPLETE';
-      const isCancelled =
-        paymentStatus === 'CANCELLED' || paymentStatus === 'CANCEL' || paymentStatus === 'CANCELED';
-      if (!paymentReference || (!isComplete && !isCancelled)) {
-        console.log('Skipping - no payment reference or invalid status (PayFast)');
-        return jsonOk('OK');
-      }
-      finalStatus = isComplete ? 'COMPLETE' : 'CANCELLED';
-      console.log('PayFast webhook:', paymentReference, 'finalStatus:', finalStatus);
+      debugLog('Skipping - non-Paystack webhook payload');
+      return jsonOk('OK');
     }
 
     if (!paymentReference || !finalStatus) {
-      console.log('Skipping - missing reference or finalStatus');
+      debugLog('Skipping - missing reference or finalStatus');
       return jsonOk('OK');
     }
 
@@ -127,15 +122,11 @@ serve(async (req) => {
 
     // Ensure we're working with a string and decode any URL encoding
     const decodedReference = decodeURIComponent(paymentReference);
-    console.log('Decoded payment reference:', decodedReference);
+    debugLog('Decoded payment reference:', decodedReference);
     
-    // Reference format: unitId.zohoContactId.timestamp (Paystack) or unitId|zohoContactId|timestamp (legacy PayFast)
-    const parts = decodedReference.includes('|')
-      ? decodedReference.split('|')
-      : decodedReference.split('.');
-    console.log('Payment reference parts (array):', JSON.stringify(parts));
-    console.log('Payment reference parts count:', parts.length);
-    console.log('SEARCH_TARGET: reference=', decodedReference, '-> we will search Zoho for unitId=', parts[0], 'contactId=', parts[1]);
+    // Reference format: unitId.zohoContactId.timestamp (Paystack)
+    const parts = decodedReference.split('.');
+    debugLog('Payment reference parts (array):', JSON.stringify(parts));
     
     if (parts.length !== 3) {
       console.error('Invalid payment reference format:', decodedReference, 'parts length:', parts.length, 'parts:', parts);
@@ -146,7 +137,7 @@ serve(async (req) => {
     const zohoContactId = String(parts[1] || '').trim();
     const timestampPart = String(parts[2] || '').trim();
 
-    console.log('Extracted from payment reference:', { 
+    debugLog('Extracted from payment reference:', { 
       unitId, 
       unitIdLength: unitId.length,
       zohoContactId, 
@@ -186,7 +177,7 @@ serve(async (req) => {
       const errorText = await tokenResponse.text();
       console.error('Failed to get Zoho token:', tokenResponse.status, errorText);
       
-      // If rate limited, return OK to allow PayFast to retry later
+      // If rate limited, return OK to allow provider retry later
       if (tokenResponse.status === 429 || errorText.includes('too many requests')) {
         console.log('Zoho rate limited on token request, will retry on next webhook call');
         return jsonOk('OK');
@@ -198,7 +189,7 @@ serve(async (req) => {
     const { access_token } = await tokenResponse.json();
     const zohoApiUrl = `https://www.zohoapis.${zohoApiDomain}/crm/v2`;
 
-    console.log('Fetching unit data from Supabase for unitId:', unitId);
+    debugLog('Fetching unit data from Supabase for unitId:', unitId);
     const { data: unitData, error: unitError } = await supabase
       .from('units')
       .select('unit_number')
@@ -207,11 +198,11 @@ serve(async (req) => {
 
     let unitNumber: string;
     if (unitError || !unitData) {
-      console.log('Unit not found in Supabase, using unitId as unitNumber:', unitId);
+      debugLog('Unit not found in Supabase, using unitId as unitNumber:', unitId);
       unitNumber = String(unitId).trim();
     } else {
       unitNumber = String(unitData.unit_number ?? unitId ?? '').trim() || String(unitId).trim();
-      console.log('Found unit in Supabase, unitNumber:', unitNumber);
+      debugLog('Found unit in Supabase, unitNumber:', unitNumber);
     }
 
     const normalizeUnit = (v: any) => String(v ?? '').trim();
@@ -230,7 +221,7 @@ serve(async (req) => {
       .maybeSingle();
     if (pendingRow?.zoho_reservation_id) {
       reservationId = String(pendingRow.zoho_reservation_id).trim();
-      console.log('Using zoho_reservation_id from pending_reservations (skip Zoho search):', reservationId);
+      debugLog('Using zoho_reservation_id from pending_reservations (skip Zoho search):', reservationId);
     }
     
     const pickBestMatch = (matches: any[], status: string) => {
@@ -243,31 +234,30 @@ serve(async (req) => {
           return ps === 'Pending';
         });
         if (pending) {
-          console.log('pickBestMatch: Selected pending reservation from', matches.length, 'matches');
+          debugLog('pickBestMatch: Selected pending reservation from', matches.length, 'matches');
           return pending;
         }
       }
       
-      console.log('pickBestMatch: Returning first match from', matches.length, 'matches');
+      debugLog('pickBestMatch: Returning first match from', matches.length, 'matches');
       return matches[0];
     };
 
     const perPage = 200;
     
     // Retry logic: Zoho may need time to index newly created reservations after submit-reservation creates them.
-    // PayFast can notify very quickly after payment; an initial delay gives Zoho time to index.
     const maxRetries = 5;
     const retryDelays = [5000, 3000, 5000, 7000, 10000]; // First attempt after 5s (Zoho indexing), then 3s, 5s, 7s, 10s
     
-    console.log('Starting reservation search with retry logic (max', maxRetries, 'attempts)');
-    console.log('Searching for contact:', zohoContactId, 'unitNumber:', unitNumber, 'unitId:', unitId);
+    debugLog('Starting reservation search with retry logic (max', maxRetries, 'attempts)');
+    debugLog('Searching for contact:', zohoContactId, 'unitNumber:', unitNumber, 'unitId:', unitId);
     
     for (let retryAttempt = 0; retryAttempt < maxRetries && !reservationId; retryAttempt++) {
       const delay = retryDelays[retryAttempt] ?? 10000;
       if (retryAttempt > 0) {
-        console.log(`Retry attempt ${retryAttempt + 1}/${maxRetries} after ${delay}ms delay...`);
+        debugLog(`Retry attempt ${retryAttempt + 1}/${maxRetries} after ${delay}ms delay...`);
       } else {
-        console.log(`Initial delay ${delay}ms before first search (allow Zoho to index new reservation)...`);
+        debugLog(`Initial delay ${delay}ms before first search (allow Zoho to index new reservation)...`);
       }
       await new Promise(resolve => setTimeout(resolve, delay));
       
@@ -276,10 +266,10 @@ serve(async (req) => {
         const unitSearchValues = unitNumber !== String(unitId) ? [unitNumber, unitId] : [unitNumber];
         for (const unitVal of unitSearchValues) {
           if (reservationId) break;
-          console.log('Trying unit-only search first...', '(Unit_Number:', unitVal, ')');
+          debugLog('Trying unit-only search first...', '(Unit_Number:', unitVal, ')');
           const unitOnlyCriteria = `(Unit_Number:equals:${encodeURIComponent(String(unitVal))})`;
           const unitSearchUrl = `${zohoApiUrl}/Unit_Reservations/search?criteria=${unitOnlyCriteria}&page=1&per_page=50`;
-          console.log('Unit-only search criteria:', unitOnlyCriteria);
+          debugLog('Unit-only search criteria:', unitOnlyCriteria);
           try {
             const unitSearchResponse = await fetch(unitSearchUrl, {
             headers: {
@@ -293,10 +283,10 @@ serve(async (req) => {
             if (unitSearchText && unitSearchText.trim()) {
               const unitSearchData = JSON.parse(unitSearchText);
               const unitResults = unitSearchData.data || [];
-              console.log(`Unit-only search found ${unitResults.length} reservations`);
+              debugLog(`Unit-only search found ${unitResults.length} reservations`);
               
               if (unitResults.length > 0) {
-                console.log(`Unit-only search found ${unitResults.length} reservations, filtering...`);
+                debugLog(`Unit-only search found ${unitResults.length} reservations, filtering...`);
                 
                 // For both COMPLETE and CANCELLED, prioritize Pending status (the one we just created)
                 const pendingMatch = unitResults.find((r: any) => {
@@ -310,7 +300,7 @@ serve(async (req) => {
                 
                 if (pendingMatch) {
                   reservationId = pendingMatch.id;
-                  console.log('Found pending reservation via unit-only search (with contact match):', reservationId);
+                  debugLog('Found pending reservation via unit-only search (with contact match):', reservationId);
                 } else {
                   // If no pending match with contact, try pending with just unit match
                   const pendingUnitMatch = unitResults.find((r: any) => {
@@ -321,7 +311,7 @@ serve(async (req) => {
                   
                   if (pendingUnitMatch) {
                     reservationId = pendingUnitMatch.id;
-                    console.log('Found pending reservation via unit-only search (unit match only):', reservationId);
+                    debugLog('Found pending reservation via unit-only search (unit match only):', reservationId);
                   } else {
                     // If no pending match, try to match by contact ID (any status)
                     const contactMatch = unitResults.find((r: any) => {
@@ -332,14 +322,14 @@ serve(async (req) => {
                     
                     if (contactMatch) {
                       reservationId = contactMatch.id;
-                      console.log('Found reservation via unit+contact match (any status):', reservationId);
+                      debugLog('Found reservation via unit+contact match (any status):', reservationId);
                     } else if (unitResults.length === 1) {
                       // If only one result and it matches the unit, use it
                       const singleMatch = unitResults[0];
                       const u = normalizeUnit(singleMatch.Unit_Number ?? singleMatch.unit_number);
                       if (u === unitNumber || u === String(unitId)) {
                         reservationId = singleMatch.id;
-                        console.log('Found single reservation matching unit:', reservationId);
+                        debugLog('Found single reservation matching unit:', reservationId);
                       }
                     }
                   }
@@ -361,26 +351,26 @@ serve(async (req) => {
         ];
         for (const criteriaCombined of combinedCriteriaOptions) {
           if (reservationId) break;
-          console.log('Trying combined search with criteria:', criteriaCombined);
+          debugLog('Trying combined search with criteria:', criteriaCombined);
 
           let combinedPage = 1;
           let combinedDone = false;
 
           while (!combinedDone && !reservationId) {
             const combinedUrl = `${zohoApiUrl}/Unit_Reservations/search?criteria=${criteriaCombined}&page=${combinedPage}&per_page=${perPage}`;
-            console.log('Searching Zoho reservations, page:', combinedPage);
+            debugLog('Searching Zoho reservations, page:', combinedPage);
             const searchResponse = await fetch(combinedUrl, {
               headers: {
                 'Authorization': `Zoho-oauthtoken ${access_token}`,
                 'Content-Type': 'application/json',
               },
             });
-            console.log('Combined search response status:', searchResponse.status);
+            debugLog('Combined search response status:', searchResponse.status);
             if (!searchResponse.ok) {
               const errorText = await searchResponse.text();
               console.error('Combined search failed:', searchResponse.status, errorText);
               if (searchResponse.status === 429 || errorText.includes('too many requests')) {
-                console.log('Rate limited, will retry after delay');
+                debugLog('Rate limited, will retry after delay');
                 break;
               }
               break;
@@ -388,19 +378,19 @@ serve(async (req) => {
             try {
               const searchText = await searchResponse.text();
               if (!searchText || searchText.trim() === '') {
-                if (searchResponse.status === 204) console.log('Zoho returned 204 No Content (no results)');
+                if (searchResponse.status === 204) debugLog('Zoho returned 204 No Content (no results)');
                 break;
               }
               const searchData = JSON.parse(searchText);
               const pageData = searchData.data || [];
-              console.log(`Combined search found ${pageData.length} reservations on page ${combinedPage}`);
+              debugLog(`Combined search found ${pageData.length} reservations on page ${combinedPage}`);
               if (pageData.length > 0) {
                 const matches = pageData.filter((r: any) => unitMatches(r));
-                console.log(`Filtered to ${matches.length} matching reservations`);
+                debugLog(`Filtered to ${matches.length} matching reservations`);
                 const match = pickBestMatch(matches, finalStatus);
                 if (match) {
                   reservationId = match.id;
-                  console.log('Found reservation via combined search:', reservationId);
+                  debugLog('Found reservation via combined search:', reservationId);
                   break;
                 }
               }
@@ -416,15 +406,15 @@ serve(async (req) => {
       
       // If we found a reservation, break out of retry loop
       if (reservationId) {
-        console.log('Reservation found on retry attempt:', retryAttempt + 1);
+        debugLog('Reservation found on retry attempt:', retryAttempt + 1);
         break;
       } else {
-        console.log('Reservation not found on attempt', retryAttempt + 1);
+        debugLog('Reservation not found on attempt', retryAttempt + 1);
       }
     }
 
     if (!reservationId) {
-      console.log('Reservation not found after all retries, trying fallback searches...');
+      debugLog('Reservation not found after all retries, trying fallback searches...');
       const searchCriteriaOptions = [
         `(Contact:equals:${encodeURIComponent(zohoContactId)})`,
         `(Contact.id:equals:${encodeURIComponent(zohoContactId)})`,
@@ -625,13 +615,12 @@ serve(async (req) => {
       return jsonOk('OK');
     }
 
-    console.log('Found reservation ID:', reservationId, 'Updating Payment_Status to:', finalStatus === 'COMPLETE' ? 'Paid' : 'Cancelled');
+    console.log('Updating reservation payment status:', finalStatus === 'COMPLETE' ? 'Paid' : 'Cancelled');
     
     const zohoPaymentStatus = finalStatus === 'COMPLETE' ? 'Paid' : 'Cancelled';
     
     const updateUrl = `${zohoApiUrl}/Unit_Reservations/${reservationId}`;
-    console.log('Updating Zoho reservation at:', updateUrl);
-    console.log('Update payload:', { Payment_Status: zohoPaymentStatus });
+    debugLog('Updating Zoho reservation at:', updateUrl);
     
     const updateResponse = await fetch(updateUrl, {
       method: 'PUT',
@@ -646,7 +635,7 @@ serve(async (req) => {
       }),
     });
 
-    console.log('Zoho update response status:', updateResponse.status);
+    debugLog('Zoho update response status:', updateResponse.status);
     
     if (!updateResponse.ok) {
       const errorText = await updateResponse.text();
@@ -654,8 +643,8 @@ serve(async (req) => {
       return jsonOk('OK');
     }
     
-    const updateResponseText = await updateResponse.text();
-    console.log('Zoho reservation updated successfully:', updateResponseText?.substring(0, 300));
+    await updateResponse.text();
+    console.log('Zoho reservation updated successfully');
 
     if (finalStatus === 'CANCELLED') {
       console.log('Payment cancelled, releasing unit lock so unit shows Available again');
@@ -671,7 +660,7 @@ serve(async (req) => {
         console.error('Failed to release unit lock:', unitUpdateError);
         return jsonOk('OK');
       }
-      console.log('Unit lock released successfully');
+      debugLog('Unit lock released successfully');
 
       await supabase
         .from('pending_reservations')
@@ -693,7 +682,7 @@ serve(async (req) => {
         console.error('Failed to update unit status:', unitUpdateError);
         return jsonOk('OK');
       }
-      console.log('Unit status updated successfully to Reserved');
+      debugLog('Unit status updated successfully to Reserved');
 
       // Add unit to user's reserved_unit_ids in profiles (for My Reservations page)
       const { data: pendingRow } = await supabase
@@ -719,7 +708,7 @@ serve(async (req) => {
           if (profileErr) {
             console.error('Failed to add unit to profile reserved_unit_ids:', profileErr);
           } else {
-            console.log('Added unit to profile reserved_unit_ids for user:', pendingRow.user_id);
+            debugLog('Added unit to profile reserved_unit_ids for user:', pendingRow.user_id);
           }
         }
         await supabase

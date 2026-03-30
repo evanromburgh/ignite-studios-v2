@@ -654,7 +654,7 @@ onMounted(async () => {
 
   const setupBeforeUnload = () => {
     beforeUnloadHandler = () => {
-      // Do not release lock when redirecting to PayFast (payment-cancel or webhook will handle cleanup)
+      // Do not release lock when redirecting to checkout (payment-cancel or webhook will handle cleanup)
       if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ignite_reservation_redirecting')) {
         return
       }

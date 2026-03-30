@@ -121,7 +121,7 @@ CREATE POLICY "Users can delete own wishlist"
   USING (auth.uid() = user_id);
 
 -- -----------------------------------------------------------------------------
--- 4. PENDING_RESERVATIONS (Zoho + PayFast flow)
+-- 4. PENDING_RESERVATIONS (Zoho + Paystack flow)
 -- -----------------------------------------------------------------------------
 CREATE TABLE public.pending_reservations (
   unit_id UUID NOT NULL REFERENCES public.units(id) ON DELETE CASCADE,

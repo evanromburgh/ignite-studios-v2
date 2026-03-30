@@ -221,7 +221,7 @@
     </div>
 
     <!-- Reserved/Sold/Locked banner (no unit type image in list view) -->
-    <div v-if="showOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none bg-white/60 backdrop-blur-[1px]">
+    <div v-if="showOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/25 backdrop-blur-[2px]">
       <span class="px-7 py-2 rounded-full bg-zinc-900 text-white text-[11px] font-black uppercase tracking-[0.2em]">
         {{ overlayLabel }}
       </span>
@@ -279,9 +279,7 @@ const formattedOriginalPrice = computed(() =>
 
 const reserveButtonLabel = computed(() => {
   if (isReserving.value) return 'Securing...'
-  if (props.unit.status === 'Available' && !isLocked.value) return 'Reserve Now'
-  if (isLocked.value) return 'Locked'
-  return props.unit.status
+  return 'Reserve Now'
 })
 
 const overlayLabel = computed(() => {

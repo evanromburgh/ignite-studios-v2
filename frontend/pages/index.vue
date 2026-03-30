@@ -63,7 +63,7 @@
             Browse Units
           </h1>
           <p class="text-center text-base sm:text-lg text-zinc-300 font-normal">
-            66 APARTMENTS
+            {{ apartmentsHeadline }}
           </p>
         </div>
         <!-- Filter bar: not inside hero; rendered fixed or anchored below -->
@@ -514,9 +514,10 @@ const viewSwitcherPillStyle = computed(() => ({
 }))
 
 watch(viewMode, (m) => {
+  if (m === 'PLANS') plansMounted.value = true
   // While a transition is in progress we already moved the pill; avoid re-measuring.
   if (pendingViewMode.value === null) updateViewSwitcherPillTo(m)
-})
+}, { immediate: true })
 watch(viewSwitcherContainerRef, (el) => {
   if (el) updateActiveViewSwitcherPill()
 }, { flush: 'post' })
@@ -610,6 +611,13 @@ const displayedUnits = computed(() => {
     return dir === 'asc' ? cmp : -cmp
   })
   return list
+})
+
+const apartmentsHeadline = computed(() => {
+  if (unitsLoading.value) return 'APARTMENTS'
+  const count = units.value.length
+  const noun = count === 1 ? 'APARTMENT' : 'APARTMENTS'
+  return `${count} ${noun}`
 })
 
 watch(unitsLoading, (loading) => {

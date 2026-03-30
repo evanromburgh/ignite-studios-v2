@@ -134,7 +134,7 @@
             </svg>
           </button>
 
-          <div class="flex items-center gap-1 p-1">
+          <div class="flex items-center gap-2 p-1">
             <button
               v-for="(f, idx) in SITE_MAP_FLOORS"
               :key="f.id"
@@ -316,7 +316,8 @@
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 380.701 338.056"
-                class="h-8 w-auto max-w-[min(4rem,18vw)] shrink-0 rotate-90 text-zinc-900 select-none sm:h-10 md:h-12"
+                class="h-8 w-auto max-w-[min(4rem,18vw)] shrink-0 text-zinc-900 select-none sm:h-10 md:h-12"
+                :style="northArrowStyle(activeFloor)"
                 aria-hidden="true"
                 focusable="false"
               >
@@ -433,10 +434,11 @@ function planHtmlBadgePositionStyle(floorId: string, pathD: string): Record<stri
   let x = rawX
   let y = rawY
   const floor = SITE_MAP_FLOORS.find((f) => f.id === floorId)
-  if (floor && shouldRotateFloorHotspotsClockwise(floor)) {
-    // Rotate normalized point 90deg clockwise around center for portrait mobile asset.
-    x = 1 - rawY
-    y = rawX
+  const quarterTurns = floor ? floorHotspotQuarterTurnsClockwise(floor) : 0
+  if (quarterTurns > 0) {
+    const rotated = rotateNormalizedPointClockwise(rawX, rawY, quarterTurns)
+    x = rotated.x
+    y = rotated.y
   }
   return {
     left: `${x * 100}%`,
@@ -561,22 +563,49 @@ function shouldRotateFloorHotspotsClockwise(floor: (typeof SITE_MAP_FLOORS)[numb
   return Boolean(isMobileViewport.value && floor.mobileImageSrc && floor.rotateHotspotsClockwiseOnMobile)
 }
 
+type FacingPosition = 'top' | 'right' | 'bottom' | 'left'
+
+const FACING_POSITIONS: FacingPosition[] = ['top', 'right', 'bottom', 'left']
+
+function floorHotspotQuarterTurnsClockwise(floor: (typeof SITE_MAP_FLOORS)[number]): number {
+  return shouldRotateFloorHotspotsClockwise(floor) ? 1 : 0
+}
+
+function rotateFacingPositionClockwise(position: FacingPosition, quarterTurns: number): FacingPosition {
+  const currentIndex = FACING_POSITIONS.indexOf(position)
+  const turns = ((quarterTurns % 4) + 4) % 4
+  return FACING_POSITIONS[(currentIndex + turns) % 4]
+}
+
+function rotateNormalizedPointClockwise(x: number, y: number, quarterTurns: number): { x: number; y: number } {
+  let rx = x
+  let ry = y
+  const turns = ((quarterTurns % 4) + 4) % 4
+  for (let i = 0; i < turns; i++) {
+    const nextX = 1 - ry
+    const nextY = rx
+    rx = nextX
+    ry = nextY
+  }
+  return { x: rx, y: ry }
+}
+
 function facingLabel(
   floor: (typeof SITE_MAP_FLOORS)[number],
-  position: 'top' | 'right' | 'bottom' | 'left',
+  position: FacingPosition,
 ): string {
-  const usingPortraitAsset = Boolean(isMobileViewport.value && floor.mobileImageSrc)
-  if (!usingPortraitAsset) return SITE_MAP_PLAN_FRAME.facing[position]
+  const sourcePosition = rotateFacingPositionClockwise(position, floorHotspotQuarterTurnsClockwise(floor))
+  return SITE_MAP_PLAN_FRAME.facing[sourcePosition]
+}
 
-  // Portrait asset is effectively rotated relative to our normalized coordinates.
-  const rotatedFacingByPosition = {
-    top: SITE_MAP_PLAN_FRAME.facing.left,
-    right: SITE_MAP_PLAN_FRAME.facing.top,
-    bottom: SITE_MAP_PLAN_FRAME.facing.right,
-    left: SITE_MAP_PLAN_FRAME.facing.bottom,
-  } as const
-
-  return rotatedFacingByPosition[position]
+function northArrowStyle(floor: (typeof SITE_MAP_FLOORS)[number]): Record<string, string> {
+  // Base orientation aligns the provided SVG with the desktop map framing.
+  const baseRotationDeg = 90
+  const totalRotationDeg = baseRotationDeg + floorHotspotQuarterTurnsClockwise(floor) * 90
+  return {
+    transform: `rotate(${totalRotationDeg}deg)`,
+    '--north-letter-rotation': `${-totalRotationDeg}deg`,
+  }
 }
 
 onMounted(() => {
@@ -673,8 +702,8 @@ if (import.meta.dev) {
 }
 
 .north-arrow-letter {
-  /* Keep just the N glyph readable while the whole arrow is rotated. */
-  transform: rotate(-90deg);
+  /* Keep just the N glyph readable while the whole arrow rotation changes by floor/mobile orientation. */
+  transform: rotate(var(--north-letter-rotation, -90deg));
   transform-box: fill-box;
   transform-origin: center;
 }

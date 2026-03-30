@@ -54,7 +54,7 @@ Single migration sets up the portal + edge functions. Run on a **new** Supabase 
 
 ## Edge functions
 
-- **submit-reservation**: auth required; inserts/updates `pending_reservations`, updates `units` (lock); uses Zoho + PayFast.
+- **submit-reservation**: auth required; inserts/updates `pending_reservations`, updates `units` (lock); uses Zoho + Paystack.
 - **payment-webhook**: reads/updates `pending_reservations`, `units` (status), `profiles` (reserved_unit_ids); uses service role.
 - **release-reservation-lock**: clears `units.lock_expires_at` and `units.locked_by`; uses service role.
 

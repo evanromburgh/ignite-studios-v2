@@ -61,7 +61,6 @@ export default defineNuxtConfig({
   routeRules: {
     '/': { isr: 60 },
     '/documents': { isr: 3600 },
-    '/contact': { static: true },
   },
   nitro: {
     minify: false,

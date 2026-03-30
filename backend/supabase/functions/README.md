@@ -14,7 +14,7 @@ Handles the "Proceed to Payment" flow:
 Called when the user closes the Paystack popup without paying (or clicks a cancel control). Updates Zoho `Unit_Reservations.Payment_Status` to **Cancelled**, releases the unit lock in Supabase, and removes the row from `pending_reservations`. Requires `Authorization: Bearer <user JWT>` and body `{ "paymentReference": "unitId.zohoContactId.timestamp" }`.
 
 ### 3. `payment-webhook`
-Handles payment confirmation from Paystack (and optionally legacy PayFast):
+Handles payment confirmation from Paystack:
 - Receives webhook from Paystack when payment succeeds or fails
 - Verifies Paystack signature (`x-paystack-signature`)
 - Updates Zoho CRM Unit_Reservations: sets `Payment_Status` to Paid or Cancelled

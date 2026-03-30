@@ -37,7 +37,7 @@ export const SITE_MAP_PLAN_FRAME = {
 
 /** Supabase public URLs for the interactive site map raster plans. */
 const SUPABASE_ASSETS_SITEMAP_BASE_URL =
-  'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/sitemap'
+  'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/units/sitemap'
 
 export const SITE_MAP_MASTER = {
   imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/location-background.webp`,
@@ -58,69 +58,233 @@ export const SITE_MAP_FLOORS: SiteMapFloor[] = [
   {
     id: 'ground',
     label: 'Ground floor',
-    imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/ground-floor.webp`,
-    mobileImageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/ground-floor-mobile.webp`,
+    imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/ground-floor-plan.webp`,
+    mobileImageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/ground-floor-plan-mobile.webp`,
     rotateHotspotsClockwiseOnMobile: true,
     viewBox: '0 0 1 1',
     units: [
       {
         unitNumber: '812',
-        /** Rectangle from authoring coords (% of W/H → 0–1) */
-        pathD: 'M 0.0031 0.075 L 0.1845 0.075 L 0.1845 0.415 L 0.0031 0.415 Z',
+        pathD: 'M 0.0007 0.078 L 0.0933 0.078 L 0.0933 0.0719 L 0.168 0.0719 L 0.168 0.078 L 0.1852 0.078 L 0.1852 0.4205 L 0.0007 0.4205 Z',
       },
       {
         unitNumber: '811',
-        /** Polygon 18.45,7.50 → 34.22,7.50 → 34.22,41.50 → 18.45,41.50 (% of W/H → 0–1) */
-        pathD: 'M 0.1845 0.075 L 0.3422 0.075 L 0.3422 0.415 L 0.1845 0.415 Z',
+        pathD: 'M 0.1852 0.078 L 0.2016 0.078 L 0.2016 0.0719 L 0.2689 0.0719 L 0.2689 0.078 L 0.3422 0.078 L 0.3422 0.4205 L 0.1852 0.4205 Z',
       },
       {
         unitNumber: '810',
-        /** Polygon 34.22,7.50 → 50.00,7.50 → 50.00,41.50 → 34.22,41.50 (% of W/H → 0–1) */
-        pathD: 'M 0.3422 0.075 L 0.5 0.075 L 0.5 0.415 L 0.3422 0.415 Z',
+        pathD: 'M 0.3422 0.078 L 0.4163 0.078 L 0.4163 0.0719 L 0.4835 0.0719 L 0.4835 0.078 L 0.5007 0.078 L 0.5007 0.4205 L 0.3422 0.4205 Z',
       },
       {
         unitNumber: '809',
-        /** Polygon 50.00,7.50 → 65.78,7.50 → 65.78,41.50 → 50.00,41.50 (% of W/H → 0–1) */
-        pathD: 'M 0.5 0.075 L 0.6578 0.075 L 0.6578 0.415 L 0.5 0.415 Z',
+        pathD: 'M 0.5007 0.078 L 0.5171 0.078 L 0.5171 0.0719 L 0.585 0.0719 L 0.585 0.078 L 0.6584 0.078 L 0.6584 0.4205 L 0.5007 0.4205 Z',
       },
       {
         unitNumber: '808',
-        /** Polygon 65.78,7.50 → 81.55,7.50 → 81.55,41.50 → 65.78,41.50 (% of W/H → 0–1) */
-        pathD: 'M 0.6578 0.075 L 0.8155 0.075 L 0.8155 0.415 L 0.6578 0.415 Z',
+        pathD: 'M 0.6584 0.078 L 0.7325 0.078 L 0.7325 0.0719 L 0.7997 0.0719 L 0.7997 0.078 L 0.8162 0.078 L 0.8162 0.4205 L 0.6584 0.4205 Z',
       },
       {
         unitNumber: '807',
-        /** Polygon 81.55,7.50 → 99.73,7.50 → 99.73,41.50 → 81.55,41.50 (% of W/H → 0–1) */
-        pathD: 'M 0.8155 0.075 L 0.9973 0.075 L 0.9973 0.415 L 0.8155 0.415 Z',
+        pathD: 'M 0.8162 0.078 L 0.8333 0.078 L 0.8333 0.0719 L 0.9081 0.0719 L 0.9081 0.078 L 0.9993 0.078 L 0.9993 0.4205 L 0.8162 0.4205 Z',
       },
       {
         unitNumber: '801',
-        /** Row 2: 0.31,57.00 → 18.45,57.00 → 18.45,91.00 → 0.31,91.00 (% of W/H → 0–1) */
-        pathD: 'M 0.0031 0.57 L 0.1845 0.57 L 0.1845 0.91 L 0.0031 0.91 Z',
+        pathD: 'M 0.0007 0.922 L 0.0933 0.922 L 0.0933 0.9281 L 0.168 0.9281 L 0.168 0.922 L 0.1852 0.922 L 0.1852 0.5795 L 0.0007 0.5795 Z',
       },
       {
         unitNumber: '802',
-        pathD: 'M 0.1845 0.57 L 0.3422 0.57 L 0.3422 0.91 L 0.1845 0.91 Z',
+        pathD: 'M 0.1852 0.922 L 0.2016 0.922 L 0.2016 0.9281 L 0.2689 0.9281 L 0.2689 0.922 L 0.3422 0.922 L 0.3422 0.5795 L 0.1852 0.5795 Z',
       },
       {
         unitNumber: '803',
-        pathD: 'M 0.3422 0.57 L 0.5 0.57 L 0.5 0.91 L 0.3422 0.91 Z',
+        pathD: 'M 0.3422 0.922 L 0.4163 0.922 L 0.4163 0.9281 L 0.4835 0.9281 L 0.4835 0.922 L 0.5007 0.922 L 0.5007 0.5795 L 0.3422 0.5795 Z',
       },
       {
         unitNumber: '804',
-        pathD: 'M 0.5 0.57 L 0.6578 0.57 L 0.6578 0.91 L 0.5 0.91 Z',
+        pathD: 'M 0.5007 0.922 L 0.5171 0.922 L 0.5171 0.9281 L 0.585 0.9281 L 0.585 0.922 L 0.6584 0.922 L 0.6584 0.5795 L 0.5007 0.5795 Z',
       },
       {
         unitNumber: '805',
-        pathD: 'M 0.6578 0.57 L 0.8155 0.57 L 0.8155 0.91 L 0.6578 0.91 Z',
+        pathD: 'M 0.6584 0.922 L 0.7325 0.922 L 0.7325 0.9281 L 0.7997 0.9281 L 0.7997 0.922 L 0.8162 0.922 L 0.8162 0.5795 L 0.6584 0.5795 Z',
       },
       {
         unitNumber: '806',
-        pathD: 'M 0.8155 0.57 L 0.9973 0.57 L 0.9973 0.91 L 0.8155 0.91 Z',
+        pathD: 'M 0.8162 0.922 L 0.8333 0.922 L 0.8333 0.9281 L 0.9081 0.9281 L 0.9081 0.922 L 0.9993 0.922 L 0.9993 0.5795 L 0.8162 0.5795 Z',
       },
     ],
   },
-  { id: 'first', label: 'First floor', imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/first-floor.webp`, viewBox: '0 0 1 1', units: [] },
-  { id: 'second', label: 'Second floor', imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/second-floor.webp`, viewBox: '0 0 1 1', units: [] },
-  { id: 'third', label: 'Third floor', imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/third-floor.webp`, viewBox: '0 0 1 1', units: [] },
+  {
+    id: 'first',
+    label: 'First floor',
+    imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/first-floor-plan.webp`,
+    mobileImageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/first-floor-plan-mobile.webp`,
+    rotateHotspotsClockwiseOnMobile: true,
+    viewBox: '0 0 1 1',
+    units: [
+      {
+        unitNumber: '824',
+        pathD: 'M 0.0007 0.078 L 0.0933 0.078 L 0.0933 0.0719 L 0.168 0.0719 L 0.168 0.078 L 0.1852 0.078 L 0.1852 0.4205 L 0.0007 0.4205 Z',
+      },
+      {
+        unitNumber: '823',
+        pathD: 'M 0.1852 0.078 L 0.2016 0.078 L 0.2016 0.0719 L 0.2689 0.0719 L 0.2689 0.078 L 0.3422 0.078 L 0.3422 0.4205 L 0.1852 0.4205 Z',
+      },
+      {
+        unitNumber: '822',
+        pathD: 'M 0.3422 0.078 L 0.4163 0.078 L 0.4163 0.0719 L 0.4835 0.0719 L 0.4835 0.078 L 0.5007 0.078 L 0.5007 0.4205 L 0.3422 0.4205 Z',
+      },
+      {
+        unitNumber: '821',
+        pathD: 'M 0.5007 0.078 L 0.5171 0.078 L 0.5171 0.0719 L 0.585 0.0719 L 0.585 0.078 L 0.6584 0.078 L 0.6584 0.4205 L 0.5007 0.4205 Z',
+      },
+      {
+        unitNumber: '820',
+        pathD: 'M 0.6584 0.078 L 0.7325 0.078 L 0.7325 0.0719 L 0.7997 0.0719 L 0.7997 0.078 L 0.8162 0.078 L 0.8162 0.4205 L 0.6584 0.4205 Z',
+      },
+      {
+        unitNumber: '819',
+        pathD: 'M 0.8162 0.078 L 0.8333 0.078 L 0.8333 0.0719 L 0.9081 0.0719 L 0.9081 0.078 L 0.9993 0.078 L 0.9993 0.4205 L 0.8162 0.4205 Z',
+      },
+      {
+        unitNumber: '818',
+        pathD: 'M 0.8162 0.922 L 0.8333 0.922 L 0.8333 0.9281 L 0.9081 0.9281 L 0.9081 0.922 L 0.9993 0.922 L 0.9993 0.5795 L 0.8162 0.5795 Z',
+      },
+      {
+        unitNumber: '817',
+        pathD: 'M 0.6584 0.922 L 0.7325 0.922 L 0.7325 0.9281 L 0.7997 0.9281 L 0.7997 0.922 L 0.8162 0.922 L 0.8162 0.5795 L 0.6584 0.5795 Z',
+      },
+      {
+        unitNumber: '816',
+        pathD: 'M 0.5007 0.922 L 0.5171 0.922 L 0.5171 0.9281 L 0.585 0.9281 L 0.585 0.922 L 0.6584 0.922 L 0.6584 0.5795 L 0.5007 0.5795 Z',
+      },
+      {
+        unitNumber: '815',
+        pathD: 'M 0.3422 0.922 L 0.4163 0.922 L 0.4163 0.9281 L 0.4835 0.9281 L 0.4835 0.922 L 0.5007 0.922 L 0.5007 0.5795 L 0.3422 0.5795 Z',
+      },
+      {
+        unitNumber: '814',
+        pathD: 'M 0.1852 0.922 L 0.2016 0.922 L 0.2016 0.9281 L 0.2689 0.9281 L 0.2689 0.922 L 0.3422 0.922 L 0.3422 0.5795 L 0.1852 0.5795 Z',
+      },
+      {
+        unitNumber: '813',
+        pathD: 'M 0.0007 0.922 L 0.0933 0.922 L 0.0933 0.9281 L 0.168 0.9281 L 0.168 0.922 L 0.1852 0.922 L 0.1852 0.5795 L 0.0007 0.5795 Z',
+      },
+    ],
+  },
+  {
+    id: 'second',
+    label: 'Second floor',
+    imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/second-floor-plan.webp`,
+    mobileImageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/second-floor-plan-mobile.webp`,
+    rotateHotspotsClockwiseOnMobile: true,
+    viewBox: '0 0 1 1',
+    units: [
+      {
+        unitNumber: '836',
+        pathD: 'M 0.0007 0.078 L 0.0933 0.078 L 0.0933 0.0719 L 0.168 0.0719 L 0.168 0.078 L 0.1852 0.078 L 0.1852 0.4205 L 0.0007 0.4205 Z',
+      },
+      {
+        unitNumber: '835',
+        pathD: 'M 0.1852 0.078 L 0.2016 0.078 L 0.2016 0.0719 L 0.2689 0.0719 L 0.2689 0.078 L 0.3422 0.078 L 0.3422 0.4205 L 0.1852 0.4205 Z',
+      },
+      {
+        unitNumber: '834',
+        pathD: 'M 0.3422 0.078 L 0.4163 0.078 L 0.4163 0.0719 L 0.4835 0.0719 L 0.4835 0.078 L 0.5007 0.078 L 0.5007 0.4205 L 0.3422 0.4205 Z',
+      },
+      {
+        unitNumber: '833',
+        pathD: 'M 0.5007 0.078 L 0.5171 0.078 L 0.5171 0.0719 L 0.585 0.0719 L 0.585 0.078 L 0.6584 0.078 L 0.6584 0.4205 L 0.5007 0.4205 Z',
+      },
+      {
+        unitNumber: '832',
+        pathD: 'M 0.6584 0.078 L 0.7325 0.078 L 0.7325 0.0719 L 0.7997 0.0719 L 0.7997 0.078 L 0.8162 0.078 L 0.8162 0.4205 L 0.6584 0.4205 Z',
+      },
+      {
+        unitNumber: '831',
+        pathD: 'M 0.8162 0.078 L 0.8333 0.078 L 0.8333 0.0719 L 0.9081 0.0719 L 0.9081 0.078 L 0.9993 0.078 L 0.9993 0.4205 L 0.8162 0.4205 Z',
+      },
+      {
+        unitNumber: '830',
+        pathD: 'M 0.8162 0.922 L 0.8333 0.922 L 0.8333 0.9281 L 0.9081 0.9281 L 0.9081 0.922 L 0.9993 0.922 L 0.9993 0.5795 L 0.8162 0.5795 Z',
+      },
+      {
+        unitNumber: '829',
+        pathD: 'M 0.6584 0.922 L 0.7325 0.922 L 0.7325 0.9281 L 0.7997 0.9281 L 0.7997 0.922 L 0.8162 0.922 L 0.8162 0.5795 L 0.6584 0.5795 Z',
+      },
+      {
+        unitNumber: '828',
+        pathD: 'M 0.5007 0.922 L 0.5171 0.922 L 0.5171 0.9281 L 0.585 0.9281 L 0.585 0.922 L 0.6584 0.922 L 0.6584 0.5795 L 0.5007 0.5795 Z',
+      },
+      {
+        unitNumber: '827',
+        pathD: 'M 0.3422 0.922 L 0.4163 0.922 L 0.4163 0.9281 L 0.4835 0.9281 L 0.4835 0.922 L 0.5007 0.922 L 0.5007 0.5795 L 0.3422 0.5795 Z',
+      },
+      {
+        unitNumber: '826',
+        pathD: 'M 0.1852 0.922 L 0.2016 0.922 L 0.2016 0.9281 L 0.2689 0.9281 L 0.2689 0.922 L 0.3422 0.922 L 0.3422 0.5795 L 0.1852 0.5795 Z',
+      },
+      {
+        unitNumber: '825',
+        pathD: 'M 0.0007 0.922 L 0.0933 0.922 L 0.0933 0.9281 L 0.168 0.9281 L 0.168 0.922 L 0.1852 0.922 L 0.1852 0.5795 L 0.0007 0.5795 Z',
+      },
+    ],
+  },
+  {
+    id: 'third',
+    label: 'Third floor',
+    imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/third-floor-plan.webp`,
+    mobileImageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/third-floor-plan-mobile.webp`,
+    rotateHotspotsClockwiseOnMobile: true,
+    viewBox: '0 0 1 1',
+    units: [
+      {
+        unitNumber: '848',
+        pathD: 'M 0.0007 0.078 L 0.0933 0.078 L 0.0933 0.0719 L 0.168 0.0719 L 0.168 0.078 L 0.1852 0.078 L 0.1852 0.4205 L 0.0007 0.4205 Z',
+      },
+      {
+        unitNumber: '847',
+        pathD: 'M 0.1852 0.078 L 0.2016 0.078 L 0.2016 0.0719 L 0.2689 0.0719 L 0.2689 0.078 L 0.3422 0.078 L 0.3422 0.4205 L 0.1852 0.4205 Z',
+      },
+      {
+        unitNumber: '846',
+        pathD: 'M 0.3422 0.078 L 0.4163 0.078 L 0.4163 0.0719 L 0.4835 0.0719 L 0.4835 0.078 L 0.5007 0.078 L 0.5007 0.4205 L 0.3422 0.4205 Z',
+      },
+      {
+        unitNumber: '845',
+        pathD: 'M 0.5007 0.078 L 0.5171 0.078 L 0.5171 0.0719 L 0.585 0.0719 L 0.585 0.078 L 0.6584 0.078 L 0.6584 0.4205 L 0.5007 0.4205 Z',
+      },
+      {
+        unitNumber: '844',
+        pathD: 'M 0.6584 0.078 L 0.7325 0.078 L 0.7325 0.0719 L 0.7997 0.0719 L 0.7997 0.078 L 0.8162 0.078 L 0.8162 0.4205 L 0.6584 0.4205 Z',
+      },
+      {
+        unitNumber: '843',
+        pathD: 'M 0.8162 0.078 L 0.8333 0.078 L 0.8333 0.0719 L 0.9081 0.0719 L 0.9081 0.078 L 0.9993 0.078 L 0.9993 0.4205 L 0.8162 0.4205 Z',
+      },
+      {
+        unitNumber: '842',
+        pathD: 'M 0.8162 0.922 L 0.8333 0.922 L 0.8333 0.9281 L 0.9081 0.9281 L 0.9081 0.922 L 0.9993 0.922 L 0.9993 0.5795 L 0.8162 0.5795 Z',
+      },
+      {
+        unitNumber: '841',
+        pathD: 'M 0.6584 0.922 L 0.7325 0.922 L 0.7325 0.9281 L 0.7997 0.9281 L 0.7997 0.922 L 0.8162 0.922 L 0.8162 0.5795 L 0.6584 0.5795 Z',
+      },
+      {
+        unitNumber: '840',
+        pathD: 'M 0.5007 0.922 L 0.5171 0.922 L 0.5171 0.9281 L 0.585 0.9281 L 0.585 0.922 L 0.6584 0.922 L 0.6584 0.5795 L 0.5007 0.5795 Z',
+      },
+      {
+        unitNumber: '839',
+        pathD: 'M 0.3422 0.922 L 0.4163 0.922 L 0.4163 0.9281 L 0.4835 0.9281 L 0.4835 0.922 L 0.5007 0.922 L 0.5007 0.5795 L 0.3422 0.5795 Z',
+      },
+      {
+        unitNumber: '838',
+        pathD: 'M 0.1852 0.922 L 0.2016 0.922 L 0.2016 0.9281 L 0.2689 0.9281 L 0.2689 0.922 L 0.3422 0.922 L 0.3422 0.5795 L 0.1852 0.5795 Z',
+      },
+      {
+        unitNumber: '837',
+        pathD: 'M 0.0007 0.922 L 0.0933 0.922 L 0.0933 0.9281 L 0.168 0.9281 L 0.168 0.922 L 0.1852 0.922 L 0.1852 0.5795 L 0.0007 0.5795 Z',
+      },
+    ],
+  },
 ]

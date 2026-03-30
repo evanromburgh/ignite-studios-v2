@@ -1,7 +1,7 @@
 <template>
   <!-- Mobile uses full-width plan and lets content define height. -->
   <div
-    class="relative mx-auto box-border w-full max-w-full overflow-x-hidden overflow-y-visible rounded-xl bg-transparent max-sm:px-3 max-sm:overflow-hidden sm:w-[60%] sm:overflow-hidden"
+    class="relative mx-auto box-border w-full max-w-full overflow-x-hidden overflow-y-visible bg-transparent max-sm:px-3 max-sm:overflow-hidden sm:w-[60%] sm:overflow-hidden"
   >
     <div
       class="flex w-full items-center justify-center max-sm:min-h-0 max-sm:items-center max-sm:py-0 sm:min-h-0 sm:block sm:py-0"
