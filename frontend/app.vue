@@ -19,7 +19,7 @@ const authTransitionLoading = ref(false)
 if (process.client) {
   const router = useRouter()
   router.beforeEach((to, from, next) => {
-    if (to.fullPath !== from.fullPath) {
+    if (to.path !== from.path) {
       routeLoading.value = true
     }
     next()

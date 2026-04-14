@@ -1,15 +1,15 @@
 <template>
   <div
-    class="group relative grid grid-rows-[1fr_1fr] h-full overflow-hidden select-none cursor-default bg-white border border-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 rounded-[0.5rem]"
+    class="group relative grid h-full grid-rows-[repeat(2,minmax(0,1fr))] overflow-hidden select-none cursor-default bg-white border border-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 rounded-[0.5rem]"
     :class="(isAvailable || isAdmin) ? 'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]' : ''"
   >
-    <!-- Image: unit number and wishlist overlaid on image -->
-      <div class="relative overflow-hidden bg-[#fbfcfd] w-full h-full">
+    <!-- Image: row 1 of 50/50 split; overlays use grid-row 1/-1 so they don’t add extra rows -->
+      <div class="relative col-start-1 row-start-1 min-h-0 h-full w-full overflow-hidden bg-[#fbfcfd]">
         <img
           :src="cardImageUrl"
           :alt="`Unit ${unit.unitNumber}`"
           loading="lazy"
-          class="object-cover w-full h-full transition-all duration-500 ease-out scale-[0.85] origin-center"
+          class="absolute inset-0 object-cover w-full h-full transition-all duration-500 ease-out scale-[0.85] origin-center"
           :class="[
             (isAvailable || isAdmin || hideReservedOverlay) ? 'group-hover:scale-95' : 'opacity-70',
             ''
@@ -41,13 +41,13 @@
     <!-- Dark overlay across the whole card when not available -->
     <div
       v-if="showOverlay"
-      class="absolute inset-0 bg-black/25 backdrop-blur-[2px] pointer-events-none z-[4]"
+      class="absolute inset-0 col-start-1 row-start-1 row-end-[-1] bg-black/25 backdrop-blur-[2px] pointer-events-none z-[4]"
       aria-hidden="true"
     />
     <!-- RESERVED/Sold/Locked badge centered on full-card overlay -->
     <div
       v-if="showOverlay"
-      class="absolute inset-0 flex items-center justify-center pointer-events-none z-[5]"
+      class="absolute inset-0 col-start-1 row-start-1 row-end-[-1] flex items-center justify-center pointer-events-none z-[5]"
     >
       <span class="px-9 py-3 rounded-full bg-zinc-900 text-white text-[12px] font-black uppercase tracking-[0.2em]">
         {{ overlayLabel }}
@@ -55,7 +55,7 @@
     </div>
 
     <!-- Details: left = floor, facing, unit type (dark gray); right = price -->
-    <div class="flex flex-col min-h-0">
+    <div class="col-start-1 row-start-2 flex min-h-0 min-w-0 flex-col overflow-y-auto">
       <div class="px-4 sm:px-[1.25rem]">
         <div class="flex justify-between items-start gap-4 py-8">
           <div class="min-w-0">

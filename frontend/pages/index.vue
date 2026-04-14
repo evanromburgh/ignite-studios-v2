@@ -59,79 +59,33 @@
           </ClientOnly>
         </div>
         <div class="relative z-20 flex min-h-full flex-col justify-center items-center px-5 pt-0 pb-0 sm:pt-24 sm:pb-32 sm:px-8 md:px-24 lg:px-40 xl:px-56 pointer-events-none">
-          <h1 class="text-center text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight mb-2">
+          <h1 class="text-center text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight mb-3">
             Browse Units
           </h1>
-          <p class="text-center text-base sm:text-lg text-zinc-300 font-normal">
+          <p class="text-center text-sm sm:text-base text-zinc-300/90 font-medium mt-1">
             {{ apartmentsHeadline }}
           </p>
         </div>
         <!-- Filter bar: not inside hero; rendered fixed or anchored below -->
       </header>
 
-      <!-- Sticky filterbar: desktop/tablet only (sm and up); mobile uses Filters drawer below -->
-      <div class="hidden sm:block">
-        <!-- Sticky filterbar: anchor slot (in-flow when scrolled past threshold) -->
-        <div
-          class="relative z-30 w-full pointer-events-auto"
-          :style="sticky.anchorWrapperStyle"
-        >
-          <div v-if="sticky.isAnchored" class="filterbar-container">
-            <FilterBar
-              :filters="filters"
-              :view-mode="viewMode"
-              :unit-types="unitTypes"
-              :floor-options="floorOptions"
-              :direction-options="directionOptions"
-              @update:filters="filters = $event"
-              @update:view-mode="viewMode = $event"
-            />
-          </div>
-          <div v-else :style="{ height: sticky.barHeightPx }" aria-hidden="true" />
-        </div>
-
-        <!-- Sticky filterbar: fixed at bottom until anchor threshold -->
-        <div
-          v-show="!sticky.isAnchored"
-          ref="stickyFixedBarRef"
-          class="z-20 pointer-events-auto"
-          :style="sticky.fixedBarStyle"
-        >
-          <div class="filterbar-container">
-            <FilterBar
-              :filters="filters"
-              :view-mode="viewMode"
-              :unit-types="unitTypes"
-              :floor-options="floorOptions"
-              :direction-options="directionOptions"
-              @update:filters="filters = $event"
-              @update:view-mode="viewMode = $event"
-            />
+      <!-- Static filter trigger under hero (all breakpoints) -->
+      <ClientOnly>
+        <div class="w-full">
+          <div class="z-[140] bg-theme-bg/95 mt-5 pt-0 pb-0 relative">
+            <div class="filterbar-container w-full">
+              <ShowFiltersTriggerButton tone="light" @click="showFiltersDrawer = true" />
+            </div>
           </div>
         </div>
-      </div>
+      </ClientOnly>
 
-      <!-- Mobile only: Filters button in flow just below hero (opens bottom sheet) -->
-      <div class="w-full px-4 pt-4 pb-2 sm:hidden">
-        <button
-          type="button"
-          class="w-full h-12 rounded-xl bg-[#ffffff] text-[#18181B] text-[12px] font-bold uppercase tracking-widest hover:bg-zinc-100 transition-colors flex items-center justify-center gap-2"
-          aria-label="Open filters"
-          @click="showFiltersDrawer = true"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
-          Show Filters
-        </button>
-      </div>
-
-      <!-- Mobile: bottom sheet with FilterBar -->
+      <!-- Bottom sheet with FilterBar (all breakpoints) -->
       <Teleport to="body">
         <Transition name="filters-drawer">
           <div
             v-if="showFiltersDrawer"
-            class="fixed inset-0 z-[200] sm:hidden"
+            class="fixed inset-0 z-[3200]"
             role="dialog"
             aria-modal="true"
             aria-label="Filter units"
@@ -141,37 +95,40 @@
               aria-hidden="true"
               @click="showFiltersDrawer = false"
             />
-            <div class="absolute bottom-0 left-0 right-0 max-h-[88vh] overflow-hidden bg-white rounded-t-2xl shadow-2xl flex flex-col filters-drawer-panel">
-              <div class="filters-drawer-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 pb-6">
-                <FilterBar
-                  :embedded="true"
-                  :hide-clear="true"
-                  :filters="filters"
-                  :view-mode="viewMode"
-                  :unit-types="unitTypes"
-                  :floor-options="floorOptions"
-                  :direction-options="directionOptions"
-                  @update:filters="filters = $event"
-                  @update:view-mode="viewMode = $event"
-                />
-                <div class="mt-4 flex items-center justify-between">
-                  <button
-                    type="button"
-                    class="filter-bar-clear inline-flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-zinc-300 capitalize transition-colors underline underline-offset-2"
-                    @click="resetFilters()"
-                  >
-                    <svg class="w-[13px] h-[13px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Clear All Filters
-                  </button>
-                  <button
-                    type="button"
-                    class="text-xs font-medium text-zinc-500 hover:text-zinc-300 capitalize transition-colors underline underline-offset-2"
-                    @click="showFiltersDrawer = false"
-                  >
-                    Hide Filters
-                  </button>
+            <div class="filters-drawer-panel-wrap absolute bottom-0 left-0 right-0 w-full sm:px-[10rem] sm:mb-5">
+              <div class="max-h-[88vh] overflow-hidden bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col filters-drawer-panel">
+                <div class="filters-drawer-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-5">
+                  <FilterBar
+                    :embedded="true"
+                    :hide-clear="isDesktopViewport"
+                    :filters="filters"
+                    :view-mode="viewMode"
+                    :unit-types="unitTypes"
+                    :floor-options="floorOptions"
+                    :direction-options="directionOptions"
+                    @update:filters="filters = $event"
+                    @update:view-mode="viewMode = $event"
+                  />
+                  <div class="mt-4 flex items-center" :class="isDesktopViewport ? 'justify-between' : 'justify-end'">
+                    <button
+                      v-if="isDesktopViewport"
+                      type="button"
+                      class="filter-bar-clear inline-flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-zinc-300 capitalize transition-colors underline underline-offset-2"
+                      @click="resetFilters()"
+                    >
+                      <svg class="w-[13px] h-[13px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Clear All Filters
+                    </button>
+                    <button
+                      type="button"
+                      class="w-full sm:w-auto inline-flex items-center justify-center h-[2.375rem] sm:h-auto px-4 sm:px-0 rounded-lg sm:rounded-none bg-[#18181B] sm:bg-transparent text-white sm:text-zinc-500 hover:bg-zinc-800 sm:hover:bg-transparent hover:text-white sm:hover:text-zinc-300 text-xs font-medium capitalize transition-colors sm:underline sm:underline-offset-2"
+                      @click="showFiltersDrawer = false"
+                    >
+                      Hide Filters
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -180,7 +137,7 @@
       </Teleport>
 
       <!-- Choose your view (above unit cards) — matches reference structure and styling -->
-      <div class="mt-8 sm:mt-[5rem] mb-[2.5rem] w-full flex justify-center px-2">
+      <div class="mt-10 mb-[2.5rem] w-full flex justify-center px-2">
         <div class="w-full max-w-lg flex flex-col items-center">
           <div class="text-center mb-[1.25rem]">
             <p class="text-[11px] font-semibold uppercase tracking-[0.25em]" style="color: rgb(0, 0, 0);">
@@ -217,7 +174,7 @@
                   </svg>
                 </span>
                 <span class="text-[11px] sm:text-xs font-medium leading-none">Grid</span>
-                <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #000000; --tw-ring-offset-color: #FFFFFF;" />
+                <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #18181B; --tw-ring-offset-color: #FFFFFF;" />
               </button>
               <button
                 type="button"
@@ -234,7 +191,7 @@
                   </svg>
                 </span>
                 <span class="text-[11px] sm:text-xs font-medium leading-none">List</span>
-                <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #000000; --tw-ring-offset-color: #FFFFFF;" />
+                <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #18181B; --tw-ring-offset-color: #FFFFFF;" />
               </button>
               <button
                 type="button"
@@ -252,15 +209,18 @@
                   </svg>
                 </span>
                 <span class="text-[11px] sm:text-xs font-medium leading-none">Plans</span>
-                <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #000000; --tw-ring-offset-color: #FFFFFF;" />
+                <span class="pointer-events-none absolute inset-0 rounded-full ring-0 group-focus-visible:ring-2 group-focus-visible:ring-offset-2" style="--tw-ring-color: #18181B; --tw-ring-offset-color: #FFFFFF;" />
               </button>
             </div>
           </div>
         </div>
       </div>
+      <p class="text-center text-[16px] leading-[16px] font-semibold uppercase text-[#18181B] mb-[1.25rem]">
+        {{ soldUnitsLabel }}
+      </p>
 
-      <!-- Unit results section: mobile padding; 90% centered from sm up -->
-      <section class="nav-section light w-full px-4 sm:px-0 sm:w-[90%] sm:mx-auto sm:pb-20">
+      <!-- Unit results section: mobile padding; sm+ matches nav horizontal inset -->
+      <section class="nav-section light w-full px-4 sm:px-[5rem] sm:pb-20">
         <!-- Plans: mount once, then toggle with v-show to avoid expensive re-mount jank -->
         <SiteMapPlansView
           v-if="plansMounted"
@@ -272,7 +232,7 @@
         <div v-show="viewMode !== 'PLANS'">
           <div
             v-show="unitsLoading"
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem] animate-pulse"
+            class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,24rem),1fr))] gap-[1.25rem] animate-pulse"
           >
             <div
               v-for="i in 8"
@@ -294,7 +254,7 @@
 
           <div
             v-show="!unitsLoading && !unitsError && displayedUnits.length > 0 && viewMode === 'GRID'"
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem]"
+            class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,24rem),1fr))] gap-[1.25rem]"
           >
             <UnitCard
               v-for="unit in displayedUnits"
@@ -312,7 +272,7 @@
 
           <div
             v-show="!unitsLoading && !unitsError && displayedUnits.length > 0 && viewMode === 'LIST'"
-            class="space-y-3"
+            class="space-y-5 sm:space-y-3"
           >
             <UnitListRow
               v-for="unit in displayedUnits"
@@ -358,6 +318,13 @@ const runtimeConfig = useRuntimeConfig()
 const reservingUnitId = ref<string | null>(null)
 const showPaymentCancelledToast = ref(false)
 const showFiltersDrawer = ref(false)
+
+const isDesktopViewport = ref(false)
+
+function syncViewportMode() {
+  if (typeof window === 'undefined') return
+  isDesktopViewport.value = window.matchMedia('(min-width: 640px)').matches
+}
 
 const plansPreloadStarted = ref(false)
 const plansMounted = ref(false)
@@ -424,9 +391,6 @@ function switchToPlans() {
   preloadPlansImages()
   setViewModeSmooth('PLANS')
 }
-
-const stickyFixedBarRef = ref<HTMLElement | null>(null)
-const sticky = useStickyFilterbar(stickyFixedBarRef)
 
 const viewSwitcherContainerRef = ref<HTMLElement | null>(null)
 const pillStyle = ref<{ left: number; top: number; width: number; height: number; background: string }>({
@@ -522,6 +486,7 @@ watch(viewSwitcherContainerRef, (el) => {
   if (el) updateActiveViewSwitcherPill()
 }, { flush: 'post' })
 let viewSwitcherResizeCleanup: (() => void) | null = null
+let viewportResizeCleanup: (() => void) | null = null
 onMounted(() => {
   updateActiveViewSwitcherPill()
   const container = viewSwitcherContainerRef.value
@@ -530,6 +495,11 @@ onMounted(() => {
     ro.observe(container)
     viewSwitcherResizeCleanup = () => ro.disconnect()
   }
+
+  syncViewportMode()
+  const onResizeViewport = () => syncViewportMode()
+  window.addEventListener('resize', onResizeViewport, { passive: true })
+  viewportResizeCleanup = () => window.removeEventListener('resize', onResizeViewport)
 })
 onUnmounted(() => {
   if (setViewModeRafId !== null) cancelAnimationFrame(setViewModeRafId)
@@ -541,6 +511,7 @@ onUnmounted(() => {
   if (pendingClearTimeoutId) clearTimeout(pendingClearTimeoutId)
   pendingClearTimeoutId = null
   viewSwitcherResizeCleanup?.()
+  viewportResizeCleanup?.()
 })
 
 const heroSlides = [
@@ -620,14 +591,20 @@ const apartmentsHeadline = computed(() => {
   return `${count} ${noun}`
 })
 
+const soldCount = computed(
+  () => units.value.filter((u) => u.status === 'Sold' || u.status === 'Reserved').length,
+)
+
+const soldUnitsLabel = computed(() => {
+  if (unitsLoading.value) return 'UNITS SOLD'
+  return `${soldCount.value} OF ${units.value.length} UNITS SOLD`
+})
+
 watch(unitsLoading, (loading) => {
   if (loading) return
   preloadUnitImages()
 }, { immediate: true })
 
-const availableCount = computed(
-  () => units.value.filter((u) => u.status === 'Available').length,
-)
 const unitTypes = computed(() => {
   const set = new Set(units.value.map((u) => u.unitType).filter(Boolean))
   return Array.from(set).sort()
@@ -711,29 +688,29 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* Mobile filters drawer: backdrop fade + panel slide up */
+/* Filters drawer: backdrop fade + panel slide up */
 .filters-drawer-enter-active,
 .filters-drawer-leave-active {
   transition: opacity 0.25s ease;
 }
-.filters-drawer-enter-active > div.absolute.bottom-0,
-.filters-drawer-leave-active > div.absolute.bottom-0 {
+.filters-drawer-enter-active .filters-drawer-panel,
+.filters-drawer-leave-active .filters-drawer-panel {
   transition: transform 0.3s ease;
 }
 .filters-drawer-enter-from,
 .filters-drawer-leave-to {
   opacity: 0;
 }
-.filters-drawer-enter-from > div.absolute.bottom-0,
-.filters-drawer-leave-to > div.absolute.bottom-0 {
+.filters-drawer-enter-from .filters-drawer-panel,
+.filters-drawer-leave-to .filters-drawer-panel {
   transform: translateY(100%);
 }
-.filters-drawer-enter-to > div.absolute.bottom-0,
-.filters-drawer-leave-from > div.absolute.bottom-0 {
+.filters-drawer-enter-to .filters-drawer-panel,
+.filters-drawer-leave-from .filters-drawer-panel {
   transform: translateY(0);
 }
 
-/* Mobile drawer: single scroll container on GPU layer to prevent icon shake on scroll */
+/* Filters drawer: single scroll container on GPU layer to prevent icon shake on scroll */
 .filters-drawer-panel {
   -webkit-overflow-scrolling: touch;
 }
@@ -743,9 +720,9 @@ onBeforeUnmount(() => {
   backface-visibility: hidden;
 }
 
-/* Full width + padding on mobile; 3/4 centered from sm up (desktop unchanged) */
+/* Full width + padding on mobile; sm+ horizontal inset matches nav */
 .filterbar-container {
-  @apply w-full px-4 sm:w-3/4 sm:mx-auto;
+  @apply w-full px-4 sm:px-[15rem];
 }
 /* Pagination bottom-right: inactive = small semi-transparent circles, active = elongated pill (match reference) */
 .hero-swiper :deep(.swiper-pagination) {

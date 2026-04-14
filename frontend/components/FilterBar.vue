@@ -1,11 +1,10 @@
 <template>
   <div>
-    <div :class="['filter-bar', 'filter-bar--light', embedded ? 'filter-bar--embedded' : 'rounded-lg p-5 sm:p-6 md:p-8']">
+    <div :class="['filter-bar', 'filter-bar--light', embedded ? 'filter-bar--embedded p-5' : 'rounded-lg p-5']">
       <div class="space-y-6">
         <!-- Mobile: 2 cols with Search/Price full width; lg: 5×3 grid -->
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-          <!-- Search: full width on mobile -->
-          <div class="col-span-2 lg:col-span-1">
+          <div class="col-span-1 lg:col-span-1 order-1 lg:order-none">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
               <svg class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                 <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -20,7 +19,7 @@
               @input="onSearchInput($event)"
             />
           </div>
-          <div class="lg:col-span-1">
+          <div class="lg:col-span-1 order-2 lg:order-none">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
               <svg class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                 <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
@@ -37,7 +36,7 @@
               <option value="bedrooms" class="bg-theme-input-bg text-theme-text-primary">Beds</option>
             </select>
           </div>
-          <div class="lg:col-span-1">
+          <div class="col-span-1 lg:col-span-1 order-3 lg:order-none">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">Sort</label>
             <button
               type="button"
@@ -50,7 +49,7 @@
             </button>
           </div>
           <!-- Price Range: full width on mobile, 2 cols on lg -->
-          <div class="col-span-2 lg:col-span-2 flex flex-col justify-end min-h-[4.125rem] overflow-visible">
+          <div class="col-span-2 lg:col-span-2 order-5 lg:order-none flex flex-col justify-end min-h-[4.125rem] overflow-visible">
             <label for="price-slider" class="flex items-center justify-center text-xs font-medium text-zinc-500 mt-1 mb-2 text-center shrink-0">
               Price Range
             </label>
@@ -118,7 +117,7 @@
           </div>
 
           <!-- Row 2 -->
-          <div class="lg:col-span-1">
+          <div class="lg:col-span-1 order-4 lg:order-none">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
               <svg class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0"/>
@@ -138,7 +137,7 @@
               <option value="Held by Developer" class="bg-theme-input-bg text-theme-text-primary">Held by Developer</option>
             </select>
           </div>
-          <div class="lg:col-span-1">
+          <div class="lg:col-span-1 order-6 lg:order-none">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
               <IconLayout class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" />
               Layout
@@ -152,7 +151,7 @@
               <option v-for="t in layoutOptions" :key="t" :value="t" class="bg-theme-input-bg text-theme-text-primary">{{ t }}</option>
             </select>
           </div>
-          <div class="lg:col-span-1">
+          <div class="lg:col-span-1 order-7 lg:order-none">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
               <svg class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M8.235 1.559a.5.5 0 0 0-.47 0l-7.5 4a.5.5 0 0 0 0 .882L3.188 8 .264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l2.922-1.559a.5.5 0 0 0 0-.882zm3.515 7.008L14.438 10 8 13.433 1.562 10 4.25 8.567l3.515 1.874a.5.5 0 0 0 .47 0zM8 9.433 1.562 6 8 2.567 14.438 6z"/>
@@ -168,7 +167,7 @@
               <option v-for="f in floorOptions" :key="f" :value="f" class="bg-theme-input-bg text-theme-text-primary">{{ formatFloorLabel(f) }}</option>
             </select>
           </div>
-          <div class="lg:col-span-1">
+          <div class="lg:col-span-1 order-8 lg:order-none">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
               <svg class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M8 16.016a7.5 7.5 0 0 0 1.962-14.74A1 1 0 0 0 9 0H7a1 1 0 0 0-.962 1.276A7.5 7.5 0 0 0 8 16.016m6.5-7.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0"/>
@@ -185,7 +184,7 @@
               <option v-for="d in directionOptions" :key="d" :value="d" class="bg-theme-input-bg text-theme-text-primary">{{ d }} Facing</option>
             </select>
           </div>
-          <div class="lg:col-span-1">
+          <div class="lg:col-span-1 order-9 lg:order-none">
             <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
               <IconCar class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" />
               Parking
@@ -201,27 +200,11 @@
               <option value="2" class="bg-theme-input-bg text-theme-text-primary">2</option>
             </select>
           </div>
-
-          <!-- Wishlist (mobile: 50%) | Clear All full width on mobile -->
-          <div class="lg:col-span-1">
-            <label class="flex items-center gap-2 text-xs font-medium text-zinc-500 capitalize mb-2">
-              <IconHeart class="w-[13px] h-[13px] text-zinc-500 flex-shrink-0" />
-              Wishlist
-            </label>
-            <select
-              class="h-[2.375rem] w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 text-zinc-300 text-[12px] font-medium capitalize appearance-none cursor-pointer focus:border-zinc-500 focus:outline-none"
-              :value="filters.wishlistFilter ?? 'all'"
-              @change="onWishlistChange($event)"
-            >
-              <option value="all" class="bg-theme-input-bg text-theme-text-primary">All</option>
-              <option value="yes" class="bg-theme-input-bg text-theme-text-primary">In wishlist</option>
-            </select>
-          </div>
-          <div v-if="!hideClear" class="hidden lg:block lg:col-span-3" aria-hidden="true" />
-          <div v-if="!hideClear" class="col-span-2 lg:col-span-1 flex justify-end items-end">
+          <div v-if="!hideClear" class="hidden lg:block lg:col-span-4" aria-hidden="true" />
+          <div v-if="!hideClear" class="col-span-2 lg:col-span-1 order-10 lg:order-none flex justify-start lg:justify-end items-end">
             <button
               type="button"
-              class="filter-bar-clear inline-flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-zinc-300 capitalize transition-colors underline underline-offset-2"
+              class="filter-bar-clear filter-bar-clear--danger h-[2.375rem] w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 text-[12px] font-medium capitalize transition-colors"
               @click="clearAllFilters"
             >
               <svg class="w-[13px] h-[13px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
@@ -237,7 +220,6 @@
 </template>
 
 <script setup lang="ts">
-import IconHeart from '~/components/icons/IconHeart.vue'
 import IconLayout from '~/components/icons/IconLayout.vue'
 import IconCar from '~/components/icons/IconCar.vue'
 import type { SearchFilters, ViewMode } from '~/types'
@@ -319,7 +301,6 @@ function onLayoutChange(e: Event) { const v = (e.target as HTMLSelectElement).va
 function onFloorChange(e: Event) { const v = (e.target as HTMLSelectElement).value; updateFilter('floor', v === 'any' ? undefined : v) }
 function onDirectionChange(e: Event) { const v = (e.target as HTMLSelectElement).value; updateFilter('direction', v === 'any' ? undefined : v) }
 function onParkingChange(e: Event) { const v = (e.target as HTMLSelectElement).value; updateFilter('parking', v === 'any' ? undefined : v) }
-function onWishlistChange(e: Event) { updateFilter('wishlistFilter', (e.target as HTMLSelectElement).value as 'all' | 'yes') }
 function onPriceMinInput(e: Event) {
   const val = Number((e.target as HTMLInputElement).value)
   emit('update:filters', { ...props.filters, minPrice: val, maxPrice: Math.max(priceMaxValue.value, val) } as SearchFilters)

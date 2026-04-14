@@ -3,108 +3,56 @@
     class="group relative w-full overflow-hidden select-none cursor-default bg-white border border-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 rounded-[0.75rem]"
     :class="(isAvailable || isAdmin) ? 'hover:shadow-[0_2px_10px_rgba(0,0,0,0.06)]' : ''"
   >
-    <!-- Mobile layout: EXACT Grid UnitCard layout (no image) -->
+    <!-- Mobile layout: compact list card -->
     <div class="sm:hidden">
-      <!-- Unit number + wishlist pill -->
-      <div class="flex items-start justify-between px-4 pt-4 pb-0 pointer-events-none">
-        <span class="pointer-events-auto text-lg font-bold text-zinc-900 tracking-tight leading-none">
+      <div class="flex items-start justify-between px-5 py-5">
+        <span class="text-[20px] font-semibold text-[#18181B] tracking-tight leading-none">
           {{ unit.unitNumber }}
         </span>
-        <button
-          type="button"
-          :disabled="!isAvailable && !isAdmin"
-          class="pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-zinc-300 bg-white/95 text-zinc-600 text-[10px] font-bold uppercase tracking-widest shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:hover:bg-white/95 disabled:hover:text-zinc-400 disabled:hover:border-zinc-300"
-          :class="isWishlisted ? '!border-red-600 !bg-red-600 !text-white' : ''"
-          @click.stop="onToggleWishlist(unit.id)"
-        >
-          <IconHeart class="w-[0.6rem] h-[0.6rem] flex-shrink-0" :filled="isWishlisted" />
-          Wishlist
-        </button>
+        <span class="text-[20px] font-bold text-[#18181B] tracking-tight leading-none">
+          R {{ formattedPrice }}
+        </span>
       </div>
 
-      <!-- Details section (same spacing/typography as UnitCard) -->
-      <div class="px-4">
-        <div class="flex justify-between items-end gap-4 pt-0 pb-4">
-          <div class="min-w-0">
-            <p v-if="unit.floor" class="text-[12px] sm:text-[14px] font-bold text-zinc-900 uppercase tracking-wide leading-tight">
-              {{ (unit.floor || '').toUpperCase() }} FLOOR
-            </p>
-            <p v-if="unit.direction" class="text-[12px] text-zinc-700 mt-0.5 leading-tight">
-              {{ unit.direction }} Facing
-            </p>
-          </div>
-          <div class="text-right shrink-0">
-            <p v-if="unit.originalPrice" class="text-[11px] text-zinc-400 line-through leading-tight">
-              R {{ formattedOriginalPrice }}
-            </p>
-            <span class="text-[20px] sm:text-[26px] font-bold leading-none block text-zinc-900">
-              R {{ formattedPrice }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Feature icons (same markup/classes as UnitCard) -->
-        <div class="flex items-center justify-evenly gap-4 border-t border-b border-zinc-200/80 py-4">
-          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
-              Bedrooms
-              <span class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800" aria-hidden="true" />
-            </span>
-            <IconBed class="w-4 h-4 text-zinc-700 flex-shrink-0" />
-            <span>{{ unit.bedrooms }}</span>
-          </div>
-          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
-              Bathrooms
-              <span class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800" aria-hidden="true" />
-            </span>
-            <IconBath class="w-4 h-4 text-zinc-700 flex-shrink-0" />
-            <span>{{ unit.bathrooms }}</span>
-          </div>
-          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
-              Parking
-              <span class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800" aria-hidden="true" />
-            </span>
-            <IconCar class="w-4 h-4 text-zinc-700 flex-shrink-0" />
-            <span>{{ unit.parking }}</span>
-          </div>
-          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
-              Unit Type
-              <span class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800" aria-hidden="true" />
-            </span>
-            <IconLayout class="w-4 h-4 text-zinc-700 flex-shrink-0" />
-            <span>{{ unit.unitType || '—' }}</span>
-          </div>
-          <div class="group/tip relative inline-flex flex-col items-center gap-1 cursor-help text-[11px] text-zinc-700">
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-zinc-800 text-white text-[11px] rounded opacity-0 pointer-events-none transition-opacity z-20 whitespace-nowrap group-hover/tip:opacity-100">
-              Unit Size
-              <span class="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-zinc-800" aria-hidden="true" />
-            </span>
-            <IconSize class="w-4 h-4 text-zinc-700 flex-shrink-0" />
-            <span>{{ unit.sizeSqm }}m²</span>
+      <div class="px-5">
+        <div class="border-t border-zinc-200/80 py-5">
+          <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+            <div>
+              <p class="text-[12px] text-[#18181B] leading-tight">Bedrooms</p>
+              <p class="text-[12px] font-semibold text-[#18181B] leading-tight">{{ unit.bedrooms }}</p>
+            </div>
+            <div>
+              <p class="text-[12px] text-[#18181B] leading-tight">Bathrooms</p>
+              <p class="text-[12px] font-semibold text-[#18181B] leading-tight">{{ unit.bathrooms }}</p>
+            </div>
+            <div>
+              <p class="text-[12px] text-[#18181B] leading-tight">Parking</p>
+              <p class="text-[12px] font-semibold text-[#18181B] leading-tight">{{ unit.parking }}</p>
+            </div>
+            <div>
+              <p class="text-[12px] text-[#18181B] leading-tight">Type</p>
+              <p class="text-[12px] font-semibold text-[#18181B] leading-tight">{{ unit.unitType || '—' }}</p>
+            </div>
+            <div>
+              <p class="text-[12px] text-[#18181B] leading-tight">Unit Size</p>
+              <p class="text-[12px] font-semibold text-[#18181B] leading-tight">{{ unit.sizeSqm }}m²</p>
+            </div>
+            <div>
+              <p class="text-[12px] text-[#18181B] leading-tight">Direction</p>
+              <p class="text-[12px] font-semibold text-[#18181B] leading-tight">{{ formatFacingLabel(unit.direction) || '—' }}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Bottom buttons (same classes as UnitCard two-button row) -->
-      <div class="grid grid-cols-2 border-zinc-200/80">
+      <div class="px-5 pb-5">
         <button
           type="button"
           :disabled="!isAvailable && !isAdmin"
-          class="-mt-px pt-[calc(1rem+1px)] pb-4 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 hover:bg-[#18181B] hover:text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center w-full"
+          class="h-10 w-full px-8 text-[12px] font-bold uppercase tracking-widest bg-[#18181B] text-white rounded-md transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:bg-zinc-800 text-center"
           @click.stop="onSelect(unit)"
         >
           View Details
-        </button>
-        <button
-          type="button"
-          :disabled="(!isAvailable && !isAdmin) || isReserving"
-          class="-mt-px -ml-px pl-px pt-[calc(1rem+1px)] pb-4 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 border-l border-zinc-200/80 hover:bg-[#18181B] hover:text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center"
-          @click.stop="onReserve(unit)"
-        >
-          {{ reserveButtonLabel }}
         </button>
       </div>
     </div>

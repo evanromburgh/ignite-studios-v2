@@ -5,7 +5,7 @@
         <div
           aria-hidden="true"
           class="fixed top-0 left-0 right-0 h-16 sm:h-24 z-[150] pointer-events-none transition-all duration-300 lg:hidden"
-          :class="navBackgroundClass"
+          :class="[navBackgroundClass, disableNavTransitions && '!transition-none !duration-0']"
         />
         <!-- White panel slides down over the bar (z-160); tap to close -->
         <div
@@ -22,12 +22,13 @@
         <nav
       ref="navRef"
       class="fixed top-0 left-0 right-0 z-[170] lg:z-[150] flex flex-col transition-all duration-300"
-      :class="[navBackgroundClass, 'max-lg:!bg-transparent max-lg:!border-transparent', menuMeasuring && 'mobile-menu-measuring']"
+      :class="[navBackgroundClass, 'max-lg:!bg-transparent max-lg:!border-transparent', menuMeasuring && 'mobile-menu-measuring', disableNavTransitions && '!transition-none !duration-0']"
     >
-      <div class="pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 h-16 sm:h-24 flex items-center justify-between flex-shrink-0">
+      <div class="pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-[5rem] h-16 sm:h-24 flex items-center justify-between flex-shrink-0">
         <NuxtLink
           to="/"
           class="cursor-pointer flex items-center shrink-0"
+          @click="handleLogoClick"
         >
           <img
             :src="logoSrc"
@@ -227,7 +228,7 @@
 
     <BottomUrgencyStrip />
 
-    <footer class="footer-main relative bg-black text-white pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 pt-16 sm:pt-20 pb-[4.25rem]">
+    <footer class="footer-main relative bg-[#18181B] text-white pl-5 pr-5 sm:pl-8 sm:pr-8 md:px-24 pt-16 sm:pt-20 pb-[4.25rem]">
       <!-- Main footer: Logo + Contact + Quick Links + Terms & Conditions -->
       <div class="footer-content flex flex-col gap-14 lg:grid lg:grid-cols-2 lg:items-start lg:gap-20 pb-[4rem] sm:pb-16">
         <!-- Logo -->
@@ -345,6 +346,7 @@ const scrolled = ref(false)
 /** Chat widget only on Properties (index); there, only after scrolling past the hero (hidden when footer is in view) */
 const showChatWidget = ref(false)
 const currentNavTheme = ref<'dark' | 'light'>(isPropertiesPage.value ? 'dark' : 'light')
+const disableNavTransitions = ref(false)
 
 const isDarkNavTheme = computed(() => currentNavTheme.value === 'dark')
 
@@ -502,8 +504,23 @@ onMounted(() => {
 watch(
   () => route.fullPath,
   async () => {
+    // Prevent a one-frame border flash when navigating to Properties:
+    // route changes before scroll restoration can briefly leave `scrolled` true.
+    if (isPropertiesPage.value) {
+      disableNavTransitions.value = true
+      scrolled.value = false
+      currentNavTheme.value = 'dark'
+    }
     await nextTick()
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve())
+      })
+    })
     updateScrolledAndTheme()
+    requestAnimationFrame(() => {
+      disableNavTransitions.value = false
+    })
   },
 )
 
@@ -567,6 +584,14 @@ watch(showMobileMenu, (open) => {
 function scrollToTop() {
   if (typeof window === 'undefined') return
   window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function handleLogoClick(event: MouseEvent) {
+  // NuxtLink ignores same-route navigations; hard-refresh home when already there.
+  if (route.path === '/' || route.path === '') {
+    event.preventDefault()
+    if (typeof window !== 'undefined') window.location.assign('/')
+  }
 }
 </script>
 

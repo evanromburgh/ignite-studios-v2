@@ -1,6 +1,6 @@
 <template>
   <Transition name="page-fade">
-  <div class="nav-section light w-full px-4 sm:px-0 sm:w-[90%] sm:mx-auto pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
+  <div class="nav-section light w-full px-4 sm:px-[5rem] pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
     <header class="mb-10 sm:mb-16 text-center">
       <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-theme-text-primary tracking-tight mb-2">
         Downloads
@@ -19,7 +19,7 @@
       </p>
     </div>
 
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem]">
+    <div v-else class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,24rem),1fr))] gap-[1.25rem]">
       <div
         v-for="doc in developmentDocuments"
         :key="doc.id"

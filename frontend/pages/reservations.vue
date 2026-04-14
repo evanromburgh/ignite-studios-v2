@@ -1,6 +1,6 @@
 <template>
   <div class="nav-section light pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
-    <div class="w-full px-4 sm:px-0 sm:w-[90%] sm:mx-auto">
+    <div class="w-full px-4 sm:px-[5rem]">
       <header class="mb-10 sm:mb-16 text-center">
         <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-theme-text-primary tracking-tight mb-2">
           My Units
@@ -11,7 +11,7 @@
       </header>
 
       <section class="pb-0">
-        <div v-if="(reservedIdsLoading || unitsLoading) && reservedUnits.length === 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem] animate-pulse">
+        <div v-if="(reservedIdsLoading || unitsLoading) && reservedUnits.length === 0" class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,24rem),1fr))] gap-[1.25rem] animate-pulse">
           <div
             v-for="i in 6"
             :key="i"
@@ -38,7 +38,7 @@
           </NuxtLink>
         </div>
 
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.25rem]">
+        <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,24rem),1fr))] gap-[1.25rem]">
           <UnitCard
             v-for="unit in reservedUnits"
             :key="unit.id"
