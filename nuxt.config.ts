@@ -11,7 +11,12 @@ const defaultPublicBranding = {
     'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/branding/logo_light.svg',
   logoDarkUrl:
     'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/branding/logo_dark.svg',
+  seoImageUrl:
+    'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/images/seo_image.webp',
 } as const
+
+const defaultSeoTitle = 'Streamline Your Unit Reservation Process'
+const defaultSeoDescription = 'Ignite Studios gives your team one portal to view available units, reserve them, and keep required reservation documents organized.'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-02-25',
@@ -22,11 +27,40 @@ export default defineNuxtConfig({
   ],
   app: {
     head: {
-      title: 'Ignite Studios | Property Reservation Portal',
+      title: process.env.NUXT_PUBLIC_SEO_TITLE || defaultSeoTitle,
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Ignite Studios property reservation portal' },
+        {
+          name: 'description',
+          content: process.env.NUXT_PUBLIC_SEO_DESCRIPTION || defaultSeoDescription,
+        },
+        { property: 'og:type', content: 'website' },
+        {
+          property: 'og:title',
+          content: process.env.NUXT_PUBLIC_SEO_TITLE || defaultSeoTitle,
+        },
+        {
+          property: 'og:description',
+          content: process.env.NUXT_PUBLIC_SEO_DESCRIPTION || defaultSeoDescription,
+        },
+        {
+          property: 'og:image',
+          content: process.env.NUXT_PUBLIC_SEO_IMAGE_URL || defaultPublicBranding.seoImageUrl,
+        },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        {
+          name: 'twitter:title',
+          content: process.env.NUXT_PUBLIC_SEO_TITLE || defaultSeoTitle,
+        },
+        {
+          name: 'twitter:description',
+          content: process.env.NUXT_PUBLIC_SEO_DESCRIPTION || defaultSeoDescription,
+        },
+        {
+          name: 'twitter:image',
+          content: process.env.NUXT_PUBLIC_SEO_IMAGE_URL || defaultPublicBranding.seoImageUrl,
+        },
         // Prevent iOS WebKit (Safari/Chrome) from auto-linking numbers/dates/addresses.
         { name: 'format-detection', content: 'telephone=no, date=no, address=no, email=no' },
         { name: 'x-apple-disable-message-reformatting', content: 'yes' },
