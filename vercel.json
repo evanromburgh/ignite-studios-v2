@@ -1,9 +1,4 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nuxtjs",
-  "installCommand": "npm ci",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".output/public",
   "crons": [
     {
       "path": "/api/cron/prune-viewers",
