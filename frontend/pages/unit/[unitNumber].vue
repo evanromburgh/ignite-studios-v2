@@ -252,7 +252,7 @@
                     Levies
                   </p>
                   <p class="text-sm font-semibold text-theme-text-primary">
-                    R {{ formatAmount(costs.levies) }}
+                    R {{ formatZarInteger(costs.levies) }}
                   </p>
                 </div>
                 <div class="text-center">
@@ -260,7 +260,7 @@
                     Rates
                   </p>
                   <p class="text-sm font-semibold text-theme-text-primary">
-                    R {{ formatAmount(costs.rates) }}
+                    R {{ formatZarInteger(costs.rates) }}
                   </p>
                 </div>
               </div>
@@ -366,7 +366,7 @@
                       Est. bond cost
                     </p>
                     <p class="text-sm sm:text-base font-semibold text-theme-text-primary">
-                      R {{ formatAmount(rentalEstimates.bond) }}
+                      R {{ formatZarInteger(rentalEstimates.bond) }}
                       <span class="text-[10px] text-zinc-500 ml-1">pm</span>
                     </p>
                   </div>
@@ -375,7 +375,7 @@
                       Est. short term rental
                     </p>
                     <p class="text-sm sm:text-base font-semibold text-theme-text-primary">
-                      R {{ formatAmount(rentalEstimates.shortTerm) }}
+                      R {{ formatZarInteger(rentalEstimates.shortTerm) }}
                       <span class="text-[10px] text-zinc-500 ml-1">pm</span>
                     </p>
                   </div>
@@ -384,7 +384,7 @@
                       Est. long term rental
                     </p>
                     <p class="text-sm sm:text-base font-semibold text-theme-text-primary">
-                      R {{ formatAmount(rentalEstimates.longTerm) }}
+                      R {{ formatZarInteger(rentalEstimates.longTerm) }}
                       <span class="text-[10px] text-zinc-500 ml-1">pm</span>
                     </p>
                   </div>
@@ -486,6 +486,7 @@ import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Autoplay } from 'swiper/modules'
 import 'swiper/css'
 import { CONFIG } from '~/config'
+import { formatZarInteger } from '~/utils/formatZar'
 import { useUnits } from '~/composables/useUnits'
 import { useWishlist } from '~/composables/useWishlist'
 import { useAuth } from '~/composables/useAuth'
@@ -496,6 +497,8 @@ import IconSize from '~/components/icons/IconSize.vue'
 import IconLayout from '~/components/icons/IconLayout.vue'
 import IconHeart from '~/components/icons/IconHeart.vue'
 import type { Unit } from '~/types'
+import type { Swiper as SwiperInstance } from 'swiper'
+import { errorMessageFromUnknown } from '~/utils/errorFromUnknown'
 
 const route = useRoute()
 const { units, loading: unitsLoading } = useUnits()
@@ -507,7 +510,7 @@ const { show: showBottomUrgencyStrip } = useBottomUrgencyStrip()
 const returningToList = ref(false)
 const activeIndex = ref(0)
 const heroAutoplayId = ref<number | null>(null)
-const gallerySwiper = ref<{ slidePrev: () => void; slideNext: () => void; slideTo: (i: number) => void } | null>(null)
+const gallerySwiper = ref<SwiperInstance | null>(null)
 
 // Lightbox state
 const lightboxOpen = ref(false)
@@ -686,7 +689,7 @@ const isLockedByOther = computed(() => {
 const canReserve = computed(() => isAvailable.value && !isLockedByOther.value)
 
 const formattedPrice = computed(() =>
-  unit.value ? formatAmount(unit.value.price) : '',
+  unit.value ? formatZarInteger(unit.value.price) : '',
 )
 
 const costs = computed(() => {
@@ -743,24 +746,16 @@ async function goBackToList() {
   await navigateTo('/')
 }
 
-function formatAmount(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: 0,
-  })
-    .format(Math.round(value))
-    .replace(/,/g, ' ')
-}
-
 function onToggleWishlist() {
   if (!unit.value) return
   toggleWishlist(unit.value.id)
 }
 
-function onGallerySwiper(swiper: any) {
+function onGallerySwiper(swiper: SwiperInstance) {
   gallerySwiper.value = swiper
 }
 
-function onGallerySlideChange(swiper: any) {
+function onGallerySlideChange(swiper: SwiperInstance) {
   activeIndex.value = swiper.realIndex
 }
 
@@ -849,8 +844,8 @@ async function onReserveClick() {
     }
 
     await navigateTo(`/reserve/${unit.value.unitNumber}`)
-  } catch (e: any) {
-    const msg = e?.data?.message || e?.message || 'Could not reserve unit.'
+  } catch (e: unknown) {
+    const msg = errorMessageFromUnknown(e, 'Could not reserve unit.')
     console.error(msg)
     showBottomUrgencyStrip(msg)
   } finally {

@@ -1,36 +1,7 @@
+import { requireAuthenticatedUnitRequest } from '~/server/utils/authenticatedUnitRequest'
+
 export default defineEventHandler(async (event) => {
-  if (event.method !== 'POST') {
-    throw createError({ statusCode: 405, message: 'Method not allowed' })
-  }
-
-  const authHeader = getHeader(event, 'authorization')
-  const token = authHeader?.replace(/^Bearer\s+/i, '')?.trim()
-  if (!token) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
-  const body = await readBody(event).catch(() => null)
-  const unitId = typeof body?.unitId === 'string' ? body.unitId.trim() : ''
-  if (!unitId) {
-    throw createError({ statusCode: 400, message: 'unitId is required' })
-  }
-
-  const config = useRuntimeConfig()
-  const supabaseUrl = (config.public.supabaseUrl as string)?.trim()
-  const serviceRoleKey = (config.supabaseServiceRoleKey as string)?.trim()
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw createError({ statusCode: 500, message: 'Server configuration error' })
-  }
-
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-  if (authError || !user) {
-    throw createError({ statusCode: 401, message: 'Invalid or expired session' })
-  }
+  const { unitId, user, supabase } = await requireAuthenticatedUnitRequest(event)
 
   const { error: updateError } = await supabase
     .from('units')

@@ -1,3 +1,4 @@
+/// <reference path="../edge-runtime.d.ts" />
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -7,63 +8,62 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, content-type, x-client-info, apikey',
 };
 
+let cachedZohoAccessToken: string | null = null;
+let cachedZohoAccessTokenExpiresAt = 0;
+
+function errMsg(e: unknown): string {
+  return e instanceof Error ? e.message : 'Unknown error';
+}
+
+async function hasServiceRoleAccess(supabaseUrl: string, candidateKey: string): Promise<boolean> {
+  const key = String(candidateKey ?? '').trim();
+  if (!key) return false;
+  try {
+    const probe = createClient(supabaseUrl, key);
+    const { error } = await probe.auth.admin.listUsers({ page: 1, perPage: 1 });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+function hasFreshCachedZohoToken(): boolean {
+  return Boolean(cachedZohoAccessToken && Date.now() < cachedZohoAccessTokenExpiresAt);
+}
+
 serve(async (req) => {
-  console.log('create-lead function invoked', { method: req.method, url: req.url });
-  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Processing create-lead request');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const authHeader = req.headers.get('Authorization');
-    console.log('Authorization header present:', !!authHeader);
-    console.log('Authorization header length:', authHeader?.length || 0);
-    
-    if (!authHeader) {
-      console.error('No Authorization header found');
-      return new Response(JSON.stringify({ error: 'Unauthorized - No token provided' }), { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
-    }
+    const apiKeyHeader = String(req.headers.get('apikey') ?? '').trim();
+    const internalServiceCall = await hasServiceRoleAccess(supabaseUrl, apiKeyHeader);
 
-    const token = authHeader.replace('Bearer ', '');
-    console.log('Token extracted, length:', token.length);
-    console.log('Token starts with:', token.substring(0, 20) + '...');
-    
-    // Decode JWT to check if it has 'sub' claim (without verification)
-    try {
-      const tokenParts = token.split('.');
-      if (tokenParts.length === 3) {
-        const payload = JSON.parse(atob(tokenParts[1]));
-        console.log('Token payload keys:', Object.keys(payload));
-        console.log('Token has sub claim:', !!payload.sub);
-        console.log('Token sub value:', payload.sub);
-        console.log('Token exp:', payload.exp);
-        console.log('Token iat:', payload.iat);
+    if (!internalServiceCall) {
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: 'Unauthorized - No token provided' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
-    } catch (decodeError) {
-      console.warn('Could not decode token for inspection:', decodeError);
+
+      const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+      if (authError || !user) {
+        console.error('create-lead: auth failed', authError?.message ?? 'no user');
+        return new Response(JSON.stringify({ error: 'Unauthorized', details: authError?.message }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      console.error('Auth failed:', authError?.message || 'No user');
-      console.error('Auth error code:', authError?.status);
-      console.error('Auth error details:', JSON.stringify(authError, null, 2));
-      return new Response(JSON.stringify({ error: 'Unauthorized', details: authError?.message }), { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
-    }
-    
-    console.log('User authenticated:', user.email);
     
     let body;
     try {
@@ -75,8 +75,8 @@ serve(async (req) => {
         });
       }
       body = JSON.parse(bodyText);
-    } catch (parseError: any) {
-      return new Response(JSON.stringify({ error: 'Invalid JSON in request body', details: parseError.message }), { 
+    } catch (parseError: unknown) {
+      return new Response(JSON.stringify({ error: 'Invalid JSON in request body', details: errMsg(parseError) }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
@@ -91,8 +91,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
     }
-
-    console.log('Creating Lead in Zoho CRM for:', email);
 
     const zohoClientId = (Deno.env.get('ZOHO_CLIENT_ID') ?? '').trim();
     const zohoClientSecret = (Deno.env.get('ZOHO_CLIENT_SECRET') ?? '').trim();
@@ -112,68 +110,72 @@ serve(async (req) => {
     }
 
     const tokenUrl = `https://accounts.zoho.${zohoApiDomain}/oauth/v2/token`;
-    console.log('Requesting Zoho access token from:', tokenUrl);
-    console.log('Using Client ID (full):', zohoClientId);
-    console.log('Using Client Secret (first 20 chars):', zohoClientSecret?.substring(0, 20) + '...');
-    console.log('Using Refresh Token (first 30 chars):', zohoRefreshToken?.substring(0, 30) + '...');
-    console.log('Using API Domain:', zohoApiDomain);
-    
-    const tokenResponse = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        refresh_token: zohoRefreshToken,
-        client_id: zohoClientId,
-        client_secret: zohoClientSecret,
-        grant_type: 'refresh_token',
-      }),
-    });
-
-    console.log('Zoho token response status:', tokenResponse.status);
-    
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('Zoho token error:', tokenResponse.status, errorText);
-      console.error('Full error response:', errorText);
-      return new Response(JSON.stringify({ error: 'Failed to authenticate with Zoho', details: errorText }), { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    const requestToken = () =>
+      fetch(tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          refresh_token: zohoRefreshToken,
+          client_id: zohoClientId,
+          client_secret: zohoClientSecret,
+          grant_type: 'refresh_token',
+        }),
       });
-    }
 
-    const tokenResponseText = await tokenResponse.text();
-    console.log('Zoho token response text:', tokenResponseText?.substring(0, 200));
-    
-    let tokenData;
-    try {
-      tokenData = JSON.parse(tokenResponseText);
-    } catch (parseError: any) {
-      console.error('Failed to parse Zoho token response:', parseError);
-      console.error('Response text:', tokenResponseText);
-      return new Response(JSON.stringify({ error: 'Invalid response from Zoho', details: tokenResponseText }), { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
-    }
-    
-    console.log('Zoho token response parsed:', { 
-      hasAccessToken: !!tokenData.access_token,
-      hasError: !!tokenData.error,
-      error: tokenData.error,
-      errorDescription: tokenData.error_description
-    });
-    
-    const { access_token } = tokenData;
+    let access_token = hasFreshCachedZohoToken() ? cachedZohoAccessToken! : '';
     if (!access_token) {
-      console.error('No access_token in Zoho token response');
-      console.error('Full token response:', JSON.stringify(tokenData, null, 2));
-      return new Response(JSON.stringify({ error: 'No access token received from Zoho', details: tokenData.error || 'Unknown error' }), { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
+      let tokenResponse = await requestToken();
+      let tokenErrorText = tokenResponse.ok ? '' : await tokenResponse.text();
+      if (!tokenResponse.ok) {
+        const looksRateLimited = tokenResponse.status === 429 || /too many requests|access denied/i.test(tokenErrorText);
+        if (looksRateLimited) {
+          await new Promise((resolve) => setTimeout(resolve, 2500));
+          tokenResponse = await requestToken();
+          tokenErrorText = tokenResponse.ok ? '' : await tokenResponse.text();
+        }
+      }
+
+      if (!tokenResponse.ok) {
+        // If Zoho token endpoint is throttled but we still hold a fresh token, continue.
+        if (hasFreshCachedZohoToken()) {
+          access_token = cachedZohoAccessToken!;
+        } else {
+          console.error('Zoho token error:', tokenResponse.status, tokenErrorText);
+          return new Response(JSON.stringify({ error: 'Failed to authenticate with Zoho', details: tokenErrorText }), { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
+      } else {
+        const tokenResponseText = await tokenResponse.text();
+        let tokenData;
+        try {
+          tokenData = JSON.parse(tokenResponseText);
+        } catch (parseError: unknown) {
+          console.error('Failed to parse Zoho token response:', parseError);
+          console.error('Response text:', tokenResponseText);
+          return new Response(JSON.stringify({ error: 'Invalid response from Zoho', details: tokenResponseText }), { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
+
+        access_token = String(tokenData?.access_token ?? '').trim();
+        if (!access_token) {
+          console.error('No access_token in Zoho token response');
+          console.error('Full token response:', JSON.stringify(tokenData, null, 2));
+          return new Response(JSON.stringify({ error: 'No access token received from Zoho', details: tokenData.error || 'Unknown error' }), { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
+
+        const expiresInSeconds = Number(tokenData?.expires_in ?? 3600);
+        const ttlMs = Math.max(60, expiresInSeconds - 60) * 1000;
+        cachedZohoAccessToken = access_token;
+        cachedZohoAccessTokenExpiresAt = Date.now() + ttlMs;
+      }
     }
-    
-    console.log('Zoho access token obtained successfully');
     
     const zohoApiUrl = `https://www.zohoapis.${zohoApiDomain}/crm/v2`;
 
@@ -282,10 +284,10 @@ serve(async (req) => {
           console.error('Zoho create response (first 800 chars):', createText.substring(0, 800));
           throw new Error('Invalid response structure from Zoho');
         }
-      } catch (parseError: any) {
+      } catch (parseError: unknown) {
         console.error('Failed to parse Zoho create response:', parseError);
         if (createText) console.error('Zoho create raw response (first 800 chars):', createText.substring(0, 800));
-        return new Response(JSON.stringify({ error: 'Failed to parse Zoho create response', details: parseError.message }), { 
+        return new Response(JSON.stringify({ error: 'Failed to parse Zoho create response', details: errMsg(parseError) }), { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         });
@@ -306,10 +308,10 @@ serve(async (req) => {
         },
       }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('create-lead function error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ error: 'Internal server error', details: errMsg(error) }),
       {
         status: 500,
         headers: {

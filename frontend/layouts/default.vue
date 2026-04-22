@@ -10,7 +10,7 @@
         <!-- White panel slides down over the bar (z-160); tap to close -->
         <div
           role="presentation"
-          aria-hidden="!showMobileMenu"
+          :aria-hidden="!showMobileMenu"
           class="lg:hidden fixed top-0 left-0 right-0 z-[160] bg-white overflow-hidden mobile-menu-panel"
           :class="[
             showMobileMenu && panelSlideDone ? 'translate-y-0 pointer-events-auto mobile-menu-panel--sized' : '-translate-y-full pointer-events-none'
@@ -223,7 +223,7 @@
 
     <!-- Chat / Contact Agent widget: Properties (index) only, after scrolling past hero -->
     <Transition name="chat-widget-appear">
-      <ChatWidget v-if="showChatWidget" />
+      <ChatWidget v-if="showChatWidget && isAgentContactConfigured" />
     </Transition>
 
     <BottomUrgencyStrip />
@@ -320,9 +320,11 @@
 <script setup lang="ts">
 import { nextTick } from 'vue'
 import IconEyeLottie from '~/components/icons/IconEyeLottie.client.vue'
+import { initialsFromName } from '~/utils/initialsFromName'
 
 const route = useRoute()
 const { logoLightUrl, logoDarkUrl } = useBranding()
+const { isConfigured: isAgentContactConfigured } = useAgentContacts()
 const { user, logout } = useAuth()
 const { onlineCount } = useGlobalPresence()
 
@@ -469,9 +471,8 @@ function updateScrolledAndTheme() {
 
 const userInitials = computed(() => {
   if (!user.value) return '?'
-  if (user.value.displayName) {
-    return user.value.displayName.split(' ').map(n => n[0]).join('').toUpperCase()
-  }
+  const dn = user.value.displayName?.trim()
+  if (dn) return initialsFromName(dn)
   return user.value.email ? user.value.email[0].toUpperCase() : '?'
 })
 

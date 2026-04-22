@@ -138,7 +138,7 @@
                   class="my-8 rounded-2xl bg-transparent"
                 >
                   <p class="text-sm sm:text-base font-semibold text-theme-text-primary mb-5">
-                    Selling price: R {{ formatPrice(unit.price) }}
+                    Selling price: R {{ formatZarInteger(unit.price) }}
                   </p>
                   <div class="flex items-center justify-evenly gap-0 rounded-2xl bg-[#ffffff] py-8">
                     <div
@@ -235,7 +235,7 @@
                   </p>
                   <div class="inline-flex items-center justify-center gap-2">
                     <span class="text-4xl font-black text-theme-text-primary tabular-nums">
-                      {{ formatTime(timeLeft) }}
+                      {{ formatClockMss(timeLeft) }}
                     </span>
                   </div>
                 </div>
@@ -278,12 +278,15 @@
 
 <script setup lang="ts">
 import { CONFIG } from '~/config'
+import { formatClockMss } from '~/utils/formatDuration'
+import { formatZarInteger } from '~/utils/formatZar'
 import { phoneCountries, formatPhoneDialCode } from '~/data/phoneCountries'
 import IconBed from '~/components/icons/IconBed.vue'
 import IconBath from '~/components/icons/IconBath.vue'
 import IconCar from '~/components/icons/IconCar.vue'
 import IconSize from '~/components/icons/IconSize.vue'
 import IconLayout from '~/components/icons/IconLayout.vue'
+import { errorMessageFromUnknown, httpStatusFromUnknown } from '~/utils/errorFromUnknown'
 
 const RESERVE_UNIT_ID = 'ignite_reserve_unitId'
 const RESERVE_LOCK_EXPIRES_AT = 'ignite_reserve_lockExpiresAt'
@@ -348,6 +351,7 @@ const isSomeoneElseReservingCopy = computed(() => {
 
 /** Minimal text + CTA when user cannot use checkout (not when they have an active hold). */
 const showBlockedMinimal = computed(() => {
+  if (completingPayment.value) return false
   if (!reserveFlowReady.value) return false
   if (acquiringLock.value) return false
   if (ownLockActive.value) return false
@@ -389,16 +393,6 @@ const showUrgencyBanner = computed(() => {
   if (!lockExpiresAtMs.value || acquireError.value || isLockedByOther.value) return false
   return true
 })
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-US').format(price).replace(/,/g, ' ')
-}
-
-function formatTime(seconds: number) {
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = seconds % 60
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-}
 
 function clearReserveSession() {
   if (typeof sessionStorage !== 'undefined') {
@@ -546,6 +540,7 @@ const profileIdPassport = ref('')
 const profileReasonForBuying = ref('')
 const loading = ref(false)
 const canceling = ref(false)
+const completingPayment = ref(false)
 const error = ref<string | null>(null)
 
 declare global {
@@ -607,6 +602,67 @@ function onPhoneInput(event: Event) {
   if (phone.value.startsWith('0')) {
     phone.value = phone.value.substring(1)
   }
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+async function resolveAccessToken(): Promise<string | null> {
+  let token = accessTokenRef.value?.trim() ?? sessionRef.value?.access_token?.trim() ?? null
+  if (token) return token
+
+  // Give auth composable a moment to finish initial session resolution.
+  for (let i = 0; i < 25 && authLoading.value; i++) {
+    await sleep(100)
+  }
+
+  token = accessTokenRef.value?.trim() ?? sessionRef.value?.access_token?.trim() ?? null
+  if (token) return token
+
+  // Retry getSession a few times to tolerate temporary auth lock contention.
+  for (let i = 0; i < 3 && !token; i++) {
+    try {
+      const { data: { session } } = await $supabase.auth.getSession()
+      token = session?.access_token?.trim() ?? null
+      if (token) {
+        accessTokenRef.value = token
+        return token
+      }
+    } catch {
+      // ignore and retry
+    }
+    await sleep(150 * (i + 1))
+  }
+
+  if (!token) {
+    const { data: { session: refreshed } } = await $supabase.auth.refreshSession()
+    token = refreshed?.access_token?.trim() ?? null
+    if (token) {
+      accessTokenRef.value = token
+      return token
+    }
+  }
+
+  if (!token && typeof localStorage !== 'undefined') {
+    const config = useRuntimeConfig()
+    const url = (config.public.supabaseUrl as string)?.trim() ?? ''
+    const projectRef = url.replace(/^https?:\/\//, '').split('.')[0]
+    const storageKey = projectRef ? `sb-${projectRef}-auth-token` : null
+    if (storageKey) {
+      try {
+        const raw = localStorage.getItem(storageKey)
+        const parsed = raw ? JSON.parse(raw) : null
+        const accessToken = parsed?.currentSession?.access_token ?? parsed?.access_token ?? null
+        if (accessToken) {
+          token = String(accessToken).trim()
+          accessTokenRef.value = token
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  return token
 }
 
 // Redirect if not logged in — delay slightly so client session can rehydrate after navigation
@@ -730,8 +786,8 @@ onMounted(async () => {
       acquiringLock.value = true
       acquireError.value = null
       try {
-        const { data: { session } } = await $supabase.auth.getSession()
-        if (!session) {
+        const token = await resolveAccessToken()
+        if (!token) {
           acquireError.value = 'Session expired. Please sign in again.'
           return
         }
@@ -739,9 +795,9 @@ onMounted(async () => {
         const res = await $fetch<{ lockExpiresAt?: string }>('/api/units/acquire-lock', {
           method: 'POST',
           body: { unitId: matchedUnit.id },
-          headers: { Authorization: `Bearer ${session.access_token}` },
+          headers: { Authorization: `Bearer ${token}` },
         })
-        accessTokenRef.value = session.access_token
+        accessTokenRef.value = token
         sync().catch(() => {}) // fire-and-forget for direct visits; list page already synced
         unitId.value = matchedUnit.id
         sessionStorage.setItem(RESERVE_UNIT_ID, matchedUnit.id)
@@ -753,9 +809,11 @@ onMounted(async () => {
           lockExpiresAtMs.value = null
         }
         setupBeforeUnload()
-      } catch (e: any) {
-        const msg = e?.data?.message || e?.message || 'Could not reserve unit. It may have been taken.'
-        acquireError.value = msg
+      } catch (e: unknown) {
+        acquireError.value = errorMessageFromUnknown(
+          e,
+          'Could not reserve unit. It may have been taken.',
+        )
       } finally {
         acquiringLock.value = false
         reserveFlowReady.value = true
@@ -902,41 +960,7 @@ async function onSubmit() {
     if (!idPassport.value) idPassport.value = 'Pending'
     if (!reasonForBuying.value) reasonForBuying.value = 'Not specified'
 
-    // Match portal: get session at submit time, and refresh if missing (portal does this in reservationService)
-    let token = accessTokenRef.value?.trim() ?? null
-    if (!token) {
-      try {
-        const { data: { session } } = await $supabase.auth.getSession()
-        token = session?.access_token?.trim() ?? null
-      } catch {
-        // getSession can timeout (NavigatorLockAcquireTimeoutError); try localStorage fallback
-      }
-    }
-    if (!token) {
-      const { data: { session: refreshed } } = await $supabase.auth.refreshSession()
-      token = refreshed?.access_token?.trim() ?? null
-      if (token) accessTokenRef.value = token
-    }
-    if (!token && typeof localStorage !== 'undefined') {
-      // Fallback when getSession/refreshSession fail (e.g. lock timeout): read same storage Supabase uses
-      const config = useRuntimeConfig()
-      const url = (config.public.supabaseUrl as string)?.trim() ?? ''
-      const projectRef = url.replace(/^https?:\/\//, '').split('.')[0]
-      const storageKey = projectRef ? `sb-${projectRef}-auth-token` : null
-      if (storageKey) {
-        try {
-          const raw = localStorage.getItem(storageKey)
-          const parsed = raw ? JSON.parse(raw) : null
-          const accessToken = parsed?.currentSession?.access_token ?? parsed?.access_token ?? null
-          if (accessToken) {
-            token = accessToken.trim()
-            accessTokenRef.value = token
-          }
-        } catch {
-          // ignore
-        }
-      }
-    }
+    const token = await resolveAccessToken()
     if (!token) {
       error.value = 'Session expired. Please sign in again.'
       loading.value = false
@@ -970,8 +994,8 @@ async function onSubmit() {
         {
           method: 'POST',
           body: {
-            name: firstName.value.trim(),
-            surname: lastName.value.trim(),
+            firstName: firstName.value.trim(),
+            lastName: lastName.value.trim(),
             email: email.value.trim(),
             phone: `+${selectedPhoneCountry.value.dialCode}${phone.value}`.trim(),
             idPassport: idPassportToSend,
@@ -990,8 +1014,8 @@ async function onSubmit() {
     let res: Awaited<ReturnType<typeof doSubmit>>
     try {
       res = await doSubmit(token)
-    } catch (firstErr: any) {
-      if (firstErr?.statusCode === 401 || firstErr?.status === 401) {
+    } catch (firstErr: unknown) {
+      if (httpStatusFromUnknown(firstErr) === 401) {
         const { data: { session } } = await $supabase.auth.refreshSession()
         const freshToken = session?.access_token?.trim() ?? null
         if (freshToken && freshToken !== token) {
@@ -1037,9 +1061,28 @@ async function onSubmit() {
           amount: payload.amountInCents,
           ref: payload.paymentReference,
           currency: payload.currency || 'ZAR',
-          onSuccess: () => {
-            error.value = null
-            navigateTo('/payment-success')
+          onSuccess: async () => {
+            completingPayment.value = true
+            try {
+              const latestToken = (await resolveAccessToken()) || token
+              await $fetch(`${supabaseUrl}/functions/v1/confirm-payment`, {
+                method: 'POST',
+                body: { paymentReference: payload.paymentReference },
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${latestToken}`,
+                  apikey: supabaseAnonKey,
+                },
+              })
+              error.value = null
+              navigateTo('/payment-success')
+            } catch (confirmErr: unknown) {
+              completingPayment.value = false
+              error.value = errorMessageFromUnknown(
+                confirmErr,
+                'Payment succeeded, but confirmation is pending. Please refresh My Units in a moment.',
+              )
+            }
           },
           onCancel: () => {
             // Best-effort cancel hook so Zoho + Supabase are updated
@@ -1055,18 +1098,18 @@ async function onSubmit() {
             navigateTo('/', { replace: true })
           },
         })
-      } catch (e: any) {
-        error.value = e?.message || 'Could not open payment. Please try again.'
+      } catch (e: unknown) {
+        error.value = errorMessageFromUnknown(e, 'Could not open payment. Please try again.')
       }
       return
     }
 
     error.value =
       payload?.message ?? 'Reservation created. Payment link not available — please contact support.'
-  } catch (e: any) {
-    const status = e?.statusCode ?? e?.status
-    const msg = e?.data?.error ?? e?.data?.message ?? e?.message
-    error.value = status === 401 ? 'Session expired. Please sign in again.' : (msg || 'Could not submit reservation.')
+  } catch (e: unknown) {
+    const status = httpStatusFromUnknown(e)
+    const msg = errorMessageFromUnknown(e, 'Could not submit reservation.')
+    error.value = status === 401 ? 'Session expired. Please sign in again.' : msg
   } finally {
     loading.value = false
   }

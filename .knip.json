@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": ["frontend/plugins/**/*.ts", "frontend/server/api/**/*.ts", "backend/supabase/functions/**/*.ts"],
+  "project": [
+    "frontend/**/*.{ts,vue}",
+    "backend/supabase/functions/**/*.ts",
+    "tests/**/*.{ts,tsx}",
+    "e2e/**/*.ts",
+    "*.ts",
+    "*.mjs"
+  ],
+  "ignore": ["nuxt-app-manifest-stub.mjs"],
+  "ignoreDependencies": ["@nuxt/devtools"]
+}

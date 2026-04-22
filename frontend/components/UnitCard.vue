@@ -145,6 +145,7 @@ import IconCar from '~/components/icons/IconCar.vue'
 import IconSize from '~/components/icons/IconSize.vue'
 import IconLayout from '~/components/icons/IconLayout.vue'
 import IconHeart from '~/components/icons/IconHeart.vue'
+import { formatZarInteger } from '~/utils/formatZar'
 
 const props = withDefaults(
   defineProps<{
@@ -167,7 +168,10 @@ const emit = defineEmits<{
   toggleWishlist: [unitId: string]
 }>()
 
-const timeLeft = ref(0)
+const { timeLeft } = useLockCountdown(
+  computed(() => props.unit.lockExpiresAt),
+  computed(() => props.serverClockOffsetMs),
+)
 const cardImageUrl = computed(() => props.unit.floorplanUrl || props.unit.imageUrl)
 
 const isLocked = computed(() => timeLeft.value > 0 && props.unit.status === 'Available')
@@ -180,25 +184,15 @@ const showOverlay = computed(() =>
   (props.unit.status !== 'Available' || isLocked.value),
 )
 
-const formattedPrice = computed(() =>
-  new Intl.NumberFormat('en-US').format(props.unit.price).replace(/,/g, ' '),
-)
+const formattedPrice = computed(() => formatZarInteger(props.unit.price))
 const formattedOriginalPrice = computed(() =>
-  props.unit.originalPrice
-    ? new Intl.NumberFormat('en-US').format(props.unit.originalPrice).replace(/,/g, ' ')
-    : '',
+  props.unit.originalPrice ? formatZarInteger(props.unit.originalPrice) : '',
 )
 
 const reserveButtonLabel = computed(() => {
   if (isReserving.value) return 'Securing...'
   return 'Reserve Now'
 })
-
-function formatTime(seconds: number) {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
 
 const overlayLabel = computed(() => {
   if (isLocked.value) return 'Reservation In Progress'
@@ -218,33 +212,4 @@ function onReserve(unit: Unit) {
 function onToggleWishlist(unitId: string) {
   emit('toggleWishlist', unitId)
 }
-
-let timerId: ReturnType<typeof setInterval> | null = null
-
-function startTimer() {
-  if (!props.unit.lockExpiresAt) {
-    timeLeft.value = 0
-    return
-  }
-  const effectiveNow = () => Date.now() + props.serverClockOffsetMs
-  const update = () => {
-    timeLeft.value = Math.max(0, Math.floor((props.unit.lockExpiresAt! - effectiveNow()) / 1000))
-  }
-  update()
-  timerId = setInterval(update, 1000)
-}
-
-onMounted(() => {
-  startTimer()
-})
-
-onBeforeUnmount(() => {
-  if (timerId) clearInterval(timerId)
-})
-
-watch(() => [props.unit.lockExpiresAt, props.serverClockOffsetMs], () => {
-  if (timerId) clearInterval(timerId)
-  timerId = null
-  startTimer()
-})
 </script>

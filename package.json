@@ -3,27 +3,47 @@
   "private": true,
   "type": "module",
   "imports": {
-    "#internal/nuxt/paths": "./nuxt-internal-paths-stub.mjs",
-    "#app-manifest": "./nuxt-app-manifest-stub.mjs"
+    "#internal/nuxt/paths": "./nuxt-internal-paths-node.mjs"
   },
   "scripts": {
     "build": "nuxt build",
+    "build:clean": "nuxi cleanup && nuxt build",
     "dev": "nuxt dev --host",
     "dev:host": "nuxt dev --host",
     "generate": "nuxt generate",
-    "preview": "nuxt preview"
+    "preview": "nuxt preview",
+    "preview:e2e": "nuxt preview --port 4173",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium",
+    "test:all": "npm run typecheck && vitest run && playwright test",
+    "verify:all": "npm run quality:all && npm run test:e2e",
+    "quality:deadcode": "knip --no-progress",
+    "quality:duplication": "jscpd frontend backend tests e2e --format typescript,javascript,markup --formats-exts \"typescript:ts,tsx;javascript:js,mjs;markup:vue,html\" --min-lines 10 --min-tokens 70 --max-lines 2000 --threshold 1 --reporters consoleFull",
+    "quality:baseline": "npm run typecheck && npm run test:unit",
+    "quality:all": "npm run quality:baseline && npm run quality:deadcode && npm run quality:duplication",
+    "postinstall": "nuxi prepare"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
+    "h3": "^1.15.11",
     "lottie-web": "^5.13.0",
     "nuxt": "^3.14.0",
     "swiper": "^11.1.14",
-    "vue": "latest",
-    "vue-router": "latest"
+    "ufo": "^1.6.3",
+    "vue": "3.5.29",
+    "vue-router": "4.6.4"
   },
   "devDependencies": {
-    "@nuxt/devtools": "latest",
+    "@nuxt/devtools": "3.2.2",
     "@nuxtjs/tailwindcss": "^6.12.2",
-    "typescript": "~5.6.2"
+    "@playwright/test": "^1.59.1",
+    "jscpd": "^4.0.9",
+    "knip": "^6.6.1",
+    "typescript": "~5.6.2",
+    "vitest": "^4.1.5"
   }
 }

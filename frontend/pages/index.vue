@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen">
       <!-- One-time toast after returning from payment cancel (bottom-right, compact) -->
-      <!-- One-time toast after returning from payment cancel (bottom-right, compact) -->
       <div
         v-if="showPaymentCancelledToast"
         class="fixed bottom-4 right-4 z-[100] max-w-[18rem] rounded-lg border border-amber-400 bg-amber-50 text-amber-900 px-3 py-2 flex items-center justify-between gap-2 shadow-lg"
@@ -163,10 +162,10 @@
                 type="button"
                 data-view-mode="GRID"
                 class="relative z-10 flex group flex-1 min-h-10 sm:min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-2 sm:py-1.5"
-                :class="effectiveViewMode === 'GRID' ? 'text-white' : 'text-black'"
+                :class="effectiveViewMode === ViewMode.GRID ? 'text-white' : 'text-black'"
                 :style="{ background: 'transparent' }"
-                :aria-pressed="effectiveViewMode === 'GRID'"
-                @click="setViewModeSmooth('GRID')"
+                :aria-pressed="effectiveViewMode === ViewMode.GRID"
+                @click="setViewModeSmooth(ViewMode.GRID)"
               >
                 <span class="icon-switcher-svg flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
                   <svg xmlns="http://www.w3.org/2000/svg" class="block h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 16 16" shape-rendering="geometricPrecision" aria-hidden="true">
@@ -180,10 +179,10 @@
                 type="button"
                 data-view-mode="LIST"
                 class="relative z-10 flex group flex-1 min-h-10 sm:min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-2 sm:py-1.5"
-                :class="effectiveViewMode === 'LIST' ? 'text-white' : 'text-black'"
+                :class="effectiveViewMode === ViewMode.LIST ? 'text-white' : 'text-black'"
                 :style="{ background: 'transparent' }"
-                :aria-pressed="effectiveViewMode === 'LIST'"
-                @click="setViewModeSmooth('LIST')"
+                :aria-pressed="effectiveViewMode === ViewMode.LIST"
+                @click="setViewModeSmooth(ViewMode.LIST)"
               >
                 <span class="icon-switcher-svg flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
                   <svg xmlns="http://www.w3.org/2000/svg" class="block h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 16 16" shape-rendering="geometricPrecision" aria-hidden="true">
@@ -197,9 +196,9 @@
                 type="button"
                 data-view-mode="PLANS"
                 class="relative z-10 flex group flex-1 min-h-10 sm:min-h-8 rounded-full transition-colors duration-200 items-center justify-center gap-2 px-2 py-2 sm:py-1.5"
-                :class="effectiveViewMode === 'PLANS' ? 'text-white' : 'text-black'"
+                :class="effectiveViewMode === ViewMode.PLANS ? 'text-white' : 'text-black'"
                 :style="{ background: 'transparent' }"
-                :aria-pressed="effectiveViewMode === 'PLANS'"
+                :aria-pressed="effectiveViewMode === ViewMode.PLANS"
                 @click="switchToPlans"
               >
                 <span class="icon-switcher-svg flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
@@ -224,12 +223,12 @@
         <!-- Plans: mount once, then toggle with v-show to avoid expensive re-mount jank -->
         <SiteMapPlansView
           v-if="plansMounted"
-          v-show="viewMode === 'PLANS'"
+          v-show="viewMode === ViewMode.PLANS"
           :units="units"
         />
 
         <!-- Grid/List: keep DOM mounted, just toggle visibility -->
-        <div v-show="viewMode !== 'PLANS'">
+        <div v-show="viewMode !== ViewMode.PLANS">
           <div
             v-show="unitsLoading"
             class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,24rem),1fr))] gap-[1.25rem] animate-pulse"
@@ -253,7 +252,7 @@
           </div>
 
           <div
-            v-show="!unitsLoading && !unitsError && displayedUnits.length > 0 && viewMode === 'GRID'"
+            v-show="!unitsLoading && !unitsError && displayedUnits.length > 0 && viewMode === ViewMode.GRID"
             class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,24rem),1fr))] gap-[1.25rem]"
           >
             <UnitCard
@@ -271,7 +270,7 @@
           </div>
 
           <div
-            v-show="!unitsLoading && !unitsError && displayedUnits.length > 0 && viewMode === 'LIST'"
+            v-show="!unitsLoading && !unitsError && displayedUnits.length > 0 && viewMode === ViewMode.LIST"
             class="space-y-5 sm:space-y-3"
           >
             <UnitListRow
@@ -304,18 +303,21 @@ import FilterBar from '~/components/FilterBar.vue'
 import SiteMapPlansView from '~/components/SiteMapPlansView.vue'
 import { SITE_MAP_FLOORS, SITE_MAP_MASTER } from '~/data/siteMap'
 import { useAuth } from '~/composables/useAuth'
+import { useReserveUnitFlow } from '~/composables/useReserveUnitFlow'
 import { useUnits } from '~/composables/useUnits'
 import { useUnitFilters } from '~/composables/useUnitFilters'
 import { useWishlist } from '~/composables/useWishlist'
-import type { Unit, SearchFilters, ViewMode } from '~/types'
+import { ViewMode, type Unit, type SearchFilters } from '~/types'
 
-const { user, sessionRef } = useAuth()
+const { user } = useAuth()
 const { units, loading: unitsLoading, error: unitsError } = useUnits()
 const { wishlistIds, toggle: toggleWishlist } = useWishlist()
 const { filters, viewMode, resetFilters } = useUnitFilters()
 const { serverClockOffsetMs } = useServerClock()
 const runtimeConfig = useRuntimeConfig()
-const reservingUnitId = ref<string | null>(null)
+const { reservingUnitId, reserveUnit } = useReserveUnitFlow({
+  fallbackErrorMessage: 'Could not reserve unit.',
+})
 const showPaymentCancelledToast = ref(false)
 const showFiltersDrawer = ref(false)
 
@@ -389,7 +391,7 @@ function preloadUnitImages() {
 
 function switchToPlans() {
   preloadPlansImages()
-  setViewModeSmooth('PLANS')
+  setViewModeSmooth(ViewMode.PLANS)
 }
 
 const viewSwitcherContainerRef = ref<HTMLElement | null>(null)
@@ -408,7 +410,7 @@ function updateViewSwitcherPillTo(mode: ViewMode) {
   // Size and position pill so external white space (gap to container) is equal top, left, and bottom.
   // Container has p-1 (4px). Pill uses pad for top/height; for left, use pad when Grid (first tab) so left gap matches.
   const pad = 4
-  const pillLeftRaw = mode === 'GRID' ? pad : bRect.left - cRect.left - border
+  const pillLeftRaw = mode === ViewMode.GRID ? pad : bRect.left - cRect.left - border
   pillStyle.value = {
     left: Math.round(pillLeftRaw),
     top: pad,
@@ -441,7 +443,7 @@ let setViewModeDelayTimeoutId: ReturnType<typeof setTimeout> | null = null
 function setViewModeSmooth(next: ViewMode) {
   // 1) Move pill immediately so the transition starts even if the view content is heavy.
   // 2) Defer `viewMode` until the next frame to avoid stutter from DOM work.
-  const shouldMountPlans = next === 'PLANS'
+  const shouldMountPlans = next === ViewMode.PLANS
 
   updateViewSwitcherPillTo(next)
   pendingViewMode.value = next
@@ -478,7 +480,7 @@ const viewSwitcherPillStyle = computed(() => ({
 }))
 
 watch(viewMode, (m) => {
-  if (m === 'PLANS') plansMounted.value = true
+  if (m === ViewMode.PLANS) plansMounted.value = true
   // While a transition is in progress we already moved the pill; avoid re-measuring.
   if (pendingViewMode.value === null) updateViewSwitcherPillTo(m)
 }, { immediate: true })
@@ -521,20 +523,6 @@ const heroSlides = [
   'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1920',
 ]
 const heroSwiperModules = [Pagination, Autoplay]
-const { $supabase } = useNuxtApp()
-// Use session from useAuth when ready; also cache from our own getSession() so we have it as soon as possible
-const sessionCache = ref<{ access_token: string } | null>(null)
-const { show: showBottomUrgencyStrip } = useBottomUrgencyStrip()
-
-watch(user, (u) => {
-  if (!u) return
-  if (sessionRef.value) sessionCache.value = sessionRef.value
-  $supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session?.access_token) sessionCache.value = { access_token: session.access_token }
-    // Warm acquire-lock only with a real unit ID when we have one (e.g. from units list);
-    // avoid calling with a fake ID so we don't get a 404 in the console.
-  }).catch(() => {})
-}, { immediate: true })
 
 const displayedUnits = computed(() => {
   let list = units.value.filter((unit) => {
@@ -623,42 +611,7 @@ function onSelectUnit(unit: Unit) {
 }
 
 function onReserveUnit(unit: Unit) {
-  reservingUnitId.value = unit.id
-  const token = sessionCache.value?.access_token ?? sessionRef.value?.access_token
-  if (token) {
-    doAcquireLock(unit, token)
-    return
-  }
-  $supabase.auth.getSession().then(({ data: { session } }) => {
-    if (!session) {
-      reservingUnitId.value = null
-      return
-    }
-    if (session?.access_token) sessionCache.value = { access_token: session.access_token }
-    doAcquireLock(unit, session.access_token)
-  })
-}
-
-async function doAcquireLock(unit: Unit, token: string) {
-  try {
-    const res = await $fetch<{ lockExpiresAt?: string }>('/api/units/acquire-lock', {
-      method: 'POST',
-      body: { unitId: unit.id },
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.setItem('ignite_reserve_unitId', unit.id)
-      if (res?.lockExpiresAt) sessionStorage.setItem('ignite_reserve_lockExpiresAt', res.lockExpiresAt)
-      sessionStorage.setItem('ignite_reserve_token', token)
-    }
-    await navigateTo(`/reserve/${unit.unitNumber}`)
-  } catch (e: any) {
-    const msg = e?.data?.message || e?.message || 'Could not reserve unit.'
-    console.error(msg)
-    showBottomUrgencyStrip(msg)
-  } finally {
-    reservingUnitId.value = null
-  }
+  reserveUnit(unit)
 }
 
 function onToggleWishlist(unitId: string) {

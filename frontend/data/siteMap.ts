@@ -3,18 +3,18 @@
  * Paths use 0–1 fractions of image width/height; tweak in Inkscape/Figma and paste `d` values.
  * Use WebP (or PNG) paths in `imageSrc` — same overlay approach for any raster format.
  */
-export interface SiteMapBuilding {
+interface SiteMapBuilding {
   id: string
   label: string
   pathD: string
 }
 
-export interface SiteMapUnitHotspot {
+interface SiteMapUnitHotspot {
   unitNumber: string
   pathD: string
 }
 
-export interface SiteMapFloor {
+interface SiteMapFloor {
   id: string
   label: string
   imageSrc: string
@@ -36,8 +36,12 @@ export const SITE_MAP_PLAN_FRAME = {
 } as const
 
 /** Supabase public URLs for the interactive site map raster plans. */
+const envSupabaseUrl = (process.env.NUXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, '')
 const SUPABASE_ASSETS_SITEMAP_BASE_URL =
-  'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/units/sitemap'
+  (process.env.NUXT_PUBLIC_SITEMAP_BASE_URL || '').trim().replace(/\/$/, '') ||
+  (envSupabaseUrl
+    ? `${envSupabaseUrl}/storage/v1/object/public/sitemap`
+    : 'https://cludixdjfecrzdbadynf.supabase.co/storage/v1/object/public/sitemap')
 
 export const SITE_MAP_MASTER = {
   imageSrc: `${SUPABASE_ASSETS_SITEMAP_BASE_URL}/location-background.webp`,

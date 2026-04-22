@@ -14,8 +14,13 @@ export interface DocumentEntry {
   fileSize?: string
 }
 
-/** Supabase Storage public URL for downloads (bucket: units, folder: downloads). */
-const STORAGE_BASE = 'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/units/downloads/'
+/** Supabase Storage public URL for downloads (bucket: `downloads`). */
+const envSupabaseUrl = (process.env.NUXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, '')
+const STORAGE_BASE =
+  (process.env.NUXT_PUBLIC_DOWNLOADS_BASE_URL || '').trim().replace(/\/$/, '') ||
+  (envSupabaseUrl
+    ? `${envSupabaseUrl}/storage/v1/object/public/downloads`
+    : 'https://cludixdjfecrzdbadynf.supabase.co/storage/v1/object/public/downloads')
 
 export const developmentDocuments: DocumentEntry[] = [
   {
@@ -23,7 +28,7 @@ export const developmentDocuments: DocumentEntry[] = [
     title: 'Site Development Plan',
     description:
       'Architectural overview detailing building placement, landscaping zones, and site infrastructure.',
-    filePath: `${STORAGE_BASE}site-development-plan.pdf`,
+    filePath: `${STORAGE_BASE}/site-development-plan.pdf`,
     fileType: 'PDF',
     fileSize: '5.88 MB',
   },
@@ -32,7 +37,7 @@ export const developmentDocuments: DocumentEntry[] = [
     title: 'Floorplan Pack',
     description:
       'Comprehensive technical layouts for all standard and premium configuration variants.',
-    filePath: `${STORAGE_BASE}floorplan-pack.pdf`,
+    filePath: `${STORAGE_BASE}/floorplan-pack.pdf`,
     fileType: 'PDF',
     fileSize: '1.03 MB',
   },
@@ -41,7 +46,7 @@ export const developmentDocuments: DocumentEntry[] = [
     title: 'Electrical Schedule',
     description:
       'Complete technical layout of lighting, power points, and smart-home integration conduits for all unit types.',
-    filePath: `${STORAGE_BASE}electrical-schedule.pdf`,
+    filePath: `${STORAGE_BASE}/electrical-schedule.pdf`,
     fileType: 'PDF',
     fileSize: '1.97 MB',
   },
@@ -50,7 +55,7 @@ export const developmentDocuments: DocumentEntry[] = [
     title: 'Conduct Rules',
     description:
       'Official regulatory framework ensuring the maintenance of Ignite’s luxury standards and communal harmony.',
-    filePath: `${STORAGE_BASE}conduct-rules.pdf`,
+    filePath: `${STORAGE_BASE}/conduct-rules.pdf`,
     fileType: 'PDF',
     fileSize: '1.57 MB',
   },
@@ -59,7 +64,7 @@ export const developmentDocuments: DocumentEntry[] = [
     title: 'List of Specifications',
     description:
       'Technical breakdown of luxury finishes, fixtures, and premium structural materials.',
-    filePath: `${STORAGE_BASE}list-of-specifications.pdf`,
+    filePath: `${STORAGE_BASE}/list-of-specifications.pdf`,
     fileType: 'PDF',
     fileSize: '381 KB',
   },

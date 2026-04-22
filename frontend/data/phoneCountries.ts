@@ -3,7 +3,7 @@
  * dialCode: digits only for parsing (e.g. "27", "1869").
  * Display: use formatPhoneDialCode(dialCode) for "+27" or "+1-869".
  */
-export interface PhoneCountry {
+interface PhoneCountry {
   dialCode: string
   countryCode: string
 }

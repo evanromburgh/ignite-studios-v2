@@ -1,4 +1,4 @@
-import type { SearchFilters, ViewMode } from '~/types'
+import { ViewMode, type SearchFilters } from '~/types'
 import type { LocationQuery, LocationQueryValue } from 'vue-router'
 
 const DEFAULT_FILTERS: SearchFilters = {
@@ -18,7 +18,7 @@ const DEFAULT_FILTERS: SearchFilters = {
 }
 
 const filters = ref<SearchFilters>({ ...DEFAULT_FILTERS })
-const viewMode = ref<ViewMode>('GRID')
+const viewMode = ref<ViewMode>(ViewMode.GRID)
 
 export function useUnitFilters() {
   const { user, authLoading } = useAuth()
@@ -29,8 +29,9 @@ export function useUnitFilters() {
   let applyingToRoute = false
 
   function queryValue(value: LocationQueryValue | LocationQueryValue[] | undefined): string | undefined {
-    if (Array.isArray(value)) return value[0]
-    return value ?? undefined
+    if (value == null) return undefined
+    if (Array.isArray(value)) return value[0] ?? undefined
+    return value
   }
 
   function parseQueryFilters(query: LocationQuery): { nextFilters: SearchFilters; nextViewMode: ViewMode } {
@@ -74,7 +75,8 @@ export function useUnitFilters() {
     if (Number.isFinite(minPrice) && minPrice > 0) nextFilters.minPrice = minPrice
     if (Number.isFinite(maxPrice) && maxPrice > 0) nextFilters.maxPrice = maxPrice
 
-    const nextViewMode: ViewMode = queryMap.view === 'LIST' || queryMap.view === 'PLANS' ? queryMap.view : 'GRID'
+    const nextViewMode: ViewMode =
+      queryMap.view === ViewMode.LIST || queryMap.view === ViewMode.PLANS ? queryMap.view : ViewMode.GRID
 
     return { nextFilters, nextViewMode }
   }
@@ -105,7 +107,7 @@ export function useUnitFilters() {
     if (current.bedrooms !== DEFAULT_FILTERS.bedrooms) q.bedrooms = current.bedrooms
     if (current.bathrooms !== DEFAULT_FILTERS.bathrooms) q.bathrooms = current.bathrooms
     if ((current.wishlistFilter ?? DEFAULT_FILTERS.wishlistFilter) !== DEFAULT_FILTERS.wishlistFilter) q.wishlist = current.wishlistFilter as string
-    if (currentViewMode !== 'GRID') q.view = currentViewMode
+    if (currentViewMode !== ViewMode.GRID) q.view = currentViewMode
 
     return q
   }
@@ -118,7 +120,7 @@ export function useUnitFilters() {
 
   function resetFilters() {
     filters.value = { ...DEFAULT_FILTERS }
-    viewMode.value = 'GRID'
+    viewMode.value = ViewMode.GRID
   }
 
   watch(

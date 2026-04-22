@@ -1,0 +1,45 @@
+{
+  "path": [
+    "frontend",
+    "backend",
+    "tests",
+    "e2e"
+  ],
+  "threshold": 1,
+  "minLines": 10,
+  "minTokens": 70,
+  "format": [
+    "typescript",
+    "javascript",
+    "markup"
+  ],
+  "formatsExts": {
+    "typescript": [
+      "ts",
+      "tsx"
+    ],
+    "javascript": [
+      "js",
+      "mjs"
+    ],
+    "markup": [
+      "vue",
+      "html"
+    ]
+  },
+  "reporters": [
+    "consoleFull"
+  ],
+  "ignore": [
+    "**/node_modules/**",
+    "**/.nuxt/**",
+    "**/.output/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/.temp/**",
+    "**/tools/**",
+    "**/*.lock",
+    "**/package-lock.json"
+  ],
+  "maxLines": 2000
+}

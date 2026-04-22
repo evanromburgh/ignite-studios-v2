@@ -16,7 +16,7 @@ const routeLoading = ref(false)
 // between the AuthPortal and the main app.
 const authTransitionLoading = ref(false)
 
-if (process.client) {
+if (import.meta.client) {
   const router = useRouter()
   router.beforeEach((to, from, next) => {
     if (to.path !== from.path) {

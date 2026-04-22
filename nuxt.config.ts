@@ -1,18 +1,74 @@
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { resolve as resolvePath } from 'node:path'
 
 const configDir = fileURLToPath(new URL('.', import.meta.url))
 
+/**
+ * Nuxt’s default `#internal/nuxt/paths` alias is an absolute Windows path (`C:\...`).
+ * Vite 7 / vite-node can pass that to Node’s `import()`, which only accepts `file://` URLs → "Received protocol 'c:'".
+ */
+function winFsPathToFileUrlIfNeeded(target: string): string {
+  if (!target || target.startsWith('file:') || target.startsWith('\0') || target.startsWith('/@fs/')) {
+    return target
+  }
+  if (/^[a-zA-Z]:[\\/]/.test(target) || target.startsWith('\\\\')) {
+    return pathToFileURL(target).href
+  }
+  return target
+}
+
+function normalizeViteAlias(alias: unknown): void {
+  if (!alias) return
+  if (Array.isArray(alias)) {
+    for (const entry of alias) {
+      if (entry && typeof entry === 'object' && typeof (entry as { replacement?: unknown }).replacement === 'string') {
+        (entry as { replacement: string }).replacement = winFsPathToFileUrlIfNeeded(
+          (entry as { replacement: string }).replacement,
+        )
+      }
+    }
+    return
+  }
+  if (typeof alias === 'object' && alias !== null) {
+    for (const key of Object.keys(alias)) {
+      const val = (alias as Record<string, unknown>)[key]
+      if (typeof val === 'string') {
+        (alias as Record<string, string>)[key] = winFsPathToFileUrlIfNeeded(val)
+      }
+    }
+  }
+}
+
+function normalizeViteConfigAliases(config: Record<string, unknown>): void {
+  const resolve = config.resolve as Record<string, unknown> | undefined
+  if (resolve && 'alias' in resolve) normalizeViteAlias(resolve.alias)
+  const envs = config.environments as Record<string, unknown> | undefined
+  if (!envs) return
+  for (const env of Object.values(envs)) {
+    if (env && typeof env === 'object') {
+      const r = (env as Record<string, unknown>).resolve as Record<string, unknown> | undefined
+      if (r && 'alias' in r) normalizeViteAlias(r.alias)
+    }
+  }
+}
+
+/** Stub only for `#app-manifest` (dead path); `#internal/nuxt/paths` must stay Nuxt’s `.nuxt/paths.mjs` + hook below. */
+const STUB_APP_MANIFEST_FS = resolvePath(configDir, 'nuxt-app-manifest-stub.mjs')
+const stubAppManifestAlias = {
+  '#app-manifest': pathToFileURL(STUB_APP_MANIFEST_FS).href,
+} as const
+
+const envSupabaseUrl = (process.env.NUXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, '')
+const defaultAssetsPublicBase = envSupabaseUrl
+  ? `${envSupabaseUrl}/storage/v1/object/public/assets`
+  : ''
+
 /** Default branding URLs (Supabase Storage, `assets` bucket / `branding/`). Override via NUXT_PUBLIC_BRANDING_* at deploy time. */
 const defaultPublicBranding = {
-  faviconUrl:
-    'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/branding/favicon.png',
-  logoLightUrl:
-    'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/branding/logo_light.svg',
-  logoDarkUrl:
-    'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/branding/logo_dark.svg',
-  seoImageUrl:
-    'https://bhmgvodqmdwnwntffvsd.supabase.co/storage/v1/object/public/assets/images/seo_image.webp',
+  faviconUrl: defaultAssetsPublicBase ? `${defaultAssetsPublicBase}/branding/favicon.png` : '',
+  logoLightUrl: defaultAssetsPublicBase ? `${defaultAssetsPublicBase}/branding/logo_light.svg` : '',
+  logoDarkUrl: defaultAssetsPublicBase ? `${defaultAssetsPublicBase}/branding/logo_dark.svg` : '',
+  seoImageUrl: defaultAssetsPublicBase ? `${defaultAssetsPublicBase}/images/seo_image.webp` : '',
 } as const
 
 const defaultSeoTitle = 'Streamline Your Unit Reservation Process'
@@ -22,6 +78,18 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-02-25',
   devtools: { enabled: true },
   srcDir: 'frontend/',
+  // Allow isolated build artifacts (e.g. E2E) so cleanup/build commands
+  // don't invalidate a concurrently running local dev server.
+  buildDir: process.env.NUXT_BUILD_DIR || '.nuxt',
+  hooks: {
+    'vite:extendConfig'(config) {
+      normalizeViteConfigAliases(config as Record<string, unknown>)
+    },
+    // Second pass: Nuxt may register aliases after early `extendConfig` (e.g. per-environment).
+    'vite:configResolved'(config) {
+      normalizeViteConfigAliases(config as Record<string, unknown>)
+    },
+  },
   modules: [
     '@nuxtjs/tailwindcss',
   ],
@@ -98,6 +166,9 @@ export default defineNuxtConfig({
   },
   nitro: {
     minify: false,
+    output: {
+      dir: process.env.NITRO_OUTPUT_DIR || '.output',
+    },
   },
   typescript: {
     strict: true,
@@ -114,12 +185,7 @@ export default defineNuxtConfig({
       },
     },
     resolve: {
-      alias: {
-        // These aliases are needed because Nuxt internal virtual modules
-        // can be unresolved during Vite pre-transform in this setup.
-        '#app-manifest': resolvePath(configDir, 'nuxt-app-manifest-stub.mjs'),
-        '#internal/nuxt/paths': resolvePath(configDir, 'nuxt-internal-paths-stub.mjs'),
-      },
+      alias: { ...stubAppManifestAlias },
     },
   },
 })

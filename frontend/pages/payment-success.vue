@@ -31,7 +31,7 @@
               Unit {{ unit.unitNumber }}
             </h3>
             <p class="text-lg text-zinc-400 mb-6">
-              R {{ formatPrice(unit.price) }}
+              R {{ formatZarInteger(unit.price) }}
             </p>
             <div class="pt-6 border-t border-theme-border flex flex-col gap-2 text-sm">
               <p class="text-zinc-500">
@@ -73,50 +73,13 @@
 
 <script setup lang="ts">
 import type { Unit } from '~/types'
+import { mapSupabaseUnitRow, type SupabaseUnitRow } from '~/utils/mapUnitRow'
+import { formatZarInteger } from '~/utils/formatZar'
+import { getUnitsBucketPublicUrl } from '~/utils/unitsStorage'
 
 const route = useRoute()
 const { $supabase } = useNuxtApp()
 const unit = ref<Unit | null>(null)
-const storageBucket = 'units'
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-US').format(price).replace(/,/g, ' ')
-}
-
-function getPublicUrl(path: string | null | undefined): string | null {
-  if (!path) return null
-  const { data } = $supabase.storage.from(storageBucket).getPublicUrl(path)
-  return data.publicUrl ?? null
-}
-
-function mapRow(row: any): Unit {
-  let lockExpiresAt: number | undefined
-  if (row.lock_expires_at != null) {
-    const ms = new Date(row.lock_expires_at).getTime()
-    if (!Number.isNaN(ms)) lockExpiresAt = ms
-  }
-  const rawViewers = (row.viewers as Record<string, number>) ?? {}
-  return {
-    id: row.id,
-    unitNumber: row.unit_number,
-    bedrooms: row.bedrooms,
-    bathrooms: row.bathrooms,
-    parking: row.parking,
-    sizeSqm: row.size_sqm,
-    price: row.price,
-    status: row.status,
-    unitType: row.unit_type,
-    floor: row.floor ?? null,
-    direction: row.direction ?? null,
-    imageUrl: (getPublicUrl(row.image_key_1) ?? '') as string,
-    imageUrl2: getPublicUrl(row.image_key_2),
-    imageUrl3: getPublicUrl(row.image_key_3),
-    floorplanUrl: getPublicUrl(row.floorplan_key),
-    viewers: rawViewers,
-    lockExpiresAt,
-    lockedBy: row.locked_by,
-  }
-}
 
 onMounted(async () => {
   const urlParams = new URLSearchParams(route.fullPath.includes('?') ? route.fullPath.split('?')[1] : '')
@@ -131,10 +94,10 @@ onMounted(async () => {
   if (!paymentRef) {
     return
   }
-  // Reference format: unitId|zohoContactId|timestamp (same as submit-reservation / payment-webhook)
-  const parts = paymentRef.split('|')
+  // Reference format: unitId.zohoContactId.timestamp (Paystack) — legacy pipe form supported
+  const parts = paymentRef.includes('|') ? paymentRef.split('|') : paymentRef.split('.')
   const unitId = parts[0]?.trim()
-  if (!unitId) {
+  if (!unitId || parts.length !== 3) {
     return
   }
   try {
@@ -144,9 +107,11 @@ onMounted(async () => {
       .eq('id', unitId)
       .single()
     if (!err && data) {
-      unit.value = mapRow(data)
+      unit.value = mapSupabaseUnitRow(data as SupabaseUnitRow, (path) =>
+        getUnitsBucketPublicUrl($supabase, path),
+      )
     }
-  } catch (e) {
+  } catch (e: unknown) {
     console.warn('Could not fetch unit for success page:', e)
   }
 })

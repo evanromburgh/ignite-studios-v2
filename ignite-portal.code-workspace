@@ -5,8 +5,8 @@
       "path": "frontend"
     },
     {
-      "name": "Backend (server)",
-      "path": "backend/server"
+      "name": "Nitro API",
+      "path": "frontend/server"
     },
     {
       "name": "Backend (supabase)",

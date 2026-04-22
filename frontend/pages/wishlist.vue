@@ -39,58 +39,38 @@
           </NuxtLink>
         </div>
 
-        <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,24rem),1fr))] gap-[1.25rem]">
-          <UnitCard
-            v-for="unit in wishlistUnits"
-            :key="unit.id"
-            :unit="unit"
-            :is-wishlisted="true"
-            :server-clock-offset-ms="serverClockOffsetMs"
-            :current-user-id="user?.id ?? null"
-            :reserving-unit-id="reservingUnitId"
-            @select="onSelectUnit"
-            @reserve="onReserveUnit"
-            @toggle-wishlist="onToggleWishlist"
-          />
-        </div>
+        <UnitCardsGrid
+          v-else
+          :units="wishlistUnits"
+          :always-wishlisted="true"
+          :server-clock-offset-ms="serverClockOffsetMs"
+          :current-user-id="user?.id ?? null"
+          :reserving-unit-id="reservingUnitId"
+          @select="onSelectUnit"
+          @reserve="onReserveUnit"
+          @toggle-wishlist="onToggleWishlist"
+        />
       </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import UnitCard from '~/components/UnitCard.vue'
+import UnitCardsGrid from '~/components/UnitCardsGrid.vue'
 import { useAuth } from '~/composables/useAuth'
+import { useReserveUnitFlow } from '~/composables/useReserveUnitFlow'
 import { useUnits } from '~/composables/useUnits'
 import { useWishlist } from '~/composables/useWishlist'
 import type { Unit } from '~/types'
 
-const { user, sessionRef } = useAuth()
+const { user } = useAuth()
 const { units, loading: unitsLoading, error: unitsError } = useUnits()
 const { wishlistIds, loading: wishlistLoading, error: wishlistError, toggle: toggleWishlist } = useWishlist()
 const { serverClockOffsetMs } = useServerClock()
-const reservingUnitId = ref<string | null>(null)
-const { $supabase } = useNuxtApp()
-const sessionCache = ref<{ access_token: string } | null>(null)
-const { show: showBottomUrgencyStrip } = useBottomUrgencyStrip()
-
-watch(user, (u) => {
-  if (!u) return
-  if (sessionRef.value) sessionCache.value = sessionRef.value
-  $supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session?.access_token) sessionCache.value = { access_token: session.access_token }
-    if (session?.access_token && !hasWarmedAcquireLock) {
-      hasWarmedAcquireLock = true
-      $fetch('/api/units/acquire-lock', {
-        method: 'POST',
-        body: { unitId: '00000000-0000-0000-0000-000000000000' },
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      }).catch(() => {})
-    }
-  }).catch(() => {})
-}, { immediate: true })
-
-let hasWarmedAcquireLock = false
+const { reservingUnitId, reserveUnit } = useReserveUnitFlow({
+  fallbackErrorMessage: 'Could not reserve unit.',
+  warmAcquireLock: true,
+})
 
 const wishlistUnits = computed(() => {
   const ids = wishlistIds.value
@@ -103,42 +83,7 @@ function onSelectUnit(unit: Unit) {
 }
 
 function onReserveUnit(unit: Unit) {
-  reservingUnitId.value = unit.id
-  const token = sessionCache.value?.access_token ?? sessionRef.value?.access_token
-  if (token) {
-    doAcquireLock(unit, token)
-    return
-  }
-  $supabase.auth.getSession().then(({ data: { session } }) => {
-    if (!session) {
-      reservingUnitId.value = null
-      return
-    }
-    if (session?.access_token) sessionCache.value = { access_token: session.access_token }
-    doAcquireLock(unit, session.access_token)
-  })
-}
-
-async function doAcquireLock(unit: Unit, token: string) {
-  try {
-    const res = await $fetch<{ lockExpiresAt?: string }>('/api/units/acquire-lock', {
-      method: 'POST',
-      body: { unitId: unit.id },
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.setItem('ignite_reserve_unitId', unit.id)
-      if (res?.lockExpiresAt) sessionStorage.setItem('ignite_reserve_lockExpiresAt', res.lockExpiresAt)
-      sessionStorage.setItem('ignite_reserve_token', token)
-    }
-    await navigateTo(`/reserve/${unit.unitNumber}`)
-  } catch (e: any) {
-    const msg = e?.data?.message || e?.message || 'Could not reserve unit.'
-    console.error(msg)
-    showBottomUrgencyStrip(msg)
-  } finally {
-    reservingUnitId.value = null
-  }
+  reserveUnit(unit)
 }
 
 function onToggleWishlist(unitId: string) {

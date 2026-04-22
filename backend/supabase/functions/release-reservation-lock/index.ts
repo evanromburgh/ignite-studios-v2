@@ -1,84 +1,54 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createServiceRoleClient, getUserFromBearerToken, jsonResponse, optionsResponse } from '../_shared/http.ts'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return optionsResponse()
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
+    return jsonResponse(405, { error: 'Method not allowed' })
   }
 
   try {
-    const contentType = req.headers.get('content-type') || '';
-    const bodyText = await req.text();
-    let ref = '';
+    const supabase = createServiceRoleClient()
+    const authUser = await getUserFromBearerToken(req, supabase)
+    if (!authUser) return jsonResponse(401, { error: 'Unauthorized' })
+
+    const contentType = req.headers.get('content-type') || ''
+    const bodyText = await req.text()
+    let reference = ''
+
     if (contentType.includes('application/json')) {
-      try {
-        const data = JSON.parse(bodyText);
-        ref = String(data.ref ?? data.payment_ref ?? '').trim();
-      } catch {
-        // ignore
-      }
+      const parsed = JSON.parse(bodyText || '{}')
+      reference = String(parsed?.paymentReference ?? parsed?.ref ?? '').trim()
     } else {
-      const params = new URLSearchParams(bodyText);
-      ref = (params.get('ref') ?? params.get('payment_ref') ?? '').trim();
+      const params = new URLSearchParams(bodyText)
+      reference = String(params.get('paymentReference') ?? params.get('ref') ?? '').trim()
     }
 
-    if (!ref) {
-      return new Response(JSON.stringify({ error: 'Missing ref' }), {
-        status: 400,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      });
-    }
+    if (!reference) return jsonResponse(400, { error: 'Missing payment reference' })
 
-    const decoded = decodeURIComponent(ref);
-    // Same format as submit-reservation / payment-webhook: unitId|zohoContactId|timestamp
-    const parts = decoded.split('|');
-    const unitId = parts[0]?.trim();
-    if (!unitId || parts.length !== 3) {
-      return new Response(JSON.stringify({ error: 'Invalid ref format' }), {
-        status: 400,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    const { error } = await supabase
-      .from('units')
-      .update({ lock_expires_at: null, locked_by: null })
-      .eq('id', unitId);
+    const { data, error } = await supabase.rpc('cancel_reservation_by_reference_v2', {
+      p_payment_reference: reference,
+      p_user_id: authUser.id,
+      p_reason: 'checkout_abandoned',
+    })
 
     if (error) {
-      console.error('release-reservation-lock error:', error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      });
+      const message = String(error?.message ?? '')
+      if (message.toLowerCase().includes('forbidden')) return jsonResponse(403, { error: 'Forbidden' })
+      if (message.toLowerCase().includes('not found')) return jsonResponse(404, { error: 'Reservation not found' })
+      return jsonResponse(500, { error: 'Failed to release reservation lock' })
     }
 
-    return new Response(JSON.stringify({ ok: true, unitId }), {
-      status: 200,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
-  } catch (err) {
-    console.error('release-reservation-lock:', err);
-    return new Response(JSON.stringify({ error: 'Internal error' }), {
-      status: 500,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
+    return jsonResponse(200, {
+      ok: true,
+      reservationId: data?.[0]?.reservation_id ?? null,
+      status: data?.[0]?.status ?? null,
+    })
+  } catch (err: any) {
+    console.error('release-reservation-lock error:', err)
+    return jsonResponse(500, { error: 'Internal error', details: err?.message })
   }
-});
+})

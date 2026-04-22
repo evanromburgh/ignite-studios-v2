@@ -2,6 +2,8 @@
  * Fetches the current user's reserved_unit_ids from profiles (updated by payment-webhook).
  * Used by My Units page and nav badge count.
  */
+import { ref, watch } from 'vue'
+
 const reservedUnitIds = ref<string[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -55,10 +57,6 @@ export function useReservedUnitIds() {
     },
     { immediate: true },
   )
-
-  onMounted(() => {
-    if (user.value?.id) fetchReservedUnitIds()
-  })
 
   return {
     reservedUnitIds,

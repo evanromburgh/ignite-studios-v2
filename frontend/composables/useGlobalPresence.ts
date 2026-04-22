@@ -11,7 +11,6 @@ export function useGlobalPresence() {
   const { $supabase } = useNuxtApp()
 
   onMounted(() => {
-    if (process.server) return
     if (channel) return
 
     const sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36)

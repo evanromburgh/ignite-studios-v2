@@ -1,5 +1,6 @@
 # Nuxt
 .nuxt
+.ignite-nuxt
 .output
 .data
 *.log
@@ -23,3 +24,9 @@ node_modules
 # OS
 .DS_Store
 Thumbs.db
+
+# Playwright
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/

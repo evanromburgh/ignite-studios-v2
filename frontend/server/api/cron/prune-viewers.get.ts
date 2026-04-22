@@ -3,7 +3,8 @@
  * Call from Vercel Cron (or any scheduler) every 5 min with CRON_SECRET.
  * Example: GET /api/cron/prune-viewers with header "Authorization: Bearer <CRON_SECRET>"
  */
-const PRESENCE_TTL_MS = 45_000
+import { CONFIG } from '~/config'
+import { createServiceRoleSupabase } from '~/server/utils/serviceSupabase'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -14,16 +15,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
-  const supabaseUrl = (config.public.supabaseUrl as string | undefined)?.trim()
-  const serviceRoleKey = (config.supabaseServiceRoleKey as string | undefined)?.trim()
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw createError({ statusCode: 500, message: 'Server configuration error' })
-  }
-
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
+  const supabase = createServiceRoleSupabase()
 
   const { data: units, error: fetchError } = await supabase
     .from('units')
@@ -43,7 +35,7 @@ export default defineEventHandler(async (event) => {
     const pruned: Record<string, number> = {}
     for (const [sid, ts] of Object.entries(raw as Record<string, unknown>)) {
       const t = typeof ts === 'number' ? ts : Number(ts)
-      if (!Number.isNaN(t) && now - t <= PRESENCE_TTL_MS) {
+      if (!Number.isNaN(t) && now - t <= CONFIG.PRESENCE_TTL_MS) {
         pruned[sid] = t
       }
     }

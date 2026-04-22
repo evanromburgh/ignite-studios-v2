@@ -1,4 +1,4 @@
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 // Shared state so layout, index, and wishlist page stay in sync
 const wishlistIds = ref<string[]>([])
@@ -86,10 +86,6 @@ export function useWishlist() {
     },
     { immediate: true },
   )
-
-  onMounted(() => {
-    if (user.value?.id) fetchWishlist()
-  })
 
   return {
     wishlistIds,

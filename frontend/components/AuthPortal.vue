@@ -111,15 +111,12 @@
 
             <!-- Step 2: Create account (basic details) -->
             <template v-else-if="step === 2 && accountExists === false">
-              <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
-                <div class="flex items-center justify-between gap-2">
-                  <div>
-                    <p class="text-[10px] sm:text-[11px] font-medium text-zinc-500 uppercase tracking-[0.05em]">CREATING ACCOUNT FOR</p>
-                    <p class="text-[13px] font-medium text-theme-text-primary mt-0.5">{{ email }}</p>
-                  </div>
-                  <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="goBackToStep1">Change</button>
-                </div>
-              </div>
+              <AuthIdentityCard
+                title="CREATING ACCOUNT FOR"
+                :email="email"
+                action-text="Change"
+                @action="goBackToStep1"
+              />
               <form class="space-y-5" @submit.prevent="handleCreateAccountStep2">
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-2">
@@ -212,28 +209,22 @@
                   </div>
                 </div>
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
-                <button
+                <AuthLoadingButton
                   type="submit"
-                  :disabled="loading"
-                  class="w-full h-12 bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all flex items-center justify-center disabled:opacity-50"
-                >
-                  <span v-if="loading" class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                  <span v-else>Continue</span>
-                </button>
+                  :loading="loading"
+                  label="Continue"
+                />
               </form>
             </template>
 
             <!-- Step 3: Signup – ID / Passport & Reason for Buying -->
             <template v-else-if="step === 3 && accountExists === false">
-              <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
-                <div class="flex items-center justify-between gap-2">
-                  <div>
-                    <p class="text-[10px] sm:text-[11px] font-medium text-zinc-500 uppercase tracking-[0.05em]">FINALIZE ACCOUNT</p>
-                    <p class="text-[13px] font-medium text-theme-text-primary mt-0.5">{{ email }}</p>
-                  </div>
-                  <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="step = 2">Back</button>
-                </div>
-              </div>
+              <AuthIdentityCard
+                title="FINALIZE ACCOUNT"
+                :email="email"
+                action-text="Back"
+                @action="step = 2"
+              />
               <form class="space-y-5" @submit.prevent="handleCreateAccount">
                 <div class="space-y-2">
                   <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
@@ -275,28 +266,22 @@
                 </div>
 
                 <div v-if="error" class="text-[10px] font-bold text-red-400 text-center">{{ error }}</div>
-                <button
+                <AuthLoadingButton
                   type="submit"
-                  :disabled="loading"
-                  class="w-full h-12 bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all flex items-center justify-center disabled:opacity-50"
-                >
-                  <span v-if="loading" class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                  <span v-else>Create Account</span>
-                </button>
+                  :loading="loading"
+                  label="Create Account"
+                />
               </form>
             </template>
 
             <!-- Step 2: Welcome back (choose method) -->
             <template v-else-if="step === 2 && accountExists === true">
-              <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
-                <div class="flex items-center justify-between gap-2">
-                  <div>
-                    <p class="text-[10px] sm:text-[11px] font-medium text-zinc-500 uppercase tracking-[0.05em]">SIGNING IN AS</p>
-                    <p class="text-[13px] font-medium text-theme-text-primary mt-0.5">{{ email }}</p>
-                  </div>
-                  <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="goBackToStep1">Change</button>
-                </div>
-              </div>
+              <AuthIdentityCard
+                title="SIGNING IN AS"
+                :email="email"
+                action-text="Change"
+                @action="goBackToStep1"
+              />
               <div class="space-y-3">
                 <button
                   type="button"
@@ -317,15 +302,12 @@
 
             <!-- Step 3: Enter password -->
             <template v-else-if="step === 3 && signInMethod === 'password'">
-              <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
-                <div class="flex items-center justify-between gap-2">
-                  <div>
-                    <p class="text-[10px] sm:text-[11px] font-medium text-zinc-500 uppercase tracking-[0.05em]">SIGNING IN AS</p>
-                    <p class="text-[13px] font-medium text-theme-text-primary mt-0.5">{{ email }}</p>
-                  </div>
-                  <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="step = 2">Change</button>
-                </div>
-              </div>
+              <AuthIdentityCard
+                title="SIGNING IN AS"
+                :email="email"
+                action-text="Change"
+                @action="step = 2"
+              />
               <form class="space-y-5" @submit.prevent="handleSignInWithPassword">
                 <!-- Hidden username/email field for accessibility & password managers -->
                 <input
@@ -369,15 +351,12 @@
 
             <!-- Step 3: Email code (Check your email, 8-digit code) -->
             <template v-else-if="step === 3 && signInMethod === 'email_code'">
-              <div class="mt-6 rounded-lg bg-theme-input-bg border border-theme-border px-4 py-4 mb-6">
-                <div class="flex items-center justify-between gap-2">
-                  <div>
-                    <p class="text-[10px] sm:text-[11px] font-medium text-zinc-500 uppercase tracking-[0.05em]">SIGNING IN AS</p>
-                    <p class="text-[13px] font-medium text-theme-text-primary mt-0.5">{{ email }}</p>
-                  </div>
-                  <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 transition-colors" @click="step = 2">Change</button>
-                </div>
-              </div>
+              <AuthIdentityCard
+                title="SIGNING IN AS"
+                :email="email"
+                action-text="Change"
+                @action="step = 2"
+              />
               <form class="space-y-6" @submit.prevent="handleVerifyOtp">
                 <div class="space-y-2">
                   <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">ONE-TIME CODE</label>
@@ -432,15 +411,18 @@
 import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { CONFIG } from '~/config'
+import AuthIdentityCard from '~/components/auth/AuthIdentityCard.vue'
+import AuthLoadingButton from '~/components/auth/AuthLoadingButton.vue'
 import StepIndicator from '~/components/auth/StepIndicator.vue'
 import { phoneCountries, formatPhoneDialCode } from '~/data/phoneCountries'
+import { errorMessageFromUnknown } from '~/utils/errorFromUnknown'
 const { signUp, login, resetPasswordForEmail, signInWithOtp, verifyOtp, checkEmailExists } = useAuth()
 
 // Supabase email OTP is 8 digits; UI matches that length
 const OTP_LENGTH = 8
 
 const mode = ref<'main' | 'forgot'>('main')
-const step = ref(1)
+const step = ref<1 | 2 | 3>(1)
 const progressStep = ref<1 | 2 | 3>(1) // Bar fill; lags behind step so it animates after new step is visible
 const accountExists = ref<boolean | null>(null)
 const signInMethod = ref<'password' | 'email_code' | null>(null)
@@ -569,9 +551,7 @@ async function handleStep1Continue() {
   loading.value = true
   error.value = null
   try {
-    console.log('[Auth] Checking email:', email.value.trim())
     const exists = await checkEmailExists(email.value.trim())
-    console.log('[Auth] checkEmailExists result:', exists)
     accountExists.value = exists
     step.value = 2
     if (exists) signInMethod.value = null
@@ -593,8 +573,8 @@ async function handleContinueWithEmailCode() {
     signInMethod.value = 'email_code'
     step.value = 3
     otpDigits.value = Array.from({ length: OTP_LENGTH }, () => '')
-  } catch (err: any) {
-    error.value = err?.message || 'Failed to send code. Try again.'
+  } catch (err: unknown) {
+    error.value = errorMessageFromUnknown(err, 'Failed to send code. Try again.')
   } finally {
     loading.value = false
   }
@@ -654,8 +634,8 @@ async function handleCreateAccount() {
       reasonForBuying.value.trim(),
     )
     await navigateTo('/')
-  } catch (err: any) {
-    error.value = err?.message || err?.error?.message || 'Something went wrong.'
+  } catch (err: unknown) {
+    error.value = errorMessageFromUnknown(err, 'Something went wrong.')
   } finally {
     loading.value = false
   }
@@ -667,8 +647,8 @@ async function handleSignInWithPassword() {
   try {
     await login(email.value, password.value)
     await navigateTo('/')
-  } catch (err: any) {
-    error.value = err?.message || err?.error?.message || 'Invalid password.'
+  } catch (err: unknown) {
+    error.value = errorMessageFromUnknown(err, 'Invalid password.')
   } finally {
     loading.value = false
   }
@@ -713,8 +693,8 @@ async function handleVerifyOtp() {
   try {
     await verifyOtp(email.value.trim(), code)
     await navigateTo('/')
-  } catch (err: any) {
-    error.value = err?.message || err?.error?.message || 'Invalid or expired code.'
+  } catch (err: unknown) {
+    error.value = errorMessageFromUnknown(err, 'Invalid or expired code.')
   } finally {
     loading.value = false
   }
@@ -737,8 +717,8 @@ async function handleForgotSubmit() {
   try {
     await resetPasswordForEmail(emailVal)
     forgotSuccess.value = true
-  } catch (err: any) {
-    error.value = err?.message || err?.error?.message || 'Something went wrong.'
+  } catch (err: unknown) {
+    error.value = errorMessageFromUnknown(err, 'Something went wrong.')
   } finally {
     loading.value = false
   }

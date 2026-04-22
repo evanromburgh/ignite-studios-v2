@@ -1,43 +1,18 @@
-import { createClient } from '@supabase/supabase-js'
+import { CONFIG } from '~/config'
+import { requireAuthenticatedUnitRequest } from '~/server/utils/authenticatedUnitRequest'
 
-const LOCK_DURATION_MS = 10 * 60 * 1000 // 10 minutes
+type UnitLockSnapshot = {
+  id: string
+  status: string | null
+  locked_by: string | null
+  lock_expires_at: string | null
+}
 
 export default defineEventHandler(async (event) => {
-  if (event.method !== 'POST') {
-    throw createError({ statusCode: 405, message: 'Method not allowed' })
-  }
+  const { unitId, user, supabase } = await requireAuthenticatedUnitRequest(event)
 
-  const authHeader = getHeader(event, 'authorization')
-  const token = authHeader?.replace(/^Bearer\s+/i, '')?.trim()
-  if (!token) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
-  const body = await readBody(event).catch(() => null)
-  const unitId = typeof body?.unitId === 'string' ? body.unitId.trim() : ''
-  if (!unitId) {
-    throw createError({ statusCode: 400, message: 'unitId is required' })
-  }
-
-  const config = useRuntimeConfig()
-  const supabaseUrl = (config.public.supabaseUrl as string)?.trim()
-  const serviceRoleKey = (config.supabaseServiceRoleKey as string)?.trim()
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw createError({ statusCode: 500, message: 'Server configuration error' })
-  }
-
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-
-  const lockExpiresAt = new Date(Date.now() + LOCK_DURATION_MS).toISOString()
+  const lockExpiresAt = new Date(Date.now() + CONFIG.LOCK_DURATION_MS).toISOString()
   const nowIso = new Date().toISOString()
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-
-  if (authError || !user) {
-    throw createError({ statusCode: 401, message: 'Invalid or expired session' })
-  }
 
   // Snapshot + guarded update:
   // read current lock state, then update only if row still matches snapshot.
@@ -56,13 +31,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Unit not found' })
   }
 
-  const unitStatus = String((existingUnit as any).status ?? '').trim()
+  const row = existingUnit as UnitLockSnapshot
+  const unitStatus = String(row.status ?? '').trim()
   if (unitStatus !== 'Available') {
     throw createError({ statusCode: 409, message: 'This unit is no longer available for reservation.' })
   }
 
-  const lockedBy = (existingUnit as any).locked_by as string | null
-  const lockExpiresRaw = (existingUnit as any).lock_expires_at as string | null
+  const lockedBy = row.locked_by
+  const lockExpiresRaw = row.lock_expires_at
   const lockActive = Boolean(lockExpiresRaw && lockExpiresRaw > nowIso)
   const canAcquire = !lockActive || !lockedBy || lockedBy === user.id
 

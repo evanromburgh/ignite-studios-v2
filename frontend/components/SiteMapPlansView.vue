@@ -342,6 +342,7 @@ import type { Unit } from '~/types'
 import { SITE_MAP_FLOORS, SITE_MAP_MASTER, SITE_MAP_PLAN_FRAME } from '~/data/siteMap'
 import ZoomablePlan from '~/components/ZoomablePlan.client.vue'
 import { approximatePathAnchor, approximatePathPinAbove } from '~/utils/siteMapGeometry'
+import { formatMissingHotspotsByFloor, summarizeMissingHotspots } from '~/utils/siteMapDiagnostics'
 
 const { faviconUrl } = useBranding()
 
@@ -633,17 +634,23 @@ onBeforeUnmount(() => {
 })
 
 if (import.meta.dev) {
+  let previousMissingSignature = ''
   watch(
     () => props.units,
     (list) => {
+      // Avoid noisy terminal spam while data is still loading.
+      if (!list.length) return
+
       const set = new Set(list.map((u) => u.unitNumber))
-      for (const floor of SITE_MAP_FLOORS) {
-        for (const h of floor.units) {
-          if (!set.has(h.unitNumber)) {
-            console.warn(`[siteMap] Hotspot unit "${h.unitNumber}" (${floor.id}) missing from loaded units`)
-          }
-        }
-      }
+      const summary = summarizeMissingHotspots(SITE_MAP_FLOORS, set)
+      if (summary.signature === previousMissingSignature) return
+      previousMissingSignature = summary.signature
+
+      if (!summary.totalMissing) return
+      const byFloor = formatMissingHotspotsByFloor(SITE_MAP_FLOORS, summary.byFloor)
+      console.warn(
+        `[siteMap] ${summary.totalMissing} hotspot unit(s) missing from loaded units by floor: ${byFloor}`,
+      )
     },
     { immediate: true },
   )

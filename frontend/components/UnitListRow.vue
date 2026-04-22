@@ -185,6 +185,8 @@ import IconCar from '~/components/icons/IconCar.vue'
 import IconSize from '~/components/icons/IconSize.vue'
 import IconLayout from '~/components/icons/IconLayout.vue'
 import IconHeart from '~/components/icons/IconHeart.vue'
+import { formatZarInteger } from '~/utils/formatZar'
+import { formatFacingLabel, formatFloorLabel } from '~/utils/unitLabels'
 
 const props = withDefaults(
   defineProps<{
@@ -205,7 +207,10 @@ const emit = defineEmits<{
   toggleWishlist: [unitId: string]
 }>()
 
-const timeLeft = ref(0)
+const { timeLeft } = useLockCountdown(
+  computed(() => props.unit.lockExpiresAt),
+  computed(() => props.serverClockOffsetMs),
+)
 const isLocked = computed(() => timeLeft.value > 0 && props.unit.status === 'Available')
 const isReserving = computed(() => props.reservingUnitId === props.unit.id)
 const isAvailable = computed(() => props.unit.status === 'Available' && !isLocked.value)
@@ -216,13 +221,9 @@ const showOverlay = computed(() =>
   (props.unit.status !== 'Available' || isLocked.value),
 )
 
-const formattedPrice = computed(() =>
-  new Intl.NumberFormat('en-US').format(props.unit.price).replace(/,/g, ' '),
-)
+const formattedPrice = computed(() => formatZarInteger(props.unit.price))
 const formattedOriginalPrice = computed(() =>
-  props.unit.originalPrice
-    ? new Intl.NumberFormat('en-US').format(props.unit.originalPrice).replace(/,/g, ' ')
-    : '',
+  props.unit.originalPrice ? formatZarInteger(props.unit.originalPrice) : '',
 )
 
 const reserveButtonLabel = computed(() => {
@@ -234,22 +235,6 @@ const overlayLabel = computed(() => {
   if (isLocked.value) return 'Reservation In Progress'
   return props.unit.status
 })
-
-function formatFloorLabel(floor: string | null | undefined): string {
-  const raw = (floor || '').trim()
-  if (!raw) return ''
-  const lower = raw.toLowerCase()
-  const withFloor = lower.includes('floor') ? lower : `${lower} floor`
-  return withFloor.replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
-function formatFacingLabel(direction: string | null | undefined): string {
-  const raw = (direction || '').trim()
-  if (!raw) return ''
-  const lower = raw.toLowerCase()
-  const withFacing = lower.includes('facing') ? lower : `${lower} facing`
-  return withFacing.replace(/\b\w/g, (c) => c.toUpperCase())
-}
 
 function onSelect(unit: Unit) {
   if (!isAvailable.value && !props.isAdmin) return
@@ -264,27 +249,5 @@ function onReserve(unit: Unit) {
 function onToggleWishlist(unitId: string) {
   emit('toggleWishlist', unitId)
 }
-
-let timerId: ReturnType<typeof setInterval> | null = null
-function startTimer() {
-  if (!props.unit.lockExpiresAt) {
-    timeLeft.value = 0
-    return
-  }
-  const effectiveNow = () => Date.now() + props.serverClockOffsetMs
-  const update = () => {
-    timeLeft.value = Math.max(0, Math.floor((props.unit.lockExpiresAt! - effectiveNow()) / 1000))
-  }
-  update()
-  timerId = setInterval(update, 1000)
-}
-
-onMounted(() => { startTimer() })
-onBeforeUnmount(() => { if (timerId) clearInterval(timerId) })
-watch(() => [props.unit.lockExpiresAt, props.serverClockOffsetMs], () => {
-  if (timerId) clearInterval(timerId)
-  timerId = null
-  startTimer()
-})
 </script>
 

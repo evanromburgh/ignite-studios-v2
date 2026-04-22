@@ -1,6 +1,4 @@
 export default defineNuxtPlugin(() => {
-  if (import.meta.server) return
-
   const isMobile = () => window.matchMedia('(max-width: 767px)').matches
   if (!isMobile()) return
 

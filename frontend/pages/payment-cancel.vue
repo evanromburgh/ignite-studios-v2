@@ -16,6 +16,7 @@ const PAYMENT_CANCELLED_TOAST_KEY = 'show_payment_cancelled_toast'
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const { $supabase } = useNuxtApp()
 
 onMounted(() => {
   const urlParams = new URLSearchParams(route.fullPath.includes('?') ? route.fullPath.split('?')[1] : '')
@@ -46,30 +47,31 @@ onMounted(() => {
     goHome()
     return
   }
-  const releaseUrl = `${baseUrl}/functions/v1/release-reservation-lock`
-  const webhookUrl = `${baseUrl}/functions/v1/payment-webhook`
+  const cancelUrl = `${baseUrl}/functions/v1/cancel-reservation`
+  const supabaseAnonKey = (config.public.supabaseAnonKey as string | undefined)?.trim() ?? ''
 
   const run = async () => {
     try {
-      await $fetch(releaseUrl, {
+      const { data: { session } } = await $supabase.auth.getSession()
+      const accessToken = session?.access_token?.trim() ?? ''
+      if (!accessToken || !supabaseAnonKey) {
+        goHome()
+        return
+      }
+
+      await $fetch(cancelUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ ref: paymentRef! }).toString(),
+        body: { paymentReference: paymentRef },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+          apikey: supabaseAnonKey,
+        },
+      }).catch((e: unknown) => {
+        console.error('Failed to cancel reservation:', e)
       })
-    } catch (e) {
-      console.error('Failed to release unit lock:', e)
-    }
-    try {
-      await $fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          m_payment_id: paymentRef!,
-          payment_status: 'CANCELLED',
-        }).toString(),
-      })
-    } catch (e) {
-      console.error('Failed to send cancellation webhook:', e)
+    } catch (e: unknown) {
+      console.error('Failed to resolve session for cancellation:', e)
     }
     goHome()
   }

@@ -1,6 +1,7 @@
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted } from 'vue'
 import type { Unit } from '~/types'
-import { CONFIG } from '~/config'
+import { mapSupabaseUnitRow, type SupabaseUnitRow } from '~/utils/mapUnitRow'
+import { getUnitsBucketPublicUrl } from '~/utils/unitsStorage'
 
 const units = ref<Unit[]>([])
 const loading = ref(true)
@@ -10,68 +11,13 @@ let channel: { unsubscribe: () => void } | null = null
 
 export function useUnits() {
   const { $supabase } = useNuxtApp()
-  const config = useRuntimeConfig()
-  const storageBucket = 'units'
-
-  /** Path inside the `units` bucket. Strips stray newlines (e.g. pasted keys) and leading slashes only — do not strip `units/`; that can be a real folder inside the bucket. */
-  function normalizeUnitsBucketObjectKey(path: string | null | undefined): string | null {
-    if (path == null) return null
-    let p = String(path).trim()
-    if (!p) return null
-    p = p.replace(/\r\n?/g, '').replace(/\n/g, '').trim()
-    if (!p) return null
-    if (/^https?:\/\//i.test(p)) return p
-    p = p.replace(/^\/+/, '')
-    return p || null
-  }
 
   function getPublicUrl(path: string | null | undefined): string | null {
-    const key = normalizeUnitsBucketObjectKey(path)
-    if (!key) return null
-    if (/^https?:\/\//i.test(key)) return key
-    const { data } = $supabase.storage.from(storageBucket).getPublicUrl(key)
-    return data.publicUrl ?? null
+    return getUnitsBucketPublicUrl($supabase, path)
   }
 
-  const mapRow = (row: any): Unit => {
-    const rawViewers = (row.viewers as Record<string, number | string> | null | undefined) ?? {}
-    const now = Date.now()
-    const ttl = CONFIG.PRESENCE_TTL_MS
-    const viewers: Record<string, number> = {}
-    for (const [key, value] of Object.entries(rawViewers)) {
-      const t = typeof value === 'number' ? value : Number(value)
-      if (!Number.isNaN(t) && now - t <= ttl) {
-        viewers[key] = t
-      }
-    }
-    let lockExpiresAt: number | undefined
-    if (row.lock_expires_at != null) {
-      const raw = row.lock_expires_at
-      const ms = raw instanceof Date ? raw.getTime() : new Date(raw).getTime()
-      if (!Number.isNaN(ms)) lockExpiresAt = ms
-    }
-
-    return {
-      id: row.id as string,
-      unitNumber: row.unit_number as string,
-      bedrooms: row.bedrooms as number,
-      bathrooms: row.bathrooms as number,
-      parking: row.parking as number,
-      sizeSqm: row.size_sqm as number,
-      price: row.price as number,
-      status: row.status as Unit['status'],
-      unitType: row.unit_type as string,
-      floor: (row.floor as string | null) ?? null,
-      direction: (row.direction as string | null) ?? null,
-      imageUrl: (getPublicUrl(row.image_key_1 as string | null) ?? '') as string,
-      imageUrl2: getPublicUrl(row.image_key_2 as string | null),
-      imageUrl3: getPublicUrl(row.image_key_3 as string | null),
-      floorplanUrl: getPublicUrl(row.floorplan_key as string | null),
-      viewers,
-      lockExpiresAt,
-      lockedBy: row.locked_by as string | undefined,
-    }
-  }
+  const mapRow = (row: unknown): Unit =>
+    mapSupabaseUnitRow(row as SupabaseUnitRow, getPublicUrl)
 
   const fetchInitial = async () => {
     loading.value = true
@@ -106,8 +52,8 @@ export function useUnits() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'units' },
         (payload) => {
-          const newRow = payload.new as any | undefined
-          const oldRow = payload.old as any | undefined
+          const newRow = payload.new as SupabaseUnitRow | undefined
+          const oldRow = payload.old as Pick<SupabaseUnitRow, 'id'> | undefined
 
           if (payload.eventType === 'INSERT' && newRow) {
             units.value = [...units.value, mapRow(newRow)]
@@ -123,10 +69,6 @@ export function useUnits() {
         },
       )
       .subscribe()
-  })
-
-  onBeforeUnmount(() => {
-    // Keep channel alive for shared state; only one subscription for app lifetime
   })
 
   return {

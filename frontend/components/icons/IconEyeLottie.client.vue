@@ -5,10 +5,11 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import lottie from 'lottie-web'
+import type { AnimationItem } from 'lottie-web'
 import eyeAnimation from '~/assets/dark_eye.json'
 
 const container = ref<HTMLDivElement | null>(null)
-let anim: lottie.AnimationItem | null = null
+let anim: AnimationItem | null = null
 
 onMounted(() => {
   if (!container.value) return

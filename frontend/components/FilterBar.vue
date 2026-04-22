@@ -223,6 +223,7 @@
 import IconLayout from '~/components/icons/IconLayout.vue'
 import IconCar from '~/components/icons/IconCar.vue'
 import type { SearchFilters, ViewMode } from '~/types'
+import { formatFloorLabel } from '~/utils/unitLabels'
 
 const props = withDefaults(
   defineProps<{
@@ -272,12 +273,6 @@ function formatPriceShort(price: number) {
   if (price >= 1_000_000) return (price / 1_000_000).toFixed(1) + 'M'
   if (price >= 1_000) return (price / 1_000).toFixed(0) + 'K'
   return String(price)
-}
-function formatFloorLabel(floor: string | undefined): string {
-  const raw = (floor || '').toLowerCase()
-  if (!raw) return ''
-  const withFloor = raw.includes('floor') ? raw : `${raw} floor`
-  return withFloor.replace(/\b\w/g, (c) => c.toUpperCase())
 }
 function updateFilter(key: keyof SearchFilters, value: string | number | 'all' | undefined) {
   emit('update:filters', { ...props.filters, [key]: value } as SearchFilters)

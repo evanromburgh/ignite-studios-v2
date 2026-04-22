@@ -1,27 +1,37 @@
 import { ref, onMounted } from 'vue'
+import type { SupabaseClient, User as SupabaseAuthUser } from '@supabase/supabase-js'
 import type { AppUser } from '~/types'
 
-function mapUserSync(supabaseUser: any): AppUser | null {
+function mapUserSync(supabaseUser: SupabaseAuthUser | null): AppUser | null {
   if (!supabaseUser) return null
-  const meta = supabaseUser.user_metadata ?? {}
+  const meta = (supabaseUser.user_metadata ?? {}) as Record<string, unknown>
   return {
     id: supabaseUser.id,
     email: supabaseUser.email ?? null,
-    displayName: meta.display_name ?? null,
+    displayName: (meta.display_name as string | undefined) ?? null,
     role: 'user',
-    firstName: meta.first_name ?? null,
-    lastName: meta.last_name ?? null,
-    phone: meta.phone ?? null,
+    firstName: (meta.first_name as string | undefined) ?? null,
+    lastName: (meta.last_name as string | undefined) ?? null,
+    phone: (meta.phone as string | undefined) ?? null,
     idPassportNumber: null,
     reasonForBuying: null,
   }
 }
 
-async function fetchRole(supabase: any, userId: string): Promise<{ role: AppUser['role']; idPassportNumber?: string | null; reasonForBuying?: string | null }> {
+async function fetchProfileExtras(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<{
+  role: AppUser['role']
+  idPassportNumber?: string | null
+  reasonForBuying?: string | null
+  firstName?: string | null
+  lastName?: string | null
+}> {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('role, id_passport_number, reason_for_buying')
+      .select('role, id_passport_number, reason_for_buying, first_name, last_name')
       .eq('id', userId)
       .single()
 
@@ -32,6 +42,8 @@ async function fetchRole(supabase: any, userId: string): Promise<{ role: AppUser
       role: (data.role as AppUser['role']) ?? 'user',
       idPassportNumber: (data.id_passport_number as string | null) ?? null,
       reasonForBuying: (data.reason_for_buying as string | null) ?? null,
+      firstName: (data.first_name as string | null) ?? null,
+      lastName: (data.last_name as string | null) ?? null,
     }
   } catch {
     return { role: 'user', idPassportNumber: null, reasonForBuying: null }
@@ -51,7 +63,7 @@ export function useAuth() {
   const { $supabase } = useNuxtApp()
 
   onMounted(() => {
-    const resolveUser = async (supabaseUser: any) => {
+    const resolveUser = async (supabaseUser: SupabaseAuthUser | null) => {
       const user = mapUserSync(supabaseUser)
       if (!user) {
         currentUser.value = null
@@ -64,13 +76,21 @@ export function useAuth() {
         idPassportNumber: null,
         reasonForBuying: null,
       }
-      void fetchRole($supabase, user.id).then((profile) => {
+      void fetchProfileExtras($supabase, user.id).then((profile) => {
         if (!currentUser.value || currentUser.value.id !== user.id) return
         currentUser.value = {
           ...currentUser.value,
           role: profile.role,
           idPassportNumber: profile.idPassportNumber ?? null,
           reasonForBuying: profile.reasonForBuying ?? null,
+          firstName:
+            profile.firstName?.trim() ||
+            currentUser.value.firstName ||
+            null,
+          lastName:
+            profile.lastName?.trim() ||
+            currentUser.value.lastName ||
+            null,
         }
       })
     }
@@ -109,7 +129,8 @@ export function useAuth() {
     // Subscribe to auth state change only once globally so we don't fire N profile fetches per event
     if (!authSubscriptionDone) {
       authSubscriptionDone = true
-      $supabase.auth.onAuthStateChange((_event: string, session: any) => {
+      $supabase.auth.onAuthStateChange((_event, session) => {
+        sessionRef.value = session?.access_token ? { access_token: session.access_token } : null
         resolveUser(session?.user ?? null)
       })
     }
@@ -140,61 +161,23 @@ export function useAuth() {
 
     if (error) throw error
 
-    // Mirror phone update behaviour from React app and also store ID/Passport + Reason for Buying in profiles
-    if (data.user?.id) {
-      const updates: Record<string, string> = {}
-      if (phone) updates.phone = phone.trim()
-      if (idPassport) updates.id_passport_number = idPassport.trim()
-      if (reasonForBuying) updates.reason_for_buying = reasonForBuying.trim()
-      if (Object.keys(updates).length > 0) {
-        await $supabase
-          .from('profiles')
-          .update(updates)
-          .eq('id', data.user.id)
-      }
-    }
-
-    // Fire-and-forget Zoho lead creation: use session from signUp response so token is valid
-    if (data.user && data.session && firstName && lastName) {
-      const config = useRuntimeConfig()
-      const supabaseUrl = config.public.supabaseUrl as string
-      const supabaseAnonKey = config.public.supabaseAnonKey as string
-      const accessToken = data.session.access_token
-
-      const createLead = async () => {
-        try {
-          if (!supabaseUrl || !accessToken) {
-            console.warn('[create-lead] Missing supabaseUrl or access_token')
-            return
-          }
-          if (!supabaseAnonKey) {
-            console.warn('[create-lead] Missing supabaseAnonKey')
-            return
-          }
-
-          const res = await $fetch<unknown>(`${supabaseUrl}/functions/v1/create-lead`, {
-            method: 'POST',
-            body: {
-              firstName,
-              lastName,
-              email,
-              phone: phone || '',
-              idPassport,
-              reasonForBuying,
-            },
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
-              apikey: supabaseAnonKey,
-            },
-          })
-
-          console.log('[create-lead] Zoho lead created:', res)
-        } catch (e: any) {
-          console.warn('[create-lead] Error:', e?.data || e?.message || e)
-        }
-      }
-      createLead()
+    // Server-side post-signup bootstrap keeps profile + Zoho lead in sync
+    // even when signUp returns no session (e.g. email confirmation flows).
+    if (data.user?.id && firstName && lastName) {
+      await $fetch('/api/auth/post-signup', {
+        method: 'POST',
+        body: {
+          userId: data.user.id,
+          email,
+          firstName,
+          lastName,
+          phone: phone || '',
+          idPassport,
+          reasonForBuying,
+        },
+      }).catch((err: unknown) => {
+        console.warn('[post-signup] bootstrap failed:', err)
+      })
     }
 
     return data
@@ -203,6 +186,9 @@ export function useAuth() {
   const login = async (email: string, password: string) => {
     const { data, error } = await $supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+    if (data.session?.access_token) {
+      sessionRef.value = { access_token: data.session.access_token }
+    }
     return data
   }
 
@@ -250,6 +236,9 @@ export function useAuth() {
       type: 'email',
     })
     if (error) throw error
+    if (data.session?.access_token) {
+      sessionRef.value = { access_token: data.session.access_token }
+    }
     return data
   }
 
