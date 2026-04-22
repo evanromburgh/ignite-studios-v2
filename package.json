@@ -6,8 +6,8 @@
     "#internal/nuxt/paths": "./nuxt-internal-paths-node.mjs"
   },
   "scripts": {
-    "build": "nuxt build",
-    "build:clean": "nuxi cleanup && nuxt build",
+    "build": "nuxt build && node scripts/sync-dist-from-output.mjs",
+    "build:clean": "nuxi cleanup && nuxt build && node scripts/sync-dist-from-output.mjs",
     "dev": "nuxt dev --host",
     "dev:host": "nuxt dev --host",
     "generate": "nuxt generate",
