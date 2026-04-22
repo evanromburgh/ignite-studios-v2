@@ -1,5 +1,4 @@
 {
-  "framework": "nuxtjs",
   "crons": [
     {
       "path": "/api/cron/prune-viewers",

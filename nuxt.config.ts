@@ -165,10 +165,15 @@ export default defineNuxtConfig({
     '/documents': { isr: 3600 },
   },
   nitro: {
+    // On Vercel, `preset: 'vercel'` and default `output` (no NITRO_OUTPUT_DIR) so Build Output API matches the platform.
+    // Local builds keep `.output/` for `nuxt preview`; E2E can set NITRO_OUTPUT_DIR.
     minify: false,
-    output: {
-      dir: process.env.NITRO_OUTPUT_DIR || '.output',
-    },
+    ...(process.env.VERCEL ? { preset: 'vercel' as const } : {}),
+    ...(process.env.NITRO_OUTPUT_DIR
+      ? { output: { dir: process.env.NITRO_OUTPUT_DIR } }
+      : !process.env.VERCEL
+        ? { output: { dir: '.output' } }
+        : {}),
   },
   typescript: {
     strict: true,
