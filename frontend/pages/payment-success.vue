@@ -182,29 +182,38 @@ function unitTypeLabel(row: UnitDetailsRow): string {
 }
 
 onMounted(async () => {
-  let reservationQuery = $supabase
-    .from('reservations')
-    .select('unit_id, amount_cents, created_at')
-    .eq('status', 'paid')
-    .order('created_at', { ascending: false })
-    .limit(1)
-
+  let reservation: ReservationDetailsRow | null = null
   const paymentReference = getPaymentReferenceFromRouteOrStorage()
+
   if (paymentReference) {
-    reservationQuery = $supabase
+    const { data, error } = await $supabase
       .from('reservations')
       .select('unit_id, amount_cents')
       .eq('paystack_reference', paymentReference)
       .eq('status', 'paid')
+      .maybeSingle()
+
+    if (!error && data) {
+      reservation = data as ReservationDetailsRow
+    }
+  }
+
+  if (!reservation) {
+    const { data, error } = await $supabase
+      .from('reservations')
+      .select('unit_id, amount_cents')
+      .eq('status', 'paid')
+      .order('created_at', { ascending: false })
       .limit(1)
+      .maybeSingle()
+
+    if (error || !data) {
+      return
+    }
+
+    reservation = data as ReservationDetailsRow
   }
 
-  const { data: reservationRows, error: reservationError } = await reservationQuery
-  if (reservationError || !reservationRows?.length) {
-    return
-  }
-
-  const reservation = reservationRows[0] as ReservationDetailsRow
   depositAmount.value = Math.max(0, Math.round((reservation.amount_cents ?? 0) / 100))
 
   const { data: unitRow, error: unitError } = await $supabase
