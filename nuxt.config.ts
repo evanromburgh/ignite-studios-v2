@@ -156,6 +156,7 @@ export default defineNuxtConfig({
    public: {
      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
      supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY,
+     sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || '',
      /** Append ?v=this to unit image URLs to bust caches after updating images (e.g. NUXT_PUBLIC_IMAGE_CACHE_BUST=2). */
      imageCacheBust: process.env.NUXT_PUBLIC_IMAGE_CACHE_BUST || '',
      /** Per-client theme: object of CSS variable names to values, e.g. { '--theme-bg': '#0f0f0f' }. Set via NUXT_PUBLIC_THEME_* or in nuxt.config. */
@@ -206,6 +207,7 @@ export default defineNuxtConfig({
  },
 
  sentry: {
+  dsn: process.env.NUXT_PUBLIC_SENTRY_DSN || '',
   org: 'ignite-studios',
   project: 'javascript-nuxt',
   autoInjectServerSentry: 'top-level-import'
