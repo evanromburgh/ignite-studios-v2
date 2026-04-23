@@ -1,11 +1,11 @@
 <template>
   <Transition name="page-fade">
-    <div class="nav-section light px-5 sm:px-8 md:px-24 lg:px-40 xl:px-56 pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
-      <header class="mb-10 sm:mb-16">
+    <div class="nav-section light w-full px-4 sm:px-[5rem] pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
+      <header class="mb-10 sm:mb-16 text-center">
         <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-theme-text-primary tracking-tight mb-2">
           My Profile
         </h1>
-        <p class="text-base sm:text-lg text-zinc-500 font-normal max-w-3xl">
+        <p class="text-base sm:text-lg text-zinc-500 font-normal max-w-3xl mx-auto">
           Update the details of your Ignite Studios account.
         </p>
       </header>
@@ -68,7 +68,8 @@
                     :value="user.email || ''"
                     type="email"
                     readonly
-                    class="w-full bg-zinc-100 border border-zinc-200 rounded-lg px-4 h-11 py-0 leading-[44px] text-zinc-600 text-base focus:outline-none cursor-not-allowed"
+                    disabled
+                    class="w-full bg-zinc-200 border border-zinc-300 rounded-lg px-4 h-11 py-0 leading-[44px] text-zinc-400 text-base focus:outline-none cursor-not-allowed"
                   />
                 </div>
 
@@ -76,12 +77,51 @@
                   <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
                     Phone Number
                   </label>
-                  <input
-                    v-model="form.phone"
-                    type="tel"
-                    required
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
-                  />
+                  <div class="relative">
+                    <div class="flex items-center bg-theme-input-bg border border-theme-border rounded-lg overflow-hidden focus-within:border-zinc-500 transition-all h-[46px]">
+                      <div class="relative shrink-0 h-full flex items-center">
+                        <button
+                          type="button"
+                          class="h-full flex items-center gap-1.5 pl-4 pr-2 text-zinc-400 hover:text-zinc-200 transition-colors"
+                          @click.stop="phoneCountryDropdownOpen = !phoneCountryDropdownOpen"
+                        >
+                          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-theme-input-bg" aria-hidden="true">
+                            <img :src="phoneFlagUrl(selectedPhoneCountry.countryCode)" :alt="selectedPhoneCountry.countryCode" class="w-full h-full object-cover" />
+                          </span>
+                          <span class="text-[0.875rem]">{{ formatPhoneDialCode(selectedPhoneCountry.dialCode) }} ({{ selectedPhoneCountry.countryCode }})</span>
+                          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
+                      <input
+                        :value="form.phone"
+                        required
+                        type="tel"
+                        maxlength="15"
+                        class="flex-1 h-full py-0 pl-4 pr-4 bg-transparent text-[#18181B] focus:outline-none text-base leading-[44px] min-w-0"
+                        @input="onProfilePhoneInput"
+                        @focus="phoneCountryDropdownOpen = false"
+                      />
+                    </div>
+                    <div
+                      v-if="phoneCountryDropdownOpen"
+                      class="absolute top-full left-0 mt-1 z-[100] max-h-64 overflow-auto rounded-lg border border-theme-border-strong bg-theme-surface-elevated shadow-xl py-1 min-w-[14rem]"
+                    >
+                      <button
+                        v-for="(country, index) in phoneCountries"
+                        :key="index"
+                        type="button"
+                        class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-zinc-300 hover:bg-theme-input-bg hover:text-theme-text-primary transition-colors"
+                        @click.stop="selectPhoneCountry(country); phoneCountryDropdownOpen = false"
+                      >
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-theme-input-bg">
+                          <img :src="phoneFlagUrl(country.countryCode)" :alt="country.countryCode" class="w-full h-full object-cover" />
+                        </span>
+                        <span>{{ formatPhoneDialCode(country.dialCode) }} ({{ country.countryCode }})</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="space-y-2">
@@ -158,17 +198,6 @@
           </form>
         </section>
 
-        <aside>
-          <div class="flex flex-col sm:flex-row sm:items-stretch gap-3 sm:gap-4 justify-start max-w-md">
-            <button
-              type="button"
-              class="inline-flex items-center justify-center h-11 px-9 rounded-lg text-[11px] font-black uppercase tracking-[0.2em] bg-[#18181B] text-white hover:bg-black transition-colors w-full sm:w-auto sm:min-w-[10rem] text-center"
-              @click="handleSignOut"
-            >
-              {{ isLoggingOut ? 'Ending Session...' : 'Sign Out' }}
-            </button>
-          </div>
-        </aside>
       </div>
     </div>
   </Transition>
@@ -177,14 +206,17 @@
 <script setup lang="ts">
 import AuthPortal from '~/components/AuthPortal.vue'
 import { useAuth } from '~/composables/useAuth'
+import { phoneCountries, formatPhoneDialCode } from '~/data/phoneCountries'
 import { ALLOWED_REASON_FOR_BUYING, type AllowedReasonForBuying } from '~/utils/profileUpdate'
 
-const { user, authLoading, logout } = useAuth()
-
-const isLoggingOut = ref(false)
+const { user, authLoading } = useAuth()
 const isSubmitting = ref(false)
 const submitMessage = ref('')
 const submitMessageType = ref<'success' | 'error' | ''>('')
+const phoneCountryDropdownOpen = ref(false)
+const selectedPhoneCountry = ref(
+  phoneCountries.find(c => c.countryCode === 'ZA') ?? phoneCountries[0],
+)
 
 const form = reactive<{
   firstName: string
@@ -204,7 +236,25 @@ watch(user, (next) => {
   if (!next) return
   form.firstName = next.firstName ?? ''
   form.lastName = next.lastName ?? ''
-  form.phone = next.phone ?? ''
+  const rawPhone = (next.phone ?? '').trim()
+  const digitsOnly = rawPhone.replace(/\D/g, '')
+  const countryMatches = phoneCountries
+    .filter(c => digitsOnly.startsWith(c.dialCode))
+    .sort((a, b) => b.dialCode.length - a.dialCode.length)
+  const matchedCountry = countryMatches[0]
+
+  if (matchedCountry) {
+    selectedPhoneCountry.value = matchedCountry
+    form.phone = digitsOnly.slice(matchedCountry.dialCode.length)
+  } else {
+    selectedPhoneCountry.value = phoneCountries.find(c => c.countryCode === 'ZA') ?? phoneCountries[0]
+    form.phone = digitsOnly
+  }
+
+  if (form.phone.startsWith('0')) {
+    form.phone = form.phone.slice(1)
+  }
+
   form.idPassport = next.idPassportNumber ?? ''
   const reason = next.reasonForBuying ?? ''
   form.reasonForBuying = ALLOWED_REASON_FOR_BUYING.includes(reason as AllowedReasonForBuying)
@@ -212,13 +262,47 @@ watch(user, (next) => {
     : ''
 }, { immediate: true })
 
-function handleSignOut() {
-  if (isLoggingOut.value) return
-  isLoggingOut.value = true
-  logout().finally(() => {
-    isLoggingOut.value = false
-    navigateTo('/')
-  })
+let closePhoneDropdownOnClick: (() => void) | null = null
+watch(phoneCountryDropdownOpen, (open) => {
+  if (closePhoneDropdownOnClick) {
+    document.removeEventListener('click', closePhoneDropdownOnClick)
+    closePhoneDropdownOnClick = null
+  }
+  if (open) {
+    closePhoneDropdownOnClick = () => {
+      phoneCountryDropdownOpen.value = false
+      document.removeEventListener('click', closePhoneDropdownOnClick!)
+    }
+    setTimeout(() => document.addEventListener('click', closePhoneDropdownOnClick!))
+  }
+})
+
+onBeforeUnmount(() => {
+  if (closePhoneDropdownOnClick) {
+    document.removeEventListener('click', closePhoneDropdownOnClick)
+  }
+})
+
+function phoneFlagUrl(countryCode: string) {
+  const code = countryCode.toLowerCase()
+  return `https://flagcdn.com/w40/${code}.png`
+}
+
+function selectPhoneCountry(country: { dialCode: string; countryCode: string }) {
+  selectedPhoneCountry.value = country
+}
+
+function onProfilePhoneInput(event: Event) {
+  const target = event.target as HTMLInputElement
+  let digits = target.value.replace(/\D/g, '')
+  if (digits.startsWith('0')) {
+    digits = digits.slice(1)
+  }
+  const currentDialCode = selectedPhoneCountry.value.dialCode
+  if (digits.startsWith(currentDialCode)) {
+    digits = digits.slice(currentDialCode.length)
+  }
+  form.phone = digits
 }
 
 async function handleUpdateProfile() {
@@ -230,7 +314,7 @@ async function handleUpdateProfile() {
   const payload = {
     firstName: form.firstName.trim(),
     lastName: form.lastName.trim(),
-    phone: form.phone.trim(),
+    phone: `+${selectedPhoneCountry.value.dialCode}${form.phone.trim().replace(/\D/g, '')}`,
     idPassport: form.idPassport.trim(),
     reasonForBuying: form.reasonForBuying,
   }
