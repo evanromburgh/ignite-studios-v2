@@ -33,3 +33,6 @@ Thumbs.db
 /playwright/.cache/
 
 .vercel
+
+# Sentry Config File
+.env.sentry-build-plugin
