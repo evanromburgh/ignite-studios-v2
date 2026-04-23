@@ -1,5 +1,6 @@
 import { requireAuthenticatedRequest } from '~/server/utils/authenticatedRequest'
 import { enqueueProfileSyncJob } from '~/server/utils/profileSyncJob'
+import { triggerZohoSyncWorker } from '~/server/utils/zohoWorkerTrigger'
 import { parseProfileUpdateInput } from '~/utils/profileUpdate'
 import { createError, defineEventHandler, readBody, type H3Event } from 'h3'
 
@@ -7,14 +8,18 @@ type Dependencies = {
   requireAuthenticatedRequest: typeof requireAuthenticatedRequest
   parseProfileUpdateInput: typeof parseProfileUpdateInput
   enqueueProfileSyncJob: typeof enqueueProfileSyncJob
+  triggerZohoSyncWorker: typeof triggerZohoSyncWorker
   readBody: typeof readBody
+  useRuntimeConfig: () => ReturnType<typeof useRuntimeConfig>
 }
 
 const defaultDependencies: Dependencies = {
   requireAuthenticatedRequest,
   parseProfileUpdateInput,
   enqueueProfileSyncJob,
+  triggerZohoSyncWorker,
   readBody,
+  useRuntimeConfig: () => useRuntimeConfig(),
 }
 
 export async function handleProfileUpdate(event: H3Event, deps: Dependencies = defaultDependencies) {
@@ -47,6 +52,13 @@ export async function handleProfileUpdate(event: H3Event, deps: Dependencies = d
   if (queueErr) {
     console.error('[profile/update] queue upsert failed', queueErr)
     throw createError({ statusCode: 500, message: 'Unable to update profile right now' })
+  }
+
+  try {
+    await deps.triggerZohoSyncWorker(deps.useRuntimeConfig())
+  } catch (err) {
+    // Best-effort immediate trigger. Cron/scheduler still guarantees eventual processing.
+    console.warn('[profile/update] immediate worker trigger failed', err)
   }
 
   const { error: authUpdateErr } = await supabase.auth.admin.updateUserById(user.id, {

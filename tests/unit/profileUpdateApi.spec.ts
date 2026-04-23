@@ -24,6 +24,8 @@ describe('/api/profile/update (integration-style)', () => {
     }
 
     const enqueueProfileSyncJob = vi.fn().mockResolvedValue({ error: null })
+    const triggerZohoSyncWorker = vi.fn().mockResolvedValue({ ok: true })
+    const useRuntimeConfig = vi.fn().mockReturnValue({ public: {} })
     const result = await handleProfileUpdate({} as any, {
       requireAuthenticatedRequest: vi.fn().mockResolvedValue({
         user: {
@@ -40,7 +42,9 @@ describe('/api/profile/update (integration-style)', () => {
         reasonForBuying: 'Purchasing to Live',
       }),
       enqueueProfileSyncJob,
+      triggerZohoSyncWorker,
       readBody: vi.fn().mockResolvedValue({}),
+      useRuntimeConfig,
     })
 
     expect(result).toEqual({ ok: true })
@@ -61,6 +65,8 @@ describe('/api/profile/update (integration-style)', () => {
         phone: '+27745588877',
       },
     })
+    expect(triggerZohoSyncWorker).toHaveBeenCalledTimes(1)
+    expect(useRuntimeConfig).toHaveBeenCalledTimes(1)
   })
 
   it('enforces auth guard by surfacing unauthorized error', async () => {
@@ -71,7 +77,9 @@ describe('/api/profile/update (integration-style)', () => {
         ),
         parseProfileUpdateInput: vi.fn(),
         enqueueProfileSyncJob: vi.fn(),
+        triggerZohoSyncWorker: vi.fn(),
         readBody: vi.fn(),
+        useRuntimeConfig: vi.fn(),
       }),
     ).rejects.toMatchObject({ statusCode: 401 })
   })
