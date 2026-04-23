@@ -503,7 +503,7 @@ onMounted(() => {
 
 // Re-evaluate theme when route changes (e.g., navigating between pages)
 watch(
-  () => route.fullPath,
+  () => route.path,
   async () => {
     // Prevent a one-frame border flash when navigating to Properties:
     // route changes before scroll restoration can briefly leave `scrolled` true.
