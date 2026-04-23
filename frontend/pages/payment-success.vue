@@ -2,18 +2,14 @@
   <div class="min-h-screen bg-theme-bg flex flex-col items-center justify-center gap-6 px-5 sm:px-8 md:px-16 pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
     <div class="text-center w-full max-w-5xl">
       <h1 class="text-2xl sm:text-4xl font-black text-theme-text-primary tracking-tight leading-tight mb-4">
-        {{ isFinalizing ? 'Finalizing Payment...' : 'Your Reservation Confirmed' }}
+        Your Reservation Confirmed
       </h1>
       <p class="text-zinc-400 text-base sm:text-lg mb-8 max-w-[42rem] mx-auto text-center">
-        {{
-          isFinalizing
-            ? 'Please wait while we confirm your payment and finalize your reservation.'
-            : 'Congratulations on securing your unit. Our sales team will contact you within 24 hours to complete the process.'
-        }}
+        Congratulations on securing your unit. Our sales team will contact you within 24 hours to complete the process.
       </p>
 
       <div
-        v-if="!isFinalizing && unit"
+        v-if="unit"
         class="group relative grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl p-4 border border-theme-border bg-theme-surface overflow-hidden w-full max-w-4xl mx-auto text-left"
       >
         <div class="absolute inset-0 bg-gradient-to-br from-theme-input-bg to-transparent pointer-events-none" />
@@ -62,8 +58,7 @@
       </div>
 
       <div v-else class="max-w-md mx-auto text-zinc-500 text-sm">
-        <p v-if="isFinalizing">Finalizing your payment confirmation. This usually takes a few seconds.</p>
-        <p v-else>Thank you for your payment. You can view your reservations below.</p>
+        <p>Thank you for your payment. You can view your reservations below.</p>
       </div>
     </div>
 
@@ -86,7 +81,6 @@ const route = useRoute()
 const { $supabase } = useNuxtApp()
 const config = useRuntimeConfig()
 const unit = ref<Unit | null>(null)
-const isFinalizing = ref(true)
 
 type ReservationSnapshot = {
   status: string | null
@@ -156,7 +150,6 @@ async function loadUnit(unitId: string) {
 onMounted(async () => {
   const paymentRef = resolvePaymentReference()
   if (!paymentRef) {
-    isFinalizing.value = false
     return
   }
 
@@ -168,8 +161,6 @@ onMounted(async () => {
     }
   } catch (e: unknown) {
     console.warn('Could not fetch unit for success page:', e)
-  } finally {
-    isFinalizing.value = false
   }
 })
 </script>
