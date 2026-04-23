@@ -1,8 +1,11 @@
 import * as Sentry from "@sentry/nuxt";
 import { useRuntimeConfig } from "#imports";
 
+const runtimeConfig = useRuntimeConfig();
+const publicConfig = runtimeConfig.public as Record<string, string | undefined>;
+
 Sentry.init({
-  dsn: useRuntimeConfig().public.sentryDsn,
+  dsn: publicConfig.sentryDsn || process.env.NUXT_PUBLIC_SENTRY_DSN,
 
   // We recommend adjusting this value in production, or using tracesSampler
   // for finer control

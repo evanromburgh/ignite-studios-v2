@@ -207,7 +207,6 @@ export default defineNuxtConfig({
  },
 
  sentry: {
-  dsn: process.env.NUXT_PUBLIC_SENTRY_DSN || '',
   org: 'ignite-studios',
   project: 'javascript-nuxt',
   autoInjectServerSentry: 'top-level-import'
