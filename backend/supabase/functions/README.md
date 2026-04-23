@@ -6,6 +6,7 @@ Current production functions for the Supabase-first reservation flow.
 
 - `_shared/reservationReference.ts`
 - `_shared/zohoReservationSync.ts`
+- `_shared/zohoProfileSync.ts`
 
 ## Active functions
 
@@ -25,7 +26,7 @@ Current production functions for the Supabase-first reservation flow.
    Authenticated checkout-abandon endpoint that releases reservation lock via cancellation RPC.
 
 6. `zoho-sync-worker`  
-   Worker for queued Zoho sync retries from `zoho_sync_jobs`.
+   Worker for queued Zoho sync retries from both `zoho_sync_jobs` and `zoho_profile_sync_jobs` with isolated handlers.
 
 7. `create-lead`  
    Creates/updates Zoho lead from signup flow.

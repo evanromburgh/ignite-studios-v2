@@ -6,7 +6,7 @@
           My Profile
         </h1>
         <p class="text-base sm:text-lg text-zinc-500 font-normal max-w-3xl">
-          View the details of your Ignite Studios account.
+          Update the details of your Ignite Studios account.
         </p>
       </header>
 
@@ -30,74 +30,134 @@
         v-else
         class="flex flex-col gap-6 lg:gap-8"
       >
-        <!-- Main details card -->
         <section
           class="relative flex flex-col rounded-[0.75rem] px-6 py-6 sm:px-8 sm:py-8 border border-zinc-200 bg-white"
         >
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-            <!-- Left column -->
-            <div class="space-y-0">
-              <div class="flex items-baseline justify-between gap-8 pb-4 border-b border-zinc-200">
-                <span class="w-1/2 pl-4 text-[11px] font-black uppercase tracking-[0.22em] text-zinc-500">
-                  First Name:
-                </span>
-                <span class="w-1/2 pr-4 text-sm sm:text-base text-zinc-900 text-right">
-                  {{ user.firstName || 'Not provided' }}
-                </span>
+          <form class="space-y-6" @submit.prevent="handleUpdateProfile">
+            <fieldset :disabled="isSubmitting" :class="isSubmitting ? 'opacity-80' : ''">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="space-y-2">
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
+                    First Name
+                  </label>
+                  <input
+                    v-model="form.firstName"
+                    type="text"
+                    required
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
+                    Last Name
+                  </label>
+                  <input
+                    v-model="form.lastName"
+                    type="text"
+                    required
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div class="space-y-2 md:col-span-2">
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
+                    Email Address
+                  </label>
+                  <input
+                    :value="user.email || ''"
+                    type="email"
+                    readonly
+                    class="w-full bg-zinc-100 border border-zinc-200 rounded-lg px-4 h-11 py-0 leading-[44px] text-zinc-600 text-base focus:outline-none cursor-not-allowed"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
+                    Phone Number
+                  </label>
+                  <input
+                    v-model="form.phone"
+                    type="tel"
+                    required
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
+                    ID / Passport Number
+                  </label>
+                  <input
+                    v-model="form.idPassport"
+                    type="text"
+                    required
+                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-4 h-11 py-0 leading-[44px] text-[#18181B] text-base focus:border-zinc-500 focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div class="space-y-2 md:col-span-2">
+                  <label class="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.2em] sm:tracking-[0.1em] block">
+                    Reason for Buying
+                  </label>
+                  <div class="relative">
+                    <select
+                      v-model="form.reasonForBuying"
+                      required
+                      class="w-full bg-theme-input-bg border border-theme-border rounded-lg pl-4 pr-10 h-11 pt-[11px] pb-[11px] leading-[1.25] focus:border-zinc-500 focus:outline-none text-[#18181B] text-base transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>Select a reason</option>
+                      <option
+                        v-for="reason in ALLOWED_REASON_FOR_BUYING"
+                        :key="reason"
+                        :value="reason"
+                      >
+                        {{ reason }}
+                      </option>
+                    </select>
+                    <svg
+                      class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
 
-              <div class="flex items-baseline justify-between gap-8 py-4 border-b border-zinc-200">
-                <span class="w-1/2 pl-4 text-[11px] font-black uppercase tracking-[0.22em] text-zinc-500">
-                  Last Name:
-                </span>
-                <span class="w-1/2 pr-4 text-sm sm:text-base text-zinc-900 text-right">
-                  {{ user.lastName || 'Not provided' }}
-                </span>
-              </div>
+              <p
+                v-if="submitMessage && submitMessageType === 'success'"
+                class="mt-5 text-sm text-emerald-600 font-medium"
+              >
+                {{ submitMessage }}
+              </p>
+              <p
+                v-if="submitMessage && submitMessageType === 'error'"
+                class="mt-5 text-sm text-red-600 font-medium"
+              >
+                {{ submitMessage }}
+              </p>
+            </fieldset>
 
-              <div class="flex items-baseline justify-between gap-8 pt-4">
-                <span class="w-1/2 pl-4 text-[11px] font-black uppercase tracking-[0.22em] text-zinc-500">
-                  Email Address:
-                </span>
-                <span class="w-1/2 pr-4 text-sm sm:text-base text-zinc-900 break-all text-right">
-                  {{ user.email || 'Not provided' }}
-                </span>
-              </div>
+            <div class="pt-2">
+              <button
+                type="submit"
+                :disabled="isSubmitting"
+                class="inline-flex items-center justify-center h-11 px-9 rounded-lg text-[11px] font-black uppercase tracking-[0.2em] bg-[#18181B] text-white hover:bg-black transition-colors w-full sm:w-auto sm:min-w-[12rem] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <span
+                  v-if="isSubmitting"
+                  class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2"
+                />
+                <span>Update Profile</span>
+              </button>
             </div>
-
-            <!-- Right column -->
-            <div class="space-y-0 mt-6 md:mt-0">
-              <div class="flex items-baseline justify-between gap-8 pb-4 border-b border-zinc-200">
-                <span class="w-1/2 pl-4 text-[11px] font-black uppercase tracking-[0.22em] text-zinc-500">
-                  Phone Number:
-                </span>
-                <span class="w-1/2 pr-4 text-sm sm:text-base text-zinc-900 text-right">
-                  {{ user.phone || 'Not provided' }}
-                </span>
-              </div>
-
-              <div class="flex items-baseline justify-between gap-8 py-4 border-b border-zinc-200">
-                <span class="w-1/2 pl-4 text-[11px] font-black uppercase tracking-[0.22em] text-zinc-500">
-                  ID / Passport Number:
-                </span>
-                <span class="w-1/2 pr-4 text-sm sm:text-base text-zinc-900 break-all text-right">
-                  {{ user.idPassportNumber || 'Not provided' }}
-                </span>
-              </div>
-
-              <div class="flex items-baseline justify-between gap-8 pt-4">
-                <span class="w-1/2 pl-4 text-[11px] font-black uppercase tracking-[0.22em] text-zinc-500">
-                  Reason for Buying:
-                </span>
-                <span class="w-1/2 pr-4 text-sm sm:text-base text-zinc-900 text-right">
-                  {{ user.reasonForBuying || 'Not provided' }}
-                </span>
-              </div>
-            </div>
-          </div>
+          </form>
         </section>
 
-        <!-- Secondary actions -->
         <aside>
           <div class="flex flex-col sm:flex-row sm:items-stretch gap-3 sm:gap-4 justify-start max-w-md">
             <button
@@ -117,10 +177,40 @@
 <script setup lang="ts">
 import AuthPortal from '~/components/AuthPortal.vue'
 import { useAuth } from '~/composables/useAuth'
+import { ALLOWED_REASON_FOR_BUYING, type AllowedReasonForBuying } from '~/utils/profileUpdate'
 
 const { user, authLoading, logout } = useAuth()
 
 const isLoggingOut = ref(false)
+const isSubmitting = ref(false)
+const submitMessage = ref('')
+const submitMessageType = ref<'success' | 'error' | ''>('')
+
+const form = reactive<{
+  firstName: string
+  lastName: string
+  phone: string
+  idPassport: string
+  reasonForBuying: AllowedReasonForBuying | ''
+}>({
+  firstName: '',
+  lastName: '',
+  phone: '',
+  idPassport: '',
+  reasonForBuying: '',
+})
+
+watch(user, (next) => {
+  if (!next) return
+  form.firstName = next.firstName ?? ''
+  form.lastName = next.lastName ?? ''
+  form.phone = next.phone ?? ''
+  form.idPassport = next.idPassportNumber ?? ''
+  const reason = next.reasonForBuying ?? ''
+  form.reasonForBuying = ALLOWED_REASON_FOR_BUYING.includes(reason as AllowedReasonForBuying)
+    ? (reason as AllowedReasonForBuying)
+    : ''
+}, { immediate: true })
 
 function handleSignOut() {
   if (isLoggingOut.value) return
@@ -131,11 +221,61 @@ function handleSignOut() {
   })
 }
 
-const fullNameFallback = computed(() => {
-  if (!user.value) return ''
-  const parts = [user.value.firstName, user.value.lastName].filter(Boolean)
-  return parts.join(' ')
-})
+async function handleUpdateProfile() {
+  if (isSubmitting.value || !user.value) return
+
+  submitMessage.value = ''
+  submitMessageType.value = ''
+
+  const payload = {
+    firstName: form.firstName.trim(),
+    lastName: form.lastName.trim(),
+    phone: form.phone.trim(),
+    idPassport: form.idPassport.trim(),
+    reasonForBuying: form.reasonForBuying,
+  }
+
+  if (!payload.firstName || !payload.lastName || !payload.phone || !payload.idPassport || !payload.reasonForBuying) {
+    submitMessage.value = 'We couldn’t update your profile right now. Please try again.'
+    submitMessageType.value = 'error'
+    return
+  }
+
+  const { data: { session } } = await useNuxtApp().$supabase.auth.getSession()
+  if (!session?.access_token) {
+    submitMessage.value = 'We couldn’t update your profile right now. Please try again.'
+    submitMessageType.value = 'error'
+    return
+  }
+
+  isSubmitting.value = true
+  try {
+    await $fetch('/api/profile/update', {
+      method: 'POST',
+      body: payload,
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+
+    user.value = {
+      ...user.value,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      phone: payload.phone,
+      idPassportNumber: payload.idPassport,
+      reasonForBuying: payload.reasonForBuying,
+    }
+
+    submitMessage.value = 'Profile updated successfully.'
+    submitMessageType.value = 'success'
+  } catch {
+    submitMessage.value = 'We couldn’t update your profile right now. Please try again.'
+    submitMessageType.value = 'error'
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <style scoped>

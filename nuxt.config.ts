@@ -167,6 +167,7 @@ export default defineNuxtConfig({
    },
    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
    cronSecret: process.env.CRON_SECRET || '',
+  supabaseWorkerCronSecret: process.env.SUPABASE_WORKER_CRON_SECRET || '',
  },
 
  routeRules: {

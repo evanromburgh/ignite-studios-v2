@@ -6,15 +6,10 @@ Migrations live in `backend/supabase/migrations/`. Apply in timestamp order on a
 
 | File | Purpose |
 |------|---------|
-| `20260225120000_schema_from_scratch.sql` | Base tables: `profiles`, `units`, `wishlists`, `pending_reservations`; RLS; realtime on `units`; signup trigger. |
-| `20260227130000_add_floor_and_direction_to_units.sql` | Adds `units.floor`, `units.direction`. |
-| `20260301120000_units_viewer_lock_update_policy.sql` | Allows **authenticated** users to `UPDATE` `units` (viewers + lock fields for presence and reservation flow). |
-| `20260319120000_units_status_held_by_developer.sql` | Extends `units.status` check to include `'Held by Developer'`. |
-| `20260421120000_units_storage_image_keys.sql` | Adds nullable `image_key_1` … `floorplan_key` for Supabase Storage paths. |
-| `20260421133000_agents_table.sql` | Adds `agents` table (chat contacts), RLS read policy, and starter seed rows. |
-| `20260421140000_profiles_first_last_name.sql` | Adds `profiles.first_name`, `profiles.last_name`. |
-| `20260421140500_profiles_column_order_names_before_phone.sql` | Rebuilds `profiles` so physical column order is `first_name` / `last_name` before `phone` (Postgres has no `ALTER COLUMN … POSITION`). |
-| `20260422110000_reservations_v2_source_of_truth.sql` | Adds canonical `reservations` + `zoho_sync_jobs`, plus transactional RPCs for payment finalize/cancel. |
+| `00_one_shot_schema.sql` | Baseline schema for profiles, units, agents, wishlists, reservations, `zoho_sync_jobs`, policies, triggers, and reservation RPCs. |
+| `01_profiles_zoho_sync_foundation.sql` | Adds profile-level Zoho IDs, `zoho_profile_sync_jobs`, queue indexes/trigger, and one-time backfill from reservations. |
+| `02_seed_units.sql` | Optional seed data for units. |
+| `03_seed_agents.sql` | Optional seed data for chat agents. |
 
 Optional seed: `seed-units.sql` (demo data; uses legacy `image_url` column).
 
@@ -39,6 +34,7 @@ Optional seed: `seed-units.sql` (demo data; uses legacy `image_url` column).
 - `first_name`, `last_name` (text, nullable) — added in `20260421140000_*`; written on signup and shown on profile
 - `phone` (text, nullable)
 - `id_passport_number`, `reason_for_buying` (text, nullable) — KYC-style fields used by signup/reservation flows
+- `zoho_lead_id`, `zoho_contact_id` (text, nullable) — profile-level CRM linkage for asynchronous profile sync
 - `reserved_unit_ids` (uuid[], default `'{}'`) — unit ids for “My Units”; updated by payment-webhook
 - `created_at`, `updated_at` (timestamptz)
 
@@ -89,6 +85,13 @@ Optional seed: `seed-units.sql` (demo data; uses legacy `image_url` column).
 - retry fields (`attempt_count`, `max_attempts`, `run_after`, `locked_at`, `last_error`)
 - `payload`, `created_at`, `updated_at`
 
+### zoho_profile_sync_jobs
+
+- `user_id` unique (→ auth.users) for latest-wins enqueue semantics
+- `status` — `'pending' | 'processing' | 'retry' | 'succeeded' | 'failed' | 'cancelled'`
+- retry fields (`attempt_count`, `max_attempts`, `run_after`, `locked_at`, `last_error`)
+- `payload`, `created_at`, `updated_at`
+
 ## Auth
 
 - Supabase Auth only. No custom claims.
@@ -103,6 +106,7 @@ Optional seed: `seed-units.sql` (demo data; uses legacy `image_url` column).
 - **pending_reservations**: no client policies; edge functions (service role) read/write.
 - **reservations**: users can read own rows; writes are service-role only.
 - **zoho_sync_jobs**: no client policies; worker/webhook only.
+- **zoho_profile_sync_jobs**: no client policies; server API/worker only.
 
 ## Realtime
 

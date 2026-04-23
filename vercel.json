@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/prune-viewers",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/zoho-sync",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

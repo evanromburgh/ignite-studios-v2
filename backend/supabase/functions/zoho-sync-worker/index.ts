@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { syncPaidReservationToZoho } from '../_shared/zohoReservationSync.ts'
+import { syncProfileToZoho } from '../_shared/zohoProfileSync.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +19,189 @@ function json(status: number, body: Record<string, unknown>) {
 function backoffMs(attempt: number) {
   const minutes = Math.min(2 ** Math.max(0, attempt - 1), 60)
   return minutes * 60_000
+}
+
+async function processReservationJobs(supabase: any, batchSize: number, nowIso: string) {
+  const { data: jobs, error: jobsErr } = await supabase
+    .from('zoho_sync_jobs')
+    .select('id, reservation_id, attempt_count, max_attempts, status')
+    .in('status', ['pending', 'retry'])
+    .lte('run_after', nowIso)
+    .order('run_after', { ascending: true })
+    .limit(batchSize)
+
+  if (jobsErr) {
+    console.error('zoho-sync-worker reservation jobs query error:', jobsErr)
+    throw new Error('Failed to query reservation jobs')
+  }
+
+  let processed = 0
+  let succeeded = 0
+  let failed = 0
+  let retried = 0
+
+  for (const job of jobs ?? []) {
+    const { data: lockedRows, error: lockErr } = await supabase
+      .from('zoho_sync_jobs')
+      .update({ status: 'processing', locked_at: new Date().toISOString() })
+      .eq('id', job.id)
+      .in('status', ['pending', 'retry'])
+      .select('id')
+
+    if (lockErr || !lockedRows || lockedRows.length === 0) {
+      continue
+    }
+
+    processed += 1
+
+    try {
+      const result = await syncPaidReservationToZoho(supabase, String(job.reservation_id))
+      const nextAttempt = Number(job.attempt_count ?? 0) + 1
+
+      await supabase
+        .from('reservations')
+        .update({
+          zoho_sync_status: 'synced',
+          zoho_last_error: null,
+          zoho_lead_id: result.zohoLeadId,
+          zoho_contact_id: result.zohoContactId,
+          zoho_reservation_id: result.zohoReservationId,
+        })
+        .eq('id', job.reservation_id)
+
+      await supabase
+        .from('zoho_sync_jobs')
+        .update({
+          status: 'succeeded',
+          attempt_count: nextAttempt,
+          last_error: null,
+          locked_at: null,
+        })
+        .eq('id', job.id)
+
+      succeeded += 1
+    } catch (err: any) {
+      const message = String(err?.message ?? 'Zoho reservation sync failed')
+      const nextAttempt = Number(job.attempt_count ?? 0) + 1
+      const maxAttempts = Number(job.max_attempts ?? 8)
+      const terminalFail = nextAttempt >= maxAttempts
+
+      await supabase
+        .from('reservations')
+        .update({
+          zoho_sync_status: terminalFail ? 'failed' : 'pending',
+          zoho_last_error: message,
+        })
+        .eq('id', job.reservation_id)
+
+      await supabase
+        .from('zoho_sync_jobs')
+        .update({
+          status: terminalFail ? 'failed' : 'retry',
+          attempt_count: nextAttempt,
+          last_error: message,
+          locked_at: null,
+          run_after: terminalFail
+            ? nowIso
+            : new Date(Date.now() + backoffMs(nextAttempt)).toISOString(),
+        })
+        .eq('id', job.id)
+
+      if (terminalFail) failed += 1
+      else retried += 1
+    }
+  }
+
+  return {
+    processed,
+    succeeded,
+    retried,
+    failed,
+  }
+}
+
+async function processProfileJobs(supabase: any, batchSize: number, nowIso: string) {
+  const { data: jobs, error: jobsErr } = await supabase
+    .from('zoho_profile_sync_jobs')
+    .select('id, user_id, attempt_count, max_attempts, status')
+    .in('status', ['pending', 'retry'])
+    .lte('run_after', nowIso)
+    .order('run_after', { ascending: true })
+    .limit(batchSize)
+
+  if (jobsErr) {
+    console.error('zoho-sync-worker profile jobs query error:', jobsErr)
+    throw new Error('Failed to query profile jobs')
+  }
+
+  let processed = 0
+  let succeeded = 0
+  let failed = 0
+  let retried = 0
+
+  for (const job of jobs ?? []) {
+    const { data: lockedRows, error: lockErr } = await supabase
+      .from('zoho_profile_sync_jobs')
+      .update({ status: 'processing', locked_at: new Date().toISOString() })
+      .eq('id', job.id)
+      .in('status', ['pending', 'retry'])
+      .select('id')
+
+    if (lockErr || !lockedRows || lockedRows.length === 0) {
+      continue
+    }
+
+    processed += 1
+
+    try {
+      const result = await syncProfileToZoho(supabase, String(job.user_id))
+      const nextAttempt = Number(job.attempt_count ?? 0) + 1
+
+      await supabase
+        .from('zoho_profile_sync_jobs')
+        .update({
+          status: 'succeeded',
+          attempt_count: nextAttempt,
+          last_error: null,
+          locked_at: null,
+          payload: {
+            source: 'zoho-sync-worker',
+            synced_module: result.syncedModule,
+          },
+        })
+        .eq('id', job.id)
+
+      succeeded += 1
+    } catch (err: any) {
+      const message = String(err?.message ?? 'Zoho profile sync failed')
+      const nextAttempt = Number(job.attempt_count ?? 0) + 1
+      const maxAttempts = Number(job.max_attempts ?? 8)
+      const terminalFail = nextAttempt >= maxAttempts
+
+      await supabase
+        .from('zoho_profile_sync_jobs')
+        .update({
+          status: terminalFail ? 'failed' : 'retry',
+          attempt_count: nextAttempt,
+          last_error: message,
+          locked_at: null,
+          run_after: terminalFail
+            ? nowIso
+            : new Date(Date.now() + backoffMs(nextAttempt)).toISOString(),
+        })
+        .eq('id', job.id)
+
+      if (terminalFail) failed += 1
+      else retried += 1
+    }
+  }
+
+  return {
+    processed,
+    succeeded,
+    retried,
+    failed,
+  }
 }
 
 serve(async (req) => {
@@ -45,102 +229,13 @@ serve(async (req) => {
     const batchSize = Number(Deno.env.get('ZOHO_SYNC_BATCH_SIZE') ?? 10)
     const nowIso = new Date().toISOString()
 
-    const { data: jobs, error: jobsErr } = await supabase
-      .from('zoho_sync_jobs')
-      .select('id, reservation_id, attempt_count, max_attempts, status')
-      .in('status', ['pending', 'retry'])
-      .lte('run_after', nowIso)
-      .order('run_after', { ascending: true })
-      .limit(batchSize)
-
-    if (jobsErr) {
-      console.error('zoho-sync-worker jobs query error:', jobsErr)
-      return json(500, { error: 'Failed to query jobs' })
-    }
-
-    let processed = 0
-    let succeeded = 0
-    let failed = 0
-    let retried = 0
-
-    for (const job of jobs ?? []) {
-      const { data: lockedRows, error: lockErr } = await supabase
-        .from('zoho_sync_jobs')
-        .update({ status: 'processing', locked_at: new Date().toISOString() })
-        .eq('id', job.id)
-        .in('status', ['pending', 'retry'])
-        .select('id')
-
-      if (lockErr || !lockedRows || lockedRows.length === 0) {
-        continue
-      }
-
-      processed += 1
-
-      try {
-        const result = await syncPaidReservationToZoho(supabase, String(job.reservation_id))
-        const nextAttempt = Number(job.attempt_count ?? 0) + 1
-
-        await supabase
-          .from('reservations')
-          .update({
-            zoho_sync_status: 'synced',
-            zoho_last_error: null,
-            zoho_lead_id: result.zohoLeadId,
-            zoho_contact_id: result.zohoContactId,
-            zoho_reservation_id: result.zohoReservationId,
-          })
-          .eq('id', job.reservation_id)
-
-        await supabase
-          .from('zoho_sync_jobs')
-          .update({
-            status: 'succeeded',
-            attempt_count: nextAttempt,
-            last_error: null,
-            locked_at: null,
-          })
-          .eq('id', job.id)
-
-        succeeded += 1
-      } catch (err: any) {
-        const message = String(err?.message ?? 'Zoho sync failed')
-        const nextAttempt = Number(job.attempt_count ?? 0) + 1
-        const maxAttempts = Number(job.max_attempts ?? 8)
-        const terminalFail = nextAttempt >= maxAttempts
-
-        await supabase
-          .from('reservations')
-          .update({
-            zoho_sync_status: terminalFail ? 'failed' : 'pending',
-            zoho_last_error: message,
-          })
-          .eq('id', job.reservation_id)
-
-        await supabase
-          .from('zoho_sync_jobs')
-          .update({
-            status: terminalFail ? 'failed' : 'retry',
-            attempt_count: nextAttempt,
-            last_error: message,
-            locked_at: null,
-            run_after: terminalFail
-              ? nowIso
-              : new Date(Date.now() + backoffMs(nextAttempt)).toISOString(),
-          })
-          .eq('id', job.id)
-
-        if (terminalFail) failed += 1
-        else retried += 1
-      }
-    }
+    const reservation = await processReservationJobs(supabase, batchSize, nowIso)
+    const profile = await processProfileJobs(supabase, batchSize, nowIso)
 
     return json(200, {
       ok: true,
-      processed,
-      succeeded,
-      retried,
-      failed,
+      reservation,
+      profile,
     })
   } catch (err: any) {
     console.error('zoho-sync-worker error:', err)

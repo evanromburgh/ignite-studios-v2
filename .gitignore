@@ -36,3 +36,7 @@ Thumbs.db
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Supabase CLI local metadata
+/supabase/
+/backend/supabase/.temp/
