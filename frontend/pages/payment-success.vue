@@ -2,14 +2,18 @@
   <div class="min-h-screen bg-theme-bg flex flex-col items-center justify-center gap-6 px-5 sm:px-8 md:px-16 pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
     <div class="text-center w-full max-w-5xl">
       <h1 class="text-2xl sm:text-4xl font-black text-theme-text-primary tracking-tight leading-tight mb-4">
-        Your Reservation Confirmed
+        {{ isFinalizing ? 'Finalizing Payment...' : 'Your Reservation Confirmed' }}
       </h1>
       <p class="text-zinc-400 text-base sm:text-lg mb-8 max-w-[42rem] mx-auto text-center">
-        Congratulations on securing your unit. Our sales team will contact you within 24 hours to complete the process.
+        {{
+          isFinalizing
+            ? 'Please wait while we confirm your payment and finalize your reservation.'
+            : 'Congratulations on securing your unit. Our sales team will contact you within 24 hours to complete the process.'
+        }}
       </p>
 
       <div
-        v-if="unit"
+        v-if="!isFinalizing && unit"
         class="group relative grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl p-4 border border-theme-border bg-theme-surface overflow-hidden w-full max-w-4xl mx-auto text-left"
       >
         <div class="absolute inset-0 bg-gradient-to-br from-theme-input-bg to-transparent pointer-events-none" />
@@ -58,7 +62,8 @@
       </div>
 
       <div v-else class="max-w-md mx-auto text-zinc-500 text-sm">
-        <p>Thank you for your payment. You can view your reservations below.</p>
+        <p v-if="isFinalizing">Finalizing your payment confirmation. This usually takes a few seconds.</p>
+        <p v-else>Thank you for your payment. You can view your reservations below.</p>
       </div>
     </div>
 
@@ -79,9 +84,16 @@ import { getUnitsBucketPublicUrl } from '~/utils/unitsStorage'
 
 const route = useRoute()
 const { $supabase } = useNuxtApp()
+const config = useRuntimeConfig()
 const unit = ref<Unit | null>(null)
+const isFinalizing = ref(true)
 
-onMounted(async () => {
+type ReservationSnapshot = {
+  status: string | null
+  unit_id: string | null
+}
+
+function resolvePaymentReference() {
   const urlParams = new URLSearchParams(route.fullPath.includes('?') ? route.fullPath.split('?')[1] : '')
   let paymentRef = urlParams.get('ref') || urlParams.get('m_payment_id') || (typeof localStorage !== 'undefined' ? localStorage.getItem('payment_reference') : null)
   if (paymentRef) {
@@ -91,28 +103,73 @@ onMounted(async () => {
       // use as-is
     }
   }
+  return paymentRef?.trim() || null
+}
+
+async function confirmPayment(paymentRef: string) {
+  const supabaseUrl = String(config.public.supabaseUrl ?? '').trim().replace(/\/$/, '')
+  const supabaseAnonKey = String(config.public.supabaseAnonKey ?? '').trim()
+  if (!supabaseUrl || !supabaseAnonKey) return
+
+  const { data: { session } } = await $supabase.auth.getSession()
+  const accessToken = session?.access_token?.trim()
+  if (!accessToken) return
+
+  await $fetch(`${supabaseUrl}/functions/v1/confirm-payment`, {
+    method: 'POST',
+    body: { paymentReference: paymentRef },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+      apikey: supabaseAnonKey,
+    },
+  }).catch(() => {})
+}
+
+async function pollReservation(paymentRef: string): Promise<ReservationSnapshot | null> {
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const { data } = await $supabase
+      .from('reservations')
+      .select('status, unit_id')
+      .eq('paystack_reference', paymentRef)
+      .maybeSingle<ReservationSnapshot>()
+
+    if (data?.status === 'paid') return data
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  return null
+}
+
+async function loadUnit(unitId: string) {
+  const { data, error: err } = await $supabase
+    .from('units')
+    .select('*')
+    .eq('id', unitId)
+    .single()
+  if (!err && data) {
+    unit.value = mapSupabaseUnitRow(data as SupabaseUnitRow, (path) =>
+      getUnitsBucketPublicUrl($supabase, path),
+    )
+  }
+}
+
+onMounted(async () => {
+  const paymentRef = resolvePaymentReference()
   if (!paymentRef) {
+    isFinalizing.value = false
     return
   }
-  // Reference format: unitId.zohoContactId.timestamp (Paystack) — legacy pipe form supported
-  const parts = paymentRef.includes('|') ? paymentRef.split('|') : paymentRef.split('.')
-  const unitId = parts[0]?.trim()
-  if (!unitId || parts.length !== 3) {
-    return
-  }
+
   try {
-    const { data, error: err } = await $supabase
-      .from('units')
-      .select('*')
-      .eq('id', unitId)
-      .single()
-    if (!err && data) {
-      unit.value = mapSupabaseUnitRow(data as SupabaseUnitRow, (path) =>
-        getUnitsBucketPublicUrl($supabase, path),
-      )
+    await confirmPayment(paymentRef)
+    const reservation = await pollReservation(paymentRef)
+    if (reservation?.unit_id) {
+      await loadUnit(reservation.unit_id)
     }
   } catch (e: unknown) {
     console.warn('Could not fetch unit for success page:', e)
+  } finally {
+    isFinalizing.value = false
   }
 })
 </script>

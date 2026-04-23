@@ -1042,8 +1042,9 @@ async function onSubmit() {
       payload?.email &&
       typeof payload?.amountInCents === 'number'
     ) {
+      const paymentReference = String(payload.paymentReference)
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('payment_reference', payload.paymentReference)
+        localStorage.setItem('payment_reference', paymentReference)
       }
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem('ignite_reservation_redirecting', unitId.value || 'true')
@@ -1063,26 +1064,20 @@ async function onSubmit() {
           currency: payload.currency || 'ZAR',
           onSuccess: async () => {
             completingPayment.value = true
-            try {
-              const latestToken = (await resolveAccessToken()) || token
-              await $fetch(`${supabaseUrl}/functions/v1/confirm-payment`, {
-                method: 'POST',
-                body: { paymentReference: payload.paymentReference },
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${latestToken}`,
-                  apikey: supabaseAnonKey,
-                },
-              })
-              error.value = null
-              navigateTo('/payment-success')
-            } catch (confirmErr: unknown) {
-              completingPayment.value = false
-              error.value = errorMessageFromUnknown(
-                confirmErr,
-                'Payment succeeded, but confirmation is pending. Please refresh My Units in a moment.',
-              )
-            }
+            const latestToken = (await resolveAccessToken()) || token
+            // Fire-and-forget confirmation to avoid blocking the transition to success UI.
+            void $fetch(`${supabaseUrl}/functions/v1/confirm-payment`, {
+              method: 'POST',
+              body: { paymentReference },
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${latestToken}`,
+                apikey: supabaseAnonKey,
+              },
+            }).catch(() => {})
+
+            error.value = null
+            navigateTo(`/payment-success?ref=${encodeURIComponent(paymentReference)}`)
           },
           onCancel: () => {
             // Best-effort cancel hook so Zoho + Supabase are updated

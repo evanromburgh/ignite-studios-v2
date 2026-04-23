@@ -74,7 +74,11 @@ serve(async (req) => {
 
     const finalized = finalizedRows?.[0]
     if (finalized?.enqueued_job && finalized?.reservation_id) {
-      await processSingleZohoSync(supabase, String(finalized.reservation_id))
+      // Best-effort fast-path: do not block API response/navigation on Zoho latency.
+      // The queued job remains the source of truth for eventual sync and retries.
+      void processSingleZohoSync(supabase, String(finalized.reservation_id)).catch((syncErr) => {
+        console.error('confirm-payment inline zoho sync failed:', syncErr)
+      })
     }
 
     return jsonResponse(200, {
