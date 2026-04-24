@@ -6,6 +6,8 @@ const { pending: salesModePending } = useSalesMode()
 const { loading: unitsLoading } = useUnits()
 const { faviconUrl, logoLightUrl } = useBranding()
 const route = useRoute()
+const { shellReady: reservePageShellReady, markNotReady: markReservePageNotReady, markReady: markReservePageReady } =
+  useReservePageShellReady()
 
 useHead({
   link: [{ rel: 'icon', type: 'image/png', href: faviconUrl }],
@@ -25,12 +27,17 @@ const requiresUnitsBootstrap = computed(() =>
   route.path === '/' ||
   route.path === '/wishlist' ||
   route.path === '/reservations' ||
+  route.path.startsWith('/reserve/') ||
   route.path.startsWith('/unit/'),
 )
 const initialDataLoading = computed(() => {
   if (!user.value) return false
   if (!requiresUnitsBootstrap.value) return false
-  return salesModePending.value || unitsLoading.value
+  const base = salesModePending.value || unitsLoading.value
+  if (route.path.startsWith('/reserve/')) {
+    return base || !reservePageShellReady.value
+  }
+  return base
 })
 
 const isLoading = computed(
@@ -79,6 +86,19 @@ watch(
   authLoading,
   (loading) => {
     if (!loading) initialAuthResolved.value = true
+  },
+  { immediate: true },
+)
+
+// Reserve page has async work after units load (lock session, acquire-lock). Keep global loader up until it signals ready.
+watch(
+  () => route.path,
+  (path) => {
+    if (path.startsWith('/reserve/')) {
+      markReservePageNotReady()
+    } else {
+      markReservePageReady()
+    }
   },
   { immediate: true },
 )

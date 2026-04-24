@@ -297,6 +297,7 @@ const { user, authLoading, sessionRef } = useAuth()
 const { $supabase } = useNuxtApp()
 const { units, loading: unitsLoading } = useUnits()
 const { effectiveNow, sync } = useServerClock()
+const { markReady: markReservePageShellReady } = useReservePageShellReady()
 
 const unitNumberDisplay = computed(() => (route.params.unitNumber as string) ?? '')
 const unitId = ref('')
@@ -305,6 +306,14 @@ const acquiringLock = ref(false)
 const acquireError = ref<string | null>(null)
 /** False until session/lock bootstrap in onMounted finishes (avoids false "unit not found" before units load). */
 const reserveFlowReady = ref(false)
+
+watch(
+  reserveFlowReady,
+  (v) => {
+    if (v) markReservePageShellReady()
+  },
+  { immediate: true },
+)
 /** Stored for beforeunload release when tab is closed. */
 const accessTokenRef = ref<string | null>(null)
 let beforeUnloadHandler: (() => void) | null = null
@@ -789,6 +798,7 @@ onMounted(async () => {
         const token = await resolveAccessToken()
         if (!token) {
           acquireError.value = 'Session expired. Please sign in again.'
+          reserveFlowReady.value = true
           return
         }
         // Acquire lock only; server clock offset is shared and usually already set from the list page
