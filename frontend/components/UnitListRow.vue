@@ -45,14 +45,24 @@
         </div>
       </div>
 
-      <div class="px-5 pb-5">
+      <div class="px-5 pb-5" :class="prelaunchMode ? 'grid grid-cols-2 gap-0 border-t border-zinc-200/80' : ''">
         <button
           type="button"
           :disabled="!isAvailable && !isAdmin"
-          class="h-10 w-full px-8 text-[12px] font-bold uppercase tracking-widest bg-[#18181B] text-white rounded-md transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:bg-zinc-800 text-center"
+          class="h-10 w-full px-4 text-[12px] font-bold uppercase tracking-widest bg-[#18181B] text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:bg-zinc-800 text-center"
+          :class="prelaunchMode ? 'rounded-l-md rounded-r-none' : 'rounded-md'"
           @click.stop="onSelect(unit)"
         >
           View Details
+        </button>
+        <button
+          v-if="prelaunchMode"
+          type="button"
+          :disabled="prelaunchWishlistDisabled"
+          class="h-10 w-full px-4 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 border-l border-zinc-200/80 rounded-r-md rounded-l-none hover:bg-[#18181B] hover:text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center -ml-px"
+          @click.stop="onToggleWishlist(unit.id)"
+        >
+          Wishlist
         </button>
       </div>
     </div>
@@ -147,6 +157,7 @@
           </button>
           <span class="h-5 w-px bg-zinc-200/80" aria-hidden="true" />
           <button
+            v-if="!prelaunchMode"
             type="button"
             :disabled="(!isAvailable && !isAdmin) || isReserving"
             class="h-[46px] min-w-[150px] px-6 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 rounded-lg hover:bg-[#18181B] hover:text-white hover:rounded-lg transition-[background-color,color,border-radius] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center"
@@ -155,6 +166,16 @@
             {{ reserveButtonLabel }}
           </button>
           <button
+            v-else
+            type="button"
+            :disabled="prelaunchWishlistDisabled"
+            class="h-[46px] min-w-[150px] px-6 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 rounded-lg hover:bg-[#18181B] hover:text-white hover:rounded-lg transition-[background-color,color,border-radius] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center"
+            @click.stop="onToggleWishlist(unit.id)"
+          >
+            Wishlist
+          </button>
+          <button
+            v-if="!prelaunchMode"
             type="button"
             :disabled="!isAvailable && !isAdmin"
             class="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-300 bg-white/95 text-zinc-600 transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:hover:bg-white/95 disabled:hover:text-zinc-400 disabled:hover:border-zinc-300"
@@ -197,8 +218,9 @@ const props = withDefaults(
     serverClockOffsetMs?: number
     currentUserId?: string | null
     reservingUnitId?: string | null
+    prelaunchMode?: boolean
   }>(),
-  { isWishlisted: false, isAdmin: false, hideReservedOverlay: false, serverClockOffsetMs: 0, currentUserId: undefined, reservingUnitId: null },
+  { isWishlisted: false, isAdmin: false, hideReservedOverlay: false, serverClockOffsetMs: 0, currentUserId: undefined, reservingUnitId: null, prelaunchMode: false },
 )
 
 const emit = defineEmits<{
@@ -214,6 +236,9 @@ const { timeLeft } = useLockCountdown(
 const isLocked = computed(() => timeLeft.value > 0 && props.unit.status === 'Available')
 const isReserving = computed(() => props.reservingUnitId === props.unit.id)
 const isAvailable = computed(() => props.unit.status === 'Available' && !isLocked.value)
+const prelaunchWishlistDisabled = computed(
+  () => !isAvailable.value && !props.isAdmin,
+)
 
 const showOverlay = computed(() =>
   !props.isAdmin &&

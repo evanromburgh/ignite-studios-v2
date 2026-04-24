@@ -56,7 +56,7 @@
               Wishlist
             </NuxtLink>
             <NuxtLink
-              v-if="user"
+              v-if="user && !isPrelaunch"
               to="/reservations"
               class="h-[46px] px-2 text-[12px] uppercase tracking-[0.15em] transition-colors flex items-center"
               :class="navLinkClass(isReservationsPage)"
@@ -91,6 +91,7 @@
                 class="hidden lg:block absolute top-full right-0 mt-3 sm:mt-[1.3rem] w-56 sm:w-64 bg-theme-overlay-dropdown rounded-xl p-2 border border-theme-border shadow-xl z-[200]"
               >
                 <NuxtLink
+                  v-if="user.role !== 'admin'"
                   to="/profile"
                   class="w-full flex items-center px-4 h-12 rounded-lg text-theme-text-muted hover:bg-zinc-100 hover:text-theme-text-primary transition-all group mb-1"
                   @click="showUserMenu = false"
@@ -99,12 +100,30 @@
                     My Profile
                   </span>
                   <svg
-                    class="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    class="w-[14px] h-[14px] ml-auto opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                     viewBox="0 0 16 16"
                     fill="currentColor"
                     aria-hidden="true"
                   >
                     <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z" />
+                  </svg>
+                </NuxtLink>
+                <NuxtLink
+                  v-if="user.role === 'admin'"
+                  to="/admin/settings"
+                  class="w-full flex items-center px-4 h-12 rounded-lg text-theme-text-muted hover:bg-zinc-100 hover:text-theme-text-primary transition-all group mb-1"
+                  @click="showUserMenu = false"
+                >
+                  <span class="text-[10px] font-black uppercase tracking-widest">
+                    Settings
+                  </span>
+                  <svg
+                    class="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z" />
                   </svg>
                 </NuxtLink>
                 <div class="h-px bg-theme-border mx-2 my-1" />
@@ -166,12 +185,14 @@
                 Wishlist
               </NuxtLink>
             </div>
-            <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
-            <div class="w-full flex">
-              <NuxtLink to="/reservations" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isReservationsPage)" @click="showMobileMenu = false">
-                My Units
-              </NuxtLink>
-            </div>
+            <template v-if="!isPrelaunch">
+              <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
+              <div class="w-full flex">
+                <NuxtLink to="/reservations" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isReservationsPage)" @click="showMobileMenu = false">
+                  My Units
+                </NuxtLink>
+              </div>
+            </template>
           </template>
           <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
           <div class="w-full flex">
@@ -180,12 +201,19 @@
             </NuxtLink>
           </div>
           <template v-if="user">
-            <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
-            <div class="w-full flex">
+            <div v-if="user.role !== 'admin'" class="w-full flex">
               <NuxtLink to="/profile" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isProfilePage)" @click="showMobileMenu = false">
                 Profile
               </NuxtLink>
             </div>
+            <template v-else>
+              <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
+              <div class="w-full flex">
+                <NuxtLink to="/admin/settings" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isAdminPage)" @click="showMobileMenu = false">
+                  Settings
+                </NuxtLink>
+              </div>
+            </template>
             <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
             <div class="w-full flex">
               <button type="button" class="w-full max-w-xs mx-auto h-12 flex items-center justify-between text-[12px] font-black uppercase tracking-widest" :class="isLoggingOut ? 'text-theme-text-muted' : 'text-red-500'" @click="handleLogoutMobile">
@@ -268,6 +296,7 @@
                 Wishlist
               </NuxtLink>
               <NuxtLink
+                v-if="!isPrelaunch"
                 to="/reservations"
                 class="text-[12px] text-[#CCCCCC] hover:text-white transition-colors leading-relaxed"
               >
@@ -326,6 +355,7 @@ const route = useRoute()
 const { logoLightUrl, logoDarkUrl } = useBranding()
 const { isConfigured: isAgentContactConfigured } = useAgentContacts()
 const { user, logout } = useAuth()
+const { isPrelaunch } = useSalesMode()
 const { onlineCount } = useGlobalPresence()
 
 const showUserMenu = ref(false)
@@ -334,6 +364,7 @@ const isDocumentsPage = computed(() => route.path === '/documents')
 const isReservationsPage = computed(() => route.path === '/reservations')
 const isWishlistPage = computed(() => route.path === '/wishlist')
 const isProfilePage = computed(() => route.path === '/profile')
+const isAdminPage = computed(() => route.path === '/admin' || route.path.startsWith('/admin/'))
 
 const showMobileMenu = ref(false)
 const navRef = ref<HTMLElement | null>(null)

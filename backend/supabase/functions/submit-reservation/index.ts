@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createServiceRoleClient, getUserFromBearerToken, jsonResponse, optionsResponse } from '../_shared/http.ts'
+import { getAppSettingsForSales, isPrelaunchFromRow, SALES_PRELAUNCH_JSON } from '../_shared/salesMode.ts'
 
 type SubmitBody = {
   firstName?: string
@@ -22,6 +23,12 @@ serve(async (req) => {
     const supabase = createServiceRoleClient()
     const user = await getUserFromBearerToken(req, supabase)
     if (!user) return jsonResponse(401, { error: 'Unauthorized' })
+
+    const appRow = await getAppSettingsForSales(supabase)
+    if (isPrelaunchFromRow(appRow)) {
+      return jsonResponse(403, { ...SALES_PRELAUNCH_JSON })
+    }
+
     const body = await req.json().catch(() => null) as SubmitBody | null
     if (!body) return jsonResponse(400, { error: 'Invalid JSON body' })
 

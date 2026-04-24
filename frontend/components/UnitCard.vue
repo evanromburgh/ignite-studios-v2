@@ -25,7 +25,7 @@
           Reserved
         </span>
         <button
-          v-else
+          v-else-if="!prelaunchMode"
           type="button"
           :disabled="!isAvailable && !isAdmin"
           class="pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-zinc-300 bg-white/95 text-zinc-600 text-[10px] font-bold uppercase tracking-widest shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:hover:bg-white/95 disabled:hover:text-zinc-400 disabled:hover:border-zinc-300"
@@ -126,11 +126,11 @@
         <button
           v-if="!isMyUnitsCard"
           type="button"
-          :disabled="(!isAvailable && !isAdmin) || isReserving"
+          :disabled="prelaunchMode ? prelaunchWishlistDisabled : (!isAvailable && !isAdmin) || isReserving"
           class="-mt-px -ml-px pl-px pt-[calc(1.25rem+1px)] pb-5 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 border-l border-zinc-200/80 hover:bg-[#18181B] hover:text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center"
-          @click.stop="onReserve(unit)"
+          @click.stop="prelaunchMode ? onToggleWishlist(unit.id) : onReserve(unit)"
         >
-          {{ reserveButtonLabel }}
+          {{ prelaunchMode ? 'Wishlist' : reserveButtonLabel }}
         </button>
       </div>
     </div>
@@ -158,8 +158,10 @@ const props = withDefaults(
     reservingUnitId?: string | null
     /** When true (e.g. on My Units page): no Reserved overlay, top-right shows "Reserved" label, single full-width View Details button */
     isMyUnitsCard?: boolean
+    /** Browse grid: hide duplicate wishlist, reserve column becomes wishlist (prelaunch) */
+    prelaunchMode?: boolean
   }>(),
-  { isWishlisted: false, isAdmin: false, hideReservedOverlay: false, serverClockOffsetMs: 0, currentUserId: undefined, reservingUnitId: null, isMyUnitsCard: false },
+  { isWishlisted: false, isAdmin: false, hideReservedOverlay: false, serverClockOffsetMs: 0, currentUserId: undefined, reservingUnitId: null, isMyUnitsCard: false, prelaunchMode: false },
 )
 
 const emit = defineEmits<{
@@ -187,6 +189,10 @@ const showOverlay = computed(() =>
 const formattedPrice = computed(() => formatZarInteger(props.unit.price))
 const formattedOriginalPrice = computed(() =>
   props.unit.originalPrice ? formatZarInteger(props.unit.originalPrice) : '',
+)
+
+const prelaunchWishlistDisabled = computed(
+  () => !props.isMyUnitsCard && !isAvailable.value && !props.isAdmin,
 )
 
 const reserveButtonLabel = computed(() => {

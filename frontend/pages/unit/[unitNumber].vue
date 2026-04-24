@@ -391,7 +391,7 @@
                 </div>
 
                 <!-- Primary CTAs -->
-                <div class="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-6">
+                <div v-if="!isPrelaunch" class="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-6">
                   <button
                     type="button"
                     :disabled="!canReserve"
@@ -405,6 +405,19 @@
                     :disabled="!isAvailable"
                     class="w-full sm:w-auto sm:flex-[0.35] sm:min-w-[170px] h-12 inline-flex items-center justify-center gap-1.5 bg-theme-bg border border-zinc-300 text-zinc-600 font-black text-[11px] uppercase tracking-wider rounded-lg shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-theme-bg disabled:hover:text-zinc-600 disabled:hover:border-zinc-300"
                     :class="isWishlisted ? '!border-red-600 !bg-red-600 !text-white' : ''"
+                    @click="isAvailable && onToggleWishlist()"
+                  >
+                    <IconHeart class="w-3.5 h-3.5 flex-shrink-0 -mt-[1px]" :filled="isWishlisted" />
+                    <span class="leading-none">
+                      {{ isWishlisted ? 'Remove from wishlist' : 'Add to wishlist' }}
+                    </span>
+                  </button>
+                </div>
+                <div v-else class="mt-8">
+                  <button
+                    type="button"
+                    :disabled="!isAvailable"
+                    class="w-full h-12 inline-flex items-center justify-center gap-1.5 bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     @click="isAvailable && onToggleWishlist()"
                   >
                     <IconHeart class="w-3.5 h-3.5 flex-shrink-0 -mt-[1px]" :filled="isWishlisted" />
@@ -504,6 +517,7 @@ const route = useRoute()
 const { units, loading: unitsLoading } = useUnits()
 const { wishlistIds, toggle: toggleWishlist } = useWishlist()
 const { user } = useAuth()
+const { isPrelaunch } = useSalesMode()
 
 const reserving = ref(false)
 const { show: showBottomUrgencyStrip } = useBottomUrgencyStrip()

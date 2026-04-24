@@ -1,5 +1,6 @@
 // plugins/supabase.client.ts
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { useSalesMode } from '~/composables/useSalesMode'
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()
@@ -17,6 +18,18 @@ export default defineNuxtPlugin(() => {
     supabaseUrl,
     supabaseAnonKey,
   )
+
+  const { refresh } = useSalesMode()
+  supabase
+    .channel('app_settings_public')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'app_settings', filter: 'id=eq.1' },
+      () => {
+        void refresh()
+      },
+    )
+    .subscribe()
 
   return {
     provide: {

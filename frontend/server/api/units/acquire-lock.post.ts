@@ -1,4 +1,5 @@
 import { CONFIG } from '~/config'
+import { getAppSettingsService, isPrelaunchMode, SALES_PRELAUNCH_ERROR } from '~/server/utils/appSettings'
 import { requireAuthenticatedUnitRequest } from '~/server/utils/authenticatedUnitRequest'
 
 type UnitLockSnapshot = {
@@ -10,6 +11,15 @@ type UnitLockSnapshot = {
 
 export default defineEventHandler(async (event) => {
   const { unitId, user, supabase } = await requireAuthenticatedUnitRequest(event)
+
+  const settings = await getAppSettingsService()
+  if (isPrelaunchMode(settings.sales_mode)) {
+    throw createError({
+      statusCode: 403,
+      message: SALES_PRELAUNCH_ERROR.message,
+      data: { code: SALES_PRELAUNCH_ERROR.code },
+    })
+  }
 
   const lockExpiresAt = new Date(Date.now() + CONFIG.LOCK_DURATION_MS).toISOString()
   const nowIso = new Date().toISOString()

@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { parseReservationReference } from '../_shared/reservationReference.ts'
 import { createServiceRoleClient, CORS_HEADERS, getUserFromBearerToken, jsonResponse, optionsResponse } from '../_shared/http.ts'
 import { processSingleZohoSync } from '../_shared/zohoSyncJob.ts'
+import { getAppSettingsForSales, isPrelaunchFromRow, SALES_PRELAUNCH_JSON } from '../_shared/salesMode.ts'
 
 async function hasServiceRoleAccess(supabaseUrl: string, candidateKey: string): Promise<boolean> {
   const key = String(candidateKey ?? '').trim()
@@ -34,6 +35,11 @@ serve(async (req) => {
     if (!internalServiceCall) {
       const user = await getUserFromBearerToken(req, supabase)
       if (!user) return jsonResponse(401, { error: 'Unauthorized' })
+    }
+
+    const appRow = await getAppSettingsForSales(supabase)
+    if (isPrelaunchFromRow(appRow)) {
+      return jsonResponse(403, { ...SALES_PRELAUNCH_JSON })
     }
 
     const body = await req.json().catch(() => null) as { paymentReference?: string } | null

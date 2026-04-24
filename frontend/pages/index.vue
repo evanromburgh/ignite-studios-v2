@@ -17,6 +17,22 @@
           </svg>
         </button>
       </div>
+      <div
+        v-if="showPrelaunchBlockToast"
+        class="fixed bottom-4 right-4 z-[100] max-w-[20rem] rounded-lg border border-zinc-400 bg-zinc-900 text-zinc-100 px-3 py-2 flex items-center justify-between gap-2 shadow-lg"
+      >
+        <p class="text-xs font-medium">Sales are not open yet. Browse units and save to your wishlist.</p>
+        <button
+          type="button"
+          class="shrink-0 text-zinc-400 hover:text-white transition-colors p-0.5"
+          aria-label="Dismiss"
+          @click="showPrelaunchBlockToast = false"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
       <!-- Hero header: Swiper slider; use svh on mobile so it fits within visible viewport (avoids iOS browser chrome overflow) -->
       <header class="nav-section dark relative min-h-svh h-svh sm:min-h-screen sm:h-screen overflow-hidden group bg-theme-bg">
         <div class="absolute inset-0 z-10">
@@ -64,6 +80,58 @@
           <p class="text-center text-sm sm:text-base text-zinc-300/90 font-medium mt-1">
             {{ apartmentsHeadline }}
           </p>
+        </div>
+        <div
+          v-show="showHeroCountdown"
+          class="absolute bottom-6 sm:bottom-10 left-0 right-0 z-20 flex flex-col items-center pointer-events-none text-white px-4 text-center"
+        >
+          <p class="font-sans text-[11px] sm:text-xs font-bold uppercase tracking-[0.25em] mb-2 drop-shadow-md">
+            Sales open in
+          </p>
+          <div
+            class="font-sans text-3xl sm:text-4xl font-black tabular-nums tracking-tight drop-shadow-md leading-none text-center
+              inline-grid w-max [grid-template-columns:repeat(7,auto)]
+              items-center justify-items-center
+              gap-x-1.5 sm:gap-x-2
+              [row-gap:0.06rem] sm:[row-gap:0.1rem]"
+            aria-live="polite"
+            role="timer"
+          >
+            <!-- row 1 -->
+            <span class="leading-none">{{ pad2(heroCountdownParts.days) }}</span>
+            <span
+              class="inline-block w-max -translate-y-[0.1em] text-[0.72em] sm:text-[0.76em] font-medium text-white/80 leading-none"
+              aria-hidden="true"
+            >•</span>
+            <span class="leading-none">{{ pad2(heroCountdownParts.hours) }}</span>
+            <span
+              class="inline-block w-max -translate-y-[0.1em] text-[0.72em] sm:text-[0.76em] font-medium text-white/80 leading-none"
+              aria-hidden="true"
+            >•</span>
+            <span class="leading-none">{{ pad2(heroCountdownParts.minutes) }}</span>
+            <span
+              class="inline-block w-max -translate-y-[0.1em] text-[0.72em] sm:text-[0.76em] font-medium text-white/80 leading-none"
+              aria-hidden="true"
+            >•</span>
+            <span class="leading-none">{{ pad2(heroCountdownParts.seconds) }}</span>
+            <!-- row 2: labels -->
+            <span class="font-sans text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-white/80 leading-none">Days</span>
+            <span
+              class="inline-block w-max invisible text-[0.72em] sm:text-[0.76em] font-medium leading-none select-none"
+              aria-hidden="true"
+            >•</span>
+            <span class="font-sans text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-white/80 leading-none">Hrs</span>
+            <span
+              class="inline-block w-max invisible text-[0.72em] sm:text-[0.76em] font-medium leading-none select-none"
+              aria-hidden="true"
+            >•</span>
+            <span class="font-sans text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-white/80 leading-none">Mins</span>
+            <span
+              class="inline-block w-max invisible text-[0.72em] sm:text-[0.76em] font-medium leading-none select-none"
+              aria-hidden="true"
+            >•</span>
+            <span class="font-sans text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-white/80 leading-none">Secs</span>
+          </div>
         </div>
         <!-- Filter bar: not inside hero; rendered fixed or anchored below -->
       </header>
@@ -260,6 +328,7 @@
               :key="unit.id"
               :unit="unit"
               :is-wishlisted="wishlistIds.includes(unit.id)"
+              :prelaunch-mode="isPrelaunch"
               :server-clock-offset-ms="serverClockOffsetMs"
               :current-user-id="user?.id ?? null"
               :reserving-unit-id="reservingUnitId"
@@ -278,6 +347,7 @@
               :key="unit.id"
               :unit="unit"
               :is-wishlisted="wishlistIds.includes(unit.id)"
+              :prelaunch-mode="isPrelaunch"
               :server-clock-offset-ms="serverClockOffsetMs"
               :current-user-id="user?.id ?? null"
               :reserving-unit-id="reservingUnitId"
@@ -304,22 +374,39 @@ import SiteMapPlansView from '~/components/SiteMapPlansView.vue'
 import { SITE_MAP_FLOORS, SITE_MAP_MASTER } from '~/data/siteMap'
 import { useAuth } from '~/composables/useAuth'
 import { useReserveUnitFlow } from '~/composables/useReserveUnitFlow'
+import { useSalesMode } from '~/composables/useSalesMode'
 import { useUnits } from '~/composables/useUnits'
 import { useUnitFilters } from '~/composables/useUnitFilters'
 import { useWishlist } from '~/composables/useWishlist'
+import { remainingCountdownParts } from '~/utils/sastTime'
 import { ViewMode, type Unit, type SearchFilters } from '~/types'
 
 const { user } = useAuth()
 const { units, loading: unitsLoading, error: unitsError } = useUnits()
 const { wishlistIds, toggle: toggleWishlist } = useWishlist()
 const { filters, viewMode, resetFilters } = useUnitFilters()
-const { serverClockOffsetMs } = useServerClock()
+const { isPrelaunch, showHeroCountdown, salesOpensAt } = useSalesMode()
+const { serverClockOffsetMs, effectiveNow } = useServerClock()
 const runtimeConfig = useRuntimeConfig()
 const { reservingUnitId, reserveUnit } = useReserveUnitFlow({
   fallbackErrorMessage: 'Could not reserve unit.',
 })
 const showPaymentCancelledToast = ref(false)
+const showPrelaunchBlockToast = ref(false)
 const showFiltersDrawer = ref(false)
+const route = useRoute()
+const router = useRouter()
+let heroCountdownIntervalId: ReturnType<typeof setInterval> | null = null
+const nowMsTick = ref(0)
+const heroCountdownParts = computed(() =>
+  showHeroCountdown.value && salesOpensAt.value
+    ? remainingCountdownParts(salesOpensAt.value, nowMsTick.value || Date.now())
+    : { days: 0, hours: 0, minutes: 0, seconds: 0 },
+)
+
+function pad2(n: number) {
+  return String(Math.max(0, n)).padStart(2, '0')
+}
 
 const isDesktopViewport = ref(false)
 
@@ -631,9 +718,36 @@ onMounted(() => {
     sessionStorage.removeItem('show_payment_cancelled_toast')
     showPaymentCancelledToast.value = true
   }
+  if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ignite_prelaunch_reservation_block')) {
+    sessionStorage.removeItem('ignite_prelaunch_reservation_block')
+    showPrelaunchBlockToast.value = true
+  }
+  if (route.query.prelaunch === '1' || route.query.prelaunch === 'true') {
+    showPrelaunchBlockToast.value = true
+    const { prelaunch: _drop, ...rest } = route.query
+    router.replace({ path: route.path, query: rest })
+  }
+
+  const tick = () => {
+    nowMsTick.value = effectiveNow()
+  }
+  tick()
+  heroCountdownIntervalId = setInterval(tick, 1000)
 })
 
+watch(
+  () => [showHeroCountdown.value, salesOpensAt.value] as const,
+  () => {
+    nowMsTick.value = effectiveNow()
+  },
+  { immediate: true },
+)
+
 onBeforeUnmount(() => {
+  if (heroCountdownIntervalId) {
+    clearInterval(heroCountdownIntervalId)
+    heroCountdownIntervalId = null
+  }
   if (typeof document !== 'undefined') {
     document.body.style.overflow = ''
   }
