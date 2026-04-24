@@ -83,7 +83,7 @@
         </div>
         <div
           v-show="showHeroCountdown"
-          class="absolute bottom-6 sm:bottom-10 left-0 right-0 z-20 flex flex-col items-center pointer-events-none text-white px-4 text-center"
+          class="absolute bottom-14 sm:bottom-10 left-0 right-0 z-20 flex flex-col items-center pointer-events-none text-white px-4 text-center"
         >
           <p class="font-sans text-[11px] sm:text-xs font-bold uppercase tracking-[0.25em] mb-2 drop-shadow-md">
             Sales open in
@@ -353,11 +353,19 @@
               :reserving-unit-id="reservingUnitId"
               @select="onSelectUnit"
               @reserve="onReserveUnit"
+              @enquire="onEnquireUnit"
               @toggle-wishlist="onToggleWishlist"
             />
           </div>
         </div>
       </section>
+
+      <EnquiryModal
+        :open="enquiryModalOpen"
+        :user="user"
+        :unit-number="enquiryUnitNumber"
+        @close="enquiryModalOpen = false"
+      />
 
   </div>
 </template>
@@ -369,6 +377,7 @@ import 'swiper/css'
 import 'swiper/css/pagination'
 import UnitCard from '~/components/UnitCard.vue'
 import UnitListRow from '~/components/UnitListRow.vue'
+import EnquiryModal from '~/components/EnquiryModal.vue'
 import FilterBar from '~/components/FilterBar.vue'
 import SiteMapPlansView from '~/components/SiteMapPlansView.vue'
 import { SITE_MAP_FLOORS, SITE_MAP_MASTER } from '~/data/siteMap'
@@ -394,6 +403,8 @@ const { reservingUnitId, reserveUnit } = useReserveUnitFlow({
 const showPaymentCancelledToast = ref(false)
 const showPrelaunchBlockToast = ref(false)
 const showFiltersDrawer = ref(false)
+const enquiryModalOpen = ref(false)
+const enquiryUnitNumber = ref('')
 const route = useRoute()
 const router = useRouter()
 let heroCountdownIntervalId: ReturnType<typeof setInterval> | null = null
@@ -699,6 +710,11 @@ function onSelectUnit(unit: Unit) {
 
 function onReserveUnit(unit: Unit) {
   reserveUnit(unit)
+}
+
+function onEnquireUnit(unit: Unit) {
+  enquiryUnitNumber.value = unit.unitNumber
+  enquiryModalOpen.value = true
 }
 
 function onToggleWishlist(unitId: string) {

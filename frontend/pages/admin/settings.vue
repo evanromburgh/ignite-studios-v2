@@ -1,6 +1,5 @@
 <template>
-  <Transition name="page-fade">
-    <div class="nav-section light w-full px-4 sm:px-[5rem] pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
+  <div class="nav-section light w-full px-4 sm:px-[5rem] pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
       <header class="mb-10 sm:mb-16 text-center">
         <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-theme-text-primary tracking-tight mb-2">
           Sales Mode and Tracking
@@ -10,13 +9,16 @@
         </p>
       </header>
 
-      <div v-if="authLoading" class="rounded-xl border border-theme-border bg-theme-surface p-8 sm:p-12 text-center">
-        <p class="text-zinc-500 text-base sm:text-lg">
+      <div v-if="authLoading" class="mb-4 text-center">
+        <p class="text-zinc-500 text-sm">
           Loading admin panel&hellip;
         </p>
       </div>
 
-      <div v-else-if="user?.role === 'admin'" class="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-6xl mx-auto">
+      <div
+        class="max-w-6xl mx-auto"
+        style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:1.5rem;"
+      >
         <section
           class="relative flex flex-col h-full rounded-[0.75rem] px-6 py-6 sm:px-8 sm:py-8 border border-zinc-200 bg-white"
         >
@@ -47,19 +49,29 @@
               <div class="flex flex-col sm:flex-row gap-3 sm:items-end">
                 <div class="flex-1 min-w-0 flex flex-col gap-1">
                   <label class="text-[10px] text-zinc-500 block">Date</label>
-                  <input
-                    v-model="salesForm.sastDate"
-                    type="date"
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-3 h-10 text-sm text-zinc-900"
-                  >
+                  <div class="relative">
+                    <input
+                      v-model="salesForm.sastDate"
+                      type="date"
+                      class="admin-datetime-input w-full bg-theme-input-bg border border-theme-border rounded-lg px-3 h-10 text-sm text-zinc-900 appearance-none"
+                    >
+                    <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
                 </div>
                 <div class="w-full sm:w-32 shrink-0 flex flex-col gap-1">
                   <label class="text-[10px] text-zinc-500 block">Time</label>
-                  <input
-                    v-model="salesForm.sastTime"
-                    type="time"
-                    class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-3 h-10 text-sm text-zinc-900"
-                  >
+                  <div class="relative">
+                    <input
+                      v-model="salesForm.sastTime"
+                      type="time"
+                      class="admin-datetime-input w-full bg-theme-input-bg border border-theme-border rounded-lg px-3 h-10 text-sm text-zinc-900 appearance-none"
+                    >
+                    <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
               <label class="inline-flex items-center gap-2 text-xs text-zinc-700 cursor-pointer">
@@ -112,6 +124,9 @@
                 placeholder="G-XXXXXXXXXX"
                 class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-3 h-10 text-sm text-zinc-900"
               >
+              <p v-if="trackingForm.googleAnalyticsId.trim()" class="text-[11px]" :class="gaValid ? 'text-emerald-700' : 'text-red-600'">
+                {{ gaValid ? 'Valid GA4 ID' : 'Invalid GA4 ID format (expected G-XXXXXXXXXX)' }}
+              </p>
             </div>
 
             <div class="space-y-2">
@@ -124,6 +139,9 @@
                 placeholder="GTM-XXXXXXX"
                 class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-3 h-10 text-sm text-zinc-900"
               >
+              <p v-if="trackingForm.googleTagManagerId.trim()" class="text-[11px]" :class="gtmValid ? 'text-emerald-700' : 'text-red-600'">
+                {{ gtmValid ? 'Valid GTM container ID' : 'Invalid GTM ID format (expected GTM-XXXXXXX)' }}
+              </p>
             </div>
 
             <div class="space-y-2">
@@ -136,6 +154,9 @@
                 placeholder="123456789012345"
                 class="w-full bg-theme-input-bg border border-theme-border rounded-lg px-3 h-10 text-sm text-zinc-900"
               >
+              <p v-if="trackingForm.metaPixelId.trim()" class="text-[11px]" :class="metaValid ? 'text-emerald-700' : 'text-red-600'">
+                {{ metaValid ? 'Valid Meta Pixel ID' : 'Invalid Meta Pixel ID (numbers only)' }}
+              </p>
             </div>
 
             <p v-if="trackingMessage" class="text-sm" :class="trackingMessageType === 'success' ? 'text-emerald-700' : 'text-red-600'">
@@ -144,7 +165,7 @@
 
             <button
               type="button"
-              :disabled="trackingSaving"
+              :disabled="trackingSaving || !canSaveTracking"
               class="inline-flex items-center justify-center h-11 px-9 rounded-lg text-[11px] font-black uppercase tracking-[0.2em] bg-zinc-900 text-white hover:bg-zinc-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               @click="saveTrackingSettings"
             >
@@ -158,7 +179,6 @@
         </section>
       </div>
     </div>
-  </Transition>
 </template>
 
 <script setup lang="ts">
@@ -189,6 +209,35 @@ const trackingForm = reactive({
   googleTagManagerId: '',
   metaPixelId: '',
 })
+
+function isValidGaId(id: string): boolean {
+  return /^G-[A-Z0-9]{4,}$/i.test(id)
+}
+
+function isValidGtmId(id: string): boolean {
+  return /^GTM-[A-Z0-9]{4,}$/i.test(id)
+}
+
+function isValidMetaPixelId(id: string): boolean {
+  return /^\d{8,20}$/.test(id)
+}
+
+const gaValid = computed(() => {
+  const value = trackingForm.googleAnalyticsId.trim()
+  return !value || isValidGaId(value)
+})
+
+const gtmValid = computed(() => {
+  const value = trackingForm.googleTagManagerId.trim()
+  return !value || isValidGtmId(value)
+})
+
+const metaValid = computed(() => {
+  const value = trackingForm.metaPixelId.trim()
+  return !value || isValidMetaPixelId(value)
+})
+
+const canSaveTracking = computed(() => gaValid.value && gtmValid.value && metaValid.value)
 
 async function loadSalesFormFromApi() {
   try {
@@ -316,16 +365,51 @@ async function saveTrackingSettings() {
 </script>
 
 <style scoped>
-.page-fade-enter-active,
-.page-fade-leave-active {
-  transition: opacity 0.25s ease;
+/* iOS Safari centers native date/time values and applies a different control look. */
+.admin-datetime-input {
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+  padding-right: 2rem;
+  line-height: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  position: relative;
 }
-.page-fade-enter-from,
-.page-fade-leave-to {
+
+.admin-datetime-input::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.25rem;
+}
+
+.admin-datetime-input::-webkit-datetime-edit {
+  text-align: left;
+  padding: 0;
+}
+
+.admin-datetime-input::-webkit-datetime-edit-fields-wrapper {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.admin-datetime-input::-webkit-datetime-edit-text,
+.admin-datetime-input::-webkit-datetime-edit-year-field,
+.admin-datetime-input::-webkit-datetime-edit-month-field,
+.admin-datetime-input::-webkit-datetime-edit-day-field,
+.admin-datetime-input::-webkit-datetime-edit-hour-field,
+.admin-datetime-input::-webkit-datetime-edit-minute-field {
+  color: #18181b;
+  padding: 0;
+}
+
+/* Keep native iOS picker affordance visible (calendar/clock icons). */
+.admin-datetime-input::-webkit-calendar-picker-indicator {
   opacity: 0;
-}
-.page-fade-enter-to,
-.page-fade-leave-from {
-  opacity: 1;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
 }
 </style>
+

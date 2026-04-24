@@ -23,6 +23,18 @@ function normalizeTrackingCode(raw: string | null | undefined): string | null {
   return code ? code : null
 }
 
+function isValidGaId(value: string): boolean {
+  return /^G-[A-Z0-9]{4,}$/i.test(value)
+}
+
+function isValidGtmId(value: string): boolean {
+  return /^GTM-[A-Z0-9]{4,}$/i.test(value)
+}
+
+function isValidMetaPixelId(value: string): boolean {
+  return /^\d{8,20}$/.test(value)
+}
+
 export default defineEventHandler(async (event) => {
   const { user } = await requireAuthenticatedRequest(event)
   const supabase = createServiceRoleSupabase()
@@ -63,6 +75,16 @@ export default defineEventHandler(async (event) => {
   const metaPixelId = hasMetaPixelId
     ? normalizeTrackingCode(body.metaPixelId)
     : (current?.meta_pixel_id as string | null) ?? null
+
+  if (hasGoogleAnalyticsId && googleAnalyticsId && !isValidGaId(googleAnalyticsId)) {
+    throw createError({ statusCode: 400, message: 'Invalid Google Analytics ID. Expected format: G-XXXXXXXXXX' })
+  }
+  if (hasGoogleTagManagerId && googleTagManagerId && !isValidGtmId(googleTagManagerId)) {
+    throw createError({ statusCode: 400, message: 'Invalid Google Tag Manager ID. Expected format: GTM-XXXXXXX' })
+  }
+  if (hasMetaPixelId && metaPixelId && !isValidMetaPixelId(metaPixelId)) {
+    throw createError({ statusCode: 400, message: 'Invalid Meta Pixel ID. Numbers only.' })
+  }
 
   if (body.clearSalesOpensAt) {
     salesOpensAt = null

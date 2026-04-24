@@ -45,24 +45,15 @@
         </div>
       </div>
 
-      <div class="px-5 pb-5" :class="prelaunchMode ? 'grid grid-cols-2 gap-0 border-t border-zinc-200/80' : ''">
+      <div class="px-5 pb-5">
         <button
           type="button"
           :disabled="!isAvailable && !isAdmin"
           class="h-10 w-full px-4 text-[12px] font-bold uppercase tracking-widest bg-[#18181B] text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:bg-zinc-800 text-center"
-          :class="prelaunchMode ? 'rounded-l-md rounded-r-none' : 'rounded-md'"
+          :class="'rounded-md'"
           @click.stop="onSelect(unit)"
         >
           View Details
-        </button>
-        <button
-          v-if="prelaunchMode"
-          type="button"
-          :disabled="prelaunchWishlistDisabled"
-          class="h-10 w-full px-4 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 border-l border-zinc-200/80 rounded-r-md rounded-l-none hover:bg-[#18181B] hover:text-white transition-[background-color,color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center -ml-px"
-          @click.stop="onToggleWishlist(unit.id)"
-        >
-          Wishlist
         </button>
       </div>
     </div>
@@ -157,25 +148,14 @@
           </button>
           <span class="h-5 w-px bg-zinc-200/80" aria-hidden="true" />
           <button
-            v-if="!prelaunchMode"
             type="button"
-            :disabled="(!isAvailable && !isAdmin) || isReserving"
+            :disabled="(!isAvailable && !isAdmin) || (!prelaunchMode && isReserving)"
             class="h-[46px] min-w-[150px] px-6 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 rounded-lg hover:bg-[#18181B] hover:text-white hover:rounded-lg transition-[background-color,color,border-radius] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center"
-            @click.stop="onReserve(unit)"
+            @click.stop="onPrimaryAction(unit)"
           >
-            {{ reserveButtonLabel }}
+            {{ prelaunchMode ? 'Enquire now' : reserveButtonLabel }}
           </button>
           <button
-            v-else
-            type="button"
-            :disabled="prelaunchWishlistDisabled"
-            class="h-[46px] min-w-[150px] px-6 text-[12px] font-bold uppercase tracking-widest bg-transparent text-zinc-900 rounded-lg hover:bg-[#18181B] hover:text-white hover:rounded-lg transition-[background-color,color,border-radius] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-500 disabled:hover:bg-transparent text-center"
-            @click.stop="onToggleWishlist(unit.id)"
-          >
-            Wishlist
-          </button>
-          <button
-            v-if="!prelaunchMode"
             type="button"
             :disabled="!isAvailable && !isAdmin"
             class="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-300 bg-white/95 text-zinc-600 transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:hover:bg-white/95 disabled:hover:text-zinc-400 disabled:hover:border-zinc-300"
@@ -226,6 +206,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   select: [unit: Unit]
   reserve: [unit: Unit]
+  enquire: [unit: Unit]
   toggleWishlist: [unitId: string]
 }>()
 
@@ -269,6 +250,15 @@ function onSelect(unit: Unit) {
 function onReserve(unit: Unit) {
   if (!isAvailable.value && !props.isAdmin) return
   emit('reserve', unit)
+}
+
+function onPrimaryAction(unit: Unit) {
+  if (props.prelaunchMode) {
+    if (!isAvailable.value && !props.isAdmin) return
+    emit('enquire', unit)
+    return
+  }
+  onReserve(unit)
 }
 
 function onToggleWishlist(unitId: string) {

@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import type { SupabaseClient, User as SupabaseAuthUser } from '@supabase/supabase-js'
 import type { AppUser } from '~/types'
 
@@ -59,82 +59,86 @@ let authSubscriptionDone = false
 /** Run initial getSession/getUser only once so we don't fire N "user" requests per page (every useAuth() caller was triggering onMounted). */
 let initialAuthFetchDone = false
 
-export function useAuth() {
-  const { $supabase } = useNuxtApp()
-
-  onMounted(() => {
-    const resolveUser = async (supabaseUser: SupabaseAuthUser | null) => {
-      const user = mapUserSync(supabaseUser)
-      if (!user) {
-        currentUser.value = null
-        return
-      }
-      // Set identity immediately so authLoading can end without waiting on profiles (faster first paint).
-      currentUser.value = {
-        ...user,
-        role: 'user',
-        idPassportNumber: null,
-        reasonForBuying: null,
-      }
-      void fetchProfileExtras($supabase, user.id).then((profile) => {
-        if (!currentUser.value || currentUser.value.id !== user.id) return
-        currentUser.value = {
-          ...currentUser.value,
-          role: profile.role,
-          idPassportNumber: profile.idPassportNumber ?? null,
-          reasonForBuying: profile.reasonForBuying ?? null,
-          firstName:
-            profile.firstName?.trim() ||
-            currentUser.value.firstName ||
-            null,
-          lastName:
-            profile.lastName?.trim() ||
-            currentUser.value.lastName ||
-            null,
-        }
-      })
-    }
-
-    // Child components mount before their parent; the first useAuth() starts getSession().
-    // Later callers must not set authLoading to false — that would flash the login UI before
-    // the initial session resolves.
-    if (initialAuthFetchDone) {
-      return
-    }
-    initialAuthFetchDone = true
-
-    $supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.access_token) {
-        sessionRef.value = { access_token: session.access_token }
-        const { data: { user: serverUser }, error } = await $supabase.auth.getUser()
-        if (error || !serverUser) {
-          // Session is invalid or user fetch failed – treat as fully logged out
-          await $supabase.auth.signOut()
-          currentUser.value = null
-          authLoading.value = false
-          return
-        }
-        await resolveUser(serverUser)
-      } else {
-        // No session at all
-        await resolveUser(null)
-      }
-      authLoading.value = false
-    }).catch((err) => {
-      // e.g. NavigatorLockAcquireTimeoutError when auth lock is contended (e.g. after signup)
-      console.warn('[useAuth] getSession failed:', err?.name ?? err)
-      authLoading.value = false
-    })
-
-    // Subscribe to auth state change only once globally so we don't fire N profile fetches per event
-    if (!authSubscriptionDone) {
-      authSubscriptionDone = true
-      $supabase.auth.onAuthStateChange((_event, session) => {
-        sessionRef.value = session?.access_token ? { access_token: session.access_token } : null
-        resolveUser(session?.user ?? null)
-      })
+async function resolveUserWithProfile(
+  supabase: SupabaseClient,
+  supabaseUser: SupabaseAuthUser | null,
+) {
+  const user = mapUserSync(supabaseUser)
+  if (!user) {
+    currentUser.value = null
+    return
+  }
+  // Keep existing enriched fields for same user id to avoid role/UI flicker
+  // (e.g. admin briefly appearing as user on auth refresh).
+  const existing = currentUser.value?.id === user.id ? currentUser.value : null
+  currentUser.value = {
+    ...user,
+    role: existing?.role ?? 'user',
+    idPassportNumber: existing?.idPassportNumber ?? null,
+    reasonForBuying: existing?.reasonForBuying ?? null,
+    firstName: existing?.firstName ?? user.firstName ?? null,
+    lastName: existing?.lastName ?? user.lastName ?? null,
+  }
+  void fetchProfileExtras(supabase, user.id).then((profile) => {
+    if (!currentUser.value || currentUser.value.id !== user.id) return
+    currentUser.value = {
+      ...currentUser.value,
+      role: profile.role,
+      idPassportNumber: profile.idPassportNumber ?? null,
+      reasonForBuying: profile.reasonForBuying ?? null,
+      firstName:
+        profile.firstName?.trim() ||
+        currentUser.value.firstName ||
+        null,
+      lastName:
+        profile.lastName?.trim() ||
+        currentUser.value.lastName ||
+        null,
     }
   })
+}
+
+function ensureAuthBootstrap(supabase: SupabaseClient) {
+  if (import.meta.server) return
+  if (initialAuthFetchDone) return
+  initialAuthFetchDone = true
+
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
+    if (session?.access_token) {
+      sessionRef.value = { access_token: session.access_token }
+      const { data: { user: serverUser }, error } = await supabase.auth.getUser()
+      if (error || !serverUser) {
+        // Session is invalid or user fetch failed – treat as fully logged out
+        await supabase.auth.signOut()
+        currentUser.value = null
+        authLoading.value = false
+        return
+      }
+      await resolveUserWithProfile(supabase, serverUser)
+    } else {
+      // No session at all
+      await resolveUserWithProfile(supabase, null)
+    }
+    authLoading.value = false
+  }).catch((err) => {
+    // e.g. NavigatorLockAcquireTimeoutError when auth lock is contended (e.g. after signup)
+    console.warn('[useAuth] getSession failed:', err?.name ?? err)
+    authLoading.value = false
+  })
+
+  // Subscribe to auth state change only once globally so we don't fire N profile fetches per event
+  if (!authSubscriptionDone) {
+    authSubscriptionDone = true
+    supabase.auth.onAuthStateChange((_event, session) => {
+      sessionRef.value = session?.access_token ? { access_token: session.access_token } : null
+      void resolveUserWithProfile(supabase, session?.user ?? null)
+    })
+  }
+}
+
+export function useAuth() {
+  const { $supabase } = useNuxtApp()
+  ensureAuthBootstrap($supabase)
 
   const signUp = async (
     email: string,

@@ -391,33 +391,20 @@
                 </div>
 
                 <!-- Primary CTAs -->
-                <div v-if="!isPrelaunch" class="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-6">
+                <div class="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-6">
                   <button
                     type="button"
-                    :disabled="!canReserve"
+                    :disabled="!canPrimaryCta"
                     class="w-full sm:w-auto sm:flex-[0.65] sm:min-w-[130px] h-12 flex items-center justify-center bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    @click="canReserve && onReserveClick()"
+                    @click="onPrimaryCtaClick"
                   >
-                    {{ isLockedByOther ? 'Reservation in Progress' : 'Reserve unit' }}
+                    {{ primaryCtaLabel }}
                   </button>
                   <button
                     type="button"
                     :disabled="!isAvailable"
                     class="w-full sm:w-auto sm:flex-[0.35] sm:min-w-[170px] h-12 inline-flex items-center justify-center gap-1.5 bg-theme-bg border border-zinc-300 text-zinc-600 font-black text-[11px] uppercase tracking-wider rounded-lg shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-theme-bg disabled:hover:text-zinc-600 disabled:hover:border-zinc-300"
                     :class="isWishlisted ? '!border-red-600 !bg-red-600 !text-white' : ''"
-                    @click="isAvailable && onToggleWishlist()"
-                  >
-                    <IconHeart class="w-3.5 h-3.5 flex-shrink-0 -mt-[1px]" :filled="isWishlisted" />
-                    <span class="leading-none">
-                      {{ isWishlisted ? 'Remove from wishlist' : 'Add to wishlist' }}
-                    </span>
-                  </button>
-                </div>
-                <div v-else class="mt-8">
-                  <button
-                    type="button"
-                    :disabled="!isAvailable"
-                    class="w-full h-12 inline-flex items-center justify-center gap-1.5 bg-[#18181B] text-[#ffffff] font-black text-[11px] uppercase tracking-wider rounded-lg hover:bg-[#27272a] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     @click="isAvailable && onToggleWishlist()"
                   >
                     <IconHeart class="w-3.5 h-3.5 flex-shrink-0 -mt-[1px]" :filled="isWishlisted" />
@@ -489,6 +476,13 @@
         />
       </div>
     </div>
+
+    <EnquiryModal
+      :open="enquiryModalOpen"
+      :user="user"
+      :unit-number="unit?.unitNumber ?? ''"
+      @close="enquiryModalOpen = false"
+    />
   </div>
 </template>
 
@@ -509,6 +503,7 @@ import IconCar from '~/components/icons/IconCar.vue'
 import IconSize from '~/components/icons/IconSize.vue'
 import IconLayout from '~/components/icons/IconLayout.vue'
 import IconHeart from '~/components/icons/IconHeart.vue'
+import EnquiryModal from '~/components/EnquiryModal.vue'
 import type { Unit } from '~/types'
 import type { Swiper as SwiperInstance } from 'swiper'
 import { errorMessageFromUnknown } from '~/utils/errorFromUnknown'
@@ -525,6 +520,7 @@ const returningToList = ref(false)
 const activeIndex = ref(0)
 const heroAutoplayId = ref<number | null>(null)
 const gallerySwiper = ref<SwiperInstance | null>(null)
+const enquiryModalOpen = ref(false)
 
 // Lightbox state
 const lightboxOpen = ref(false)
@@ -701,6 +697,11 @@ const isLockedByOther = computed(() => {
   return u.lockExpiresAt > Date.now()
 })
 const canReserve = computed(() => isAvailable.value && !isLockedByOther.value)
+const canPrimaryCta = computed(() => (isPrelaunch.value ? isAvailable.value : canReserve.value))
+const primaryCtaLabel = computed(() => {
+  if (isPrelaunch.value) return 'Enquire now'
+  return isLockedByOther.value ? 'Reservation in Progress' : 'Reserve unit'
+})
 
 const formattedPrice = computed(() =>
   unit.value ? formatZarInteger(unit.value.price) : '',
@@ -864,6 +865,21 @@ async function onReserveClick() {
     showBottomUrgencyStrip(msg)
   } finally {
     reserving.value = false
+  }
+}
+
+function onEnquireClick() {
+  if (!unit.value || !isAvailable.value) return
+  enquiryModalOpen.value = true
+}
+
+function onPrimaryCtaClick() {
+  if (isPrelaunch.value) {
+    onEnquireClick()
+    return
+  }
+  if (canReserve.value) {
+    void onReserveClick()
   }
 }
 

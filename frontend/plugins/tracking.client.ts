@@ -1,10 +1,15 @@
-import { useSalesMode } from '~/composables/useSalesMode'
+import { APP_SETTINGS_DATA_KEY, type AppSettingsPublic } from '~/composables/useSalesMode'
 
 declare global {
   interface Window {
     dataLayer?: unknown[]
     gtag?: (...args: unknown[]) => void
-    fbq?: ((...args: unknown[]) => void) & { queue?: unknown[]; loaded?: boolean; version?: string; push?: (...args: unknown[]) => void }
+    fbq?: ((...args: unknown[]) => void) & {
+      queue?: unknown[]
+      loaded?: boolean
+      version?: string
+      push?: (...args: unknown[]) => void
+    }
     _fbq?: Window['fbq']
   }
 }
@@ -26,59 +31,82 @@ function appendInlineScriptOnce(id: string, code: string): void {
   document.head.appendChild(script)
 }
 
-function sanitizeCode(raw: string | null | undefined): string | null {
+function clean(raw: string | null | undefined): string | null {
   const value = String(raw ?? '').trim()
-  return value ? value : null
+  return value || null
+}
+
+function validGaId(id: string): boolean {
+  return /^G-[A-Z0-9]{4,}$/i.test(id)
+}
+
+function validGtmId(id: string): boolean {
+  return /^GTM-[A-Z0-9]{4,}$/i.test(id)
+}
+
+function validMetaPixelId(id: string): boolean {
+  return /^\d{8,20}$/.test(id)
 }
 
 export default defineNuxtPlugin(() => {
+  if (import.meta.dev) return
+
+  const config = useRuntimeConfig()
+  // Emergency kill-switch: set NUXT_PUBLIC_ENABLE_TRACKING_RUNTIME=false to disable.
+  const trackingEnabled = String(config.public.enableTrackingRuntime ?? 'true').toLowerCase() !== 'false'
+  if (!trackingEnabled) return
+
   const route = useRoute()
-  const { googleAnalyticsId, googleTagManagerId, metaPixelId } = useSalesMode()
+  const appEntry = useNuxtData<AppSettingsPublic>(APP_SETTINGS_DATA_KEY)
 
   const initializedGa = new Set<string>()
   const initializedGtm = new Set<string>()
   const initializedMeta = new Set<string>()
   let lastTrackedPath = ''
 
+  const gaId = computed(() => clean(appEntry.data.value?.googleAnalyticsId))
+  const gtmId = computed(() => clean(appEntry.data.value?.googleTagManagerId))
+  const metaId = computed(() => clean(appEntry.data.value?.metaPixelId))
+
+  if (!appEntry.data.value) {
+    void refreshNuxtData(APP_SETTINGS_DATA_KEY)
+  }
+
   function trackPageView(path: string) {
-    const gaId = sanitizeCode(googleAnalyticsId.value)
-    if (gaId && typeof window.gtag === 'function') {
+    if (gaId.value && validGaId(gaId.value) && typeof window.gtag === 'function') {
       window.gtag('event', 'page_view', {
         page_path: path,
         page_location: window.location.href,
-        send_to: gaId,
+        send_to: gaId.value,
       })
     }
 
-    if (sanitizeCode(metaPixelId.value) && typeof window.fbq === 'function') {
+    if (metaId.value && validMetaPixelId(metaId.value) && typeof window.fbq === 'function') {
       window.fbq('track', 'PageView')
     }
   }
 
   function ensureTrackingLoaded() {
-    const gaId = sanitizeCode(googleAnalyticsId.value)
-    if (gaId && !initializedGa.has(gaId)) {
-      appendScriptOnce('ignite-ga-lib', `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`)
+    if (gaId.value && validGaId(gaId.value) && !initializedGa.has(gaId.value)) {
+      appendScriptOnce('ignite-ga-lib', `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId.value)}`)
       appendInlineScriptOnce(
-        `ignite-ga-init-${gaId}`,
+        `ignite-ga-init-${gaId.value}`,
         `window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 window.gtag = window.gtag || gtag;
 gtag('js', new Date());
-gtag('config', '${gaId}', { send_page_view: false });`,
+gtag('config', '${gaId.value}', { send_page_view: false });`,
       )
-      initializedGa.add(gaId)
+      initializedGa.add(gaId.value)
     }
 
-    const gtmId = sanitizeCode(googleTagManagerId.value)
-    if (gtmId && !initializedGtm.has(gtmId)) {
+    if (gtmId.value && validGtmId(gtmId.value) && !initializedGtm.has(gtmId.value)) {
       window.dataLayer = window.dataLayer || []
-      appendScriptOnce('ignite-gtm-lib', `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId)}`)
-      initializedGtm.add(gtmId)
+      appendScriptOnce('ignite-gtm-lib', `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId.value)}`)
+      initializedGtm.add(gtmId.value)
     }
 
-    const metaId = sanitizeCode(metaPixelId.value)
-    if (metaId && !initializedMeta.has(metaId)) {
+    if (metaId.value && validMetaPixelId(metaId.value) && !initializedMeta.has(metaId.value)) {
       appendInlineScriptOnce(
         'ignite-meta-init',
         `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -88,11 +116,11 @@ t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, d
 'https://connect.facebook.net/en_US/fbevents.js');`,
       )
       if (typeof window.fbq === 'function') {
-        window.fbq('init', metaId)
+        window.fbq('init', metaId.value)
       } else {
-        appendInlineScriptOnce(`ignite-meta-config-${metaId}`, `fbq('init', '${metaId}');`)
+        appendInlineScriptOnce(`ignite-meta-config-${metaId.value}`, `fbq('init', '${metaId.value}');`)
       }
-      initializedMeta.add(metaId)
+      initializedMeta.add(metaId.value)
     }
 
     const path = route.fullPath || '/'
@@ -103,8 +131,8 @@ t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, d
   }
 
   watch(
-    () => [googleAnalyticsId.value, googleTagManagerId.value, metaPixelId.value],
-    () => ensureTrackingLoaded(),
+    () => [gaId.value, gtmId.value, metaId.value],
+    ensureTrackingLoaded,
     { immediate: true },
   )
 

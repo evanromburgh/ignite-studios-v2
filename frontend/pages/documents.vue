@@ -1,5 +1,4 @@
 <template>
-  <Transition name="page-fade">
   <div class="nav-section light w-full px-4 sm:px-[5rem] pt-[7.5rem] sm:pt-[11rem] sm:pb-20">
     <header class="mb-10 sm:mb-16 text-center">
       <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-theme-text-primary tracking-tight mb-2">
@@ -63,7 +62,6 @@
       </div>
     </div>
   </div>
-  </Transition>
 </template>
 
 <script setup lang="ts">
@@ -133,17 +131,3 @@ function fileTypeLabel(doc: DocumentEntry) {
 }
 </script>
 
-<style scoped>
-.page-fade-enter-active,
-.page-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.page-fade-enter-from,
-.page-fade-leave-to {
-  opacity: 0;
-}
-.page-fade-enter-to,
-.page-fade-leave-from {
-  opacity: 1;
-}
-</style>
