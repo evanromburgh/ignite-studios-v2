@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { visible, message } = useBottomUrgencyStrip()
+const { visible, message, tone } = useBottomUrgencyStrip()
 </script>
 
 <template>
@@ -7,7 +7,8 @@ const { visible, message } = useBottomUrgencyStrip()
     <Transition name="bottom-urgency-strip">
       <div
         v-if="visible"
-        class="bottom-urgency-strip fixed left-1/2 z-[215] w-max max-w-[calc(100vw-2.5rem)] rounded-xl bg-[#922724] px-4 py-3 text-center text-white shadow-lg"
+        class="bottom-urgency-strip fixed left-1/2 z-[215] w-max max-w-[calc(100vw-2.5rem)] rounded-xl px-4 py-3 text-center text-white shadow-lg"
+        :class="tone === 'dark' ? 'bg-[#18181B]' : 'bg-[#922724]'"
         role="alert"
         aria-live="assertive"
       >

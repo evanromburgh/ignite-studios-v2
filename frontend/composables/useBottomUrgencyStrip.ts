@@ -2,10 +2,12 @@
 export function useBottomUrgencyStrip() {
   const visible = useState('bottomUrgencyStrip.visible', () => false)
   const message = useState('bottomUrgencyStrip.message', () => '')
+  const tone = useState<'danger' | 'dark'>('bottomUrgencyStrip.tone', () => 'danger')
   let hideTimer: ReturnType<typeof setTimeout> | null = null
 
-  function show(text: string) {
+  function show(text: string, opts?: { tone?: 'danger' | 'dark' }) {
     message.value = text
+    tone.value = opts?.tone ?? 'danger'
     visible.value = true
     if (hideTimer) {
       clearTimeout(hideTimer)
@@ -27,5 +29,5 @@ export function useBottomUrgencyStrip() {
     visible.value = false
   }
 
-  return { visible, message, show, dismiss }
+  return { visible, message, tone, show, dismiss }
 }

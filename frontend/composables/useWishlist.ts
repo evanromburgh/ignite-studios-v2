@@ -8,6 +8,8 @@ const error = ref<string | null>(null)
 export function useWishlist() {
   const { $supabase } = useNuxtApp()
   const { user } = useAuth()
+  const { units } = useUnits()
+  const { show: showBottomUrgencyStrip } = useBottomUrgencyStrip()
 
   const wishlistCount = computed(() => wishlistIds.value.length)
 
@@ -48,12 +50,16 @@ export function useWishlist() {
     }
     if (!wishlistIds.value.includes(unitId)) {
       wishlistIds.value = [...wishlistIds.value, unitId]
+      const unitNumber = units.value.find((u) => u.id === unitId)?.unitNumber
+      const label = unitNumber ? `Unit ${unitNumber}` : 'Unit'
+      showBottomUrgencyStrip(`${label} added to your wishlist.`, { tone: 'dark' })
     }
   }
 
   async function remove(unitId: string) {
     if (!user.value?.id) return
     error.value = null
+    const unitNumber = units.value.find((u) => u.id === unitId)?.unitNumber
     const { error: e } = await $supabase
       .from('wishlists')
       .delete()
@@ -65,6 +71,8 @@ export function useWishlist() {
       return
     }
     wishlistIds.value = wishlistIds.value.filter((id) => id !== unitId)
+    const label = unitNumber ? `Unit ${unitNumber}` : 'Unit'
+    showBottomUrgencyStrip(`${label} removed from your wishlist.`, { tone: 'dark' })
   }
 
   async function toggle(unitId: string) {

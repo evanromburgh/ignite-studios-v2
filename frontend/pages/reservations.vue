@@ -27,7 +27,7 @@
           Could not load your reservations. {{ reservedIdsError }}
         </div>
 
-        <div v-else-if="reservedUnits.length === 0" class="text-center py-48 bg-theme-surface backdrop-blur-3xl rounded-xl border border-theme-border shadow-inner">
+        <div v-else-if="reservedUnits.length === 0" class="text-center py-48 px-8 sm:px-0 bg-theme-surface backdrop-blur-3xl rounded-xl border border-theme-border shadow-inner">
           <h3 class="text-2xl md:text-3xl font-black text-zinc-300 uppercase tracking-[0.3em] mb-4">No reserved units</h3>
           <p class="text-zinc-500 font-medium mb-8">Reserve a unit from the Properties page and complete payment to see it here.</p>
           <NuxtLink

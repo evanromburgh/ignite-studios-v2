@@ -28,7 +28,7 @@
           Could not load wishlist. {{ wishlistError }} Make sure the wishlists table exists (run the migration in README).
         </div>
 
-        <div v-else-if="wishlistUnits.length === 0" class="text-center py-48 bg-theme-surface backdrop-blur-3xl rounded-xl border border-theme-border shadow-inner">
+        <div v-else-if="wishlistUnits.length === 0" class="text-center py-48 px-8 sm:px-0 bg-theme-surface backdrop-blur-3xl rounded-xl border border-theme-border shadow-inner">
           <h3 class="text-2xl md:text-3xl font-black text-zinc-300 uppercase tracking-[0.3em] mb-4">No saved units</h3>
           <p class="text-zinc-500 font-medium mb-8">Save units from the Properties page to see them here.</p>
           <NuxtLink
