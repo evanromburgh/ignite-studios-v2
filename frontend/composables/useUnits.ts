@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import type { Unit } from '~/types'
 import { mapSupabaseUnitRow, type SupabaseUnitRow } from '~/utils/mapUnitRow'
 import { getUnitsBucketPublicUrl } from '~/utils/unitsStorage'
@@ -8,6 +8,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 let hasInitialized = false
 let channel: { unsubscribe: () => void } | null = null
+let initPromise: Promise<void> | null = null
 
 export function useUnits() {
   const { $supabase } = useNuxtApp()
@@ -35,41 +36,55 @@ export function useUnits() {
       }
       if (!data) return
       units.value = data.map(mapRow)
+    } catch (err) {
+      console.error('Unexpected units fetch failure:', err)
+      error.value = 'Failed to load units.'
     } finally {
       loading.value = false
     }
   }
 
-  onMounted(async () => {
+  function ensureUnitsBootstrap() {
+    if (import.meta.server) return
     if (hasInitialized) return
-    hasInitialized = true
+    if (initPromise) return
 
-    await fetchInitial()
+    initPromise = (async () => {
+      await fetchInitial()
 
-    channel = $supabase
-      .channel('units-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'units' },
-        (payload) => {
-          const newRow = payload.new as SupabaseUnitRow | undefined
-          const oldRow = payload.old as Pick<SupabaseUnitRow, 'id'> | undefined
+      if (!channel) {
+        channel = $supabase
+          .channel('units-realtime')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'units' },
+            (payload) => {
+              const newRow = payload.new as SupabaseUnitRow | undefined
+              const oldRow = payload.old as Pick<SupabaseUnitRow, 'id'> | undefined
 
-          if (payload.eventType === 'INSERT' && newRow) {
-            units.value = [...units.value, mapRow(newRow)]
-          } else if (payload.eventType === 'UPDATE' && newRow) {
-            units.value = units.value.map((u) =>
-              u.id === newRow.id ? mapRow(newRow) : u,
-            )
-          } else if (payload.eventType === 'DELETE' && oldRow) {
-            units.value = units.value.filter((u) => u.id !== oldRow.id)
-          }
+              if (payload.eventType === 'INSERT' && newRow) {
+                units.value = [...units.value, mapRow(newRow)]
+              } else if (payload.eventType === 'UPDATE' && newRow) {
+                units.value = units.value.map((u) =>
+                  u.id === newRow.id ? mapRow(newRow) : u,
+                )
+              } else if (payload.eventType === 'DELETE' && oldRow) {
+                units.value = units.value.filter((u) => u.id !== oldRow.id)
+              }
 
-          units.value.sort((a, b) => a.unitNumber.localeCompare(b.unitNumber))
-        },
-      )
-      .subscribe()
-  })
+              units.value.sort((a, b) => a.unitNumber.localeCompare(b.unitNumber))
+            },
+          )
+          .subscribe()
+      }
+
+      hasInitialized = true
+    })().finally(() => {
+      initPromise = null
+    })
+  }
+
+  ensureUnitsBootstrap()
 
   return {
     units,

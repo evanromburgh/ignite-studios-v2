@@ -201,13 +201,13 @@
             </NuxtLink>
           </div>
           <template v-if="user">
+            <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
             <div v-if="user.role !== 'admin'" class="w-full flex">
               <NuxtLink to="/profile" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isProfilePage)" @click="showMobileMenu = false">
                 Profile
               </NuxtLink>
             </div>
             <template v-else>
-              <div class="w-full h-px my-1" :class="effectiveIsDarkNavTheme ? 'bg-white/10' : 'bg-zinc-200'" />
               <div class="w-full flex">
                 <NuxtLink to="/admin/settings" class="w-full max-w-xs mx-auto h-12 flex items-center text-[12px] uppercase tracking-wider" :class="navLinkClass(isAdminPage)" @click="showMobileMenu = false">
                   Settings

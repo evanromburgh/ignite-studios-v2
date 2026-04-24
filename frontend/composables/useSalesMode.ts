@@ -47,7 +47,9 @@ export function useSalesMode(): {
     () => $fetch<AppSettingsPublic>('/api/app-settings'),
     {
       default: () => ({
-        salesMode: 'launched' as const,
+        // Safe default while remote settings resolve: never show "launched" briefly
+        // when the real mode is prelaunch.
+        salesMode: 'prelaunch' as const,
         salesOpensAt: null,
         googleAnalyticsId: null,
         googleTagManagerId: null,

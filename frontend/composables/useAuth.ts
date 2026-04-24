@@ -58,6 +58,8 @@ const sessionRef = ref<{ access_token: string } | null>(null)
 let authSubscriptionDone = false
 /** Run initial getSession/getUser only once so we don't fire N "user" requests per page (every useAuth() caller was triggering onMounted). */
 let initialAuthFetchDone = false
+/** Sequence guard so only the latest auth transition can end loading state. */
+let authTransitionSeq = 0
 
 async function resolveUserWithProfile(
   supabase: SupabaseClient,
@@ -129,9 +131,21 @@ function ensureAuthBootstrap(supabase: SupabaseClient) {
   // Subscribe to auth state change only once globally so we don't fire N profile fetches per event
   if (!authSubscriptionDone) {
     authSubscriptionDone = true
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      const seq = ++authTransitionSeq
+      const isAuthBoundaryTransition =
+        event === 'SIGNED_IN' ||
+        event === 'SIGNED_OUT'
+
+      // Avoid full-screen loader flashes on passive events like TOKEN_REFRESHED/INITIAL_SESSION.
+      if (isAuthBoundaryTransition) {
+        authLoading.value = true
+      }
       sessionRef.value = session?.access_token ? { access_token: session.access_token } : null
-      void resolveUserWithProfile(supabase, session?.user ?? null)
+      await resolveUserWithProfile(supabase, session?.user ?? null)
+      if (isAuthBoundaryTransition && seq === authTransitionSeq) {
+        authLoading.value = false
+      }
     })
   }
 }
@@ -188,8 +202,12 @@ export function useAuth() {
   }
 
   const login = async (email: string, password: string) => {
+    authLoading.value = true
     const { data, error } = await $supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
+    if (error) {
+      authLoading.value = false
+      throw error
+    }
     if (data.session?.access_token) {
       sessionRef.value = { access_token: data.session.access_token }
     }
@@ -197,6 +215,7 @@ export function useAuth() {
   }
 
   const logout = async () => {
+    authLoading.value = true
     const { data: { session } } = await $supabase.auth.getSession()
     const unitId = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ignite_reserve_unitId') : null
     if (session?.access_token && unitId) {
@@ -211,8 +230,15 @@ export function useAuth() {
       sessionStorage.removeItem('ignite_reserve_lockExpiresAt')
     }
     const { error } = await $supabase.auth.signOut()
-    if (error) throw error
+    if (error) {
+      authLoading.value = false
+      throw error
+    }
     currentUser.value = null
+    authLoading.value = false
+    if (import.meta.client) {
+      await navigateTo('/', { replace: true })
+    }
   }
 
   const resetPasswordForEmail = async (email: string) => {

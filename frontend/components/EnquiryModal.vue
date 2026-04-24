@@ -251,4 +251,14 @@ textarea {
 .enquiry-modal-leave-to {
   opacity: 0;
 }
+
+@media (max-width: 640px) {
+  .enquiry-header {
+    padding: 1rem;
+  }
+
+  .enquiry-form {
+    padding: 1rem;
+  }
+}
 </style>
