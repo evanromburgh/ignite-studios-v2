@@ -403,7 +403,7 @@
                   <button
                     type="button"
                     :disabled="!isAvailable"
-                    class="w-full sm:w-auto sm:flex-[0.35] sm:min-w-[170px] h-12 inline-flex items-center justify-center gap-1.5 bg-theme-bg border border-zinc-300 text-zinc-600 font-black text-[11px] uppercase tracking-wider rounded-lg shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-theme-bg disabled:hover:text-zinc-600 disabled:hover:border-zinc-300"
+                    class="w-full sm:w-auto sm:flex-[0.35] sm:min-w-[170px] h-12 touch-manipulation inline-flex items-center justify-center gap-1.5 bg-theme-bg border border-zinc-300 text-zinc-600 font-black text-[11px] uppercase tracking-wider rounded-lg shadow-sm transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:hover:bg-red-600 [@media(hover:hover)]:hover:text-white [@media(hover:hover)]:hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:[@media(hover:hover)]:hover:bg-theme-bg disabled:[@media(hover:hover)]:hover:text-zinc-600 disabled:[@media(hover:hover)]:hover:border-zinc-300"
                     :class="isWishlisted ? '!border-red-600 !bg-red-600 !text-white' : ''"
                     @click="isAvailable && onToggleWishlist()"
                   >

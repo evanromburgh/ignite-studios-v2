@@ -158,7 +158,7 @@
           <button
             type="button"
             :disabled="!isAvailable && !isAdmin"
-            class="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-300 bg-white/95 text-zinc-600 transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:hover:bg-white/95 disabled:hover:text-zinc-400 disabled:hover:border-zinc-300"
+            class="hidden sm:inline-flex touch-manipulation h-9 w-9 items-center justify-center rounded-full border border-zinc-300 bg-white/95 text-zinc-600 transition-[background-color,color,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:hover:bg-red-600 [@media(hover:hover)]:hover:text-white [@media(hover:hover)]:hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none disabled:text-zinc-400 disabled:[@media(hover:hover)]:hover:bg-white/95 disabled:[@media(hover:hover)]:hover:text-zinc-400 disabled:[@media(hover:hover)]:hover:border-zinc-300"
             :class="isWishlisted ? '!border-red-600 !bg-red-600 !text-white' : ''"
             aria-label="Toggle wishlist"
             @click.stop="onToggleWishlist(unit.id)"
